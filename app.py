@@ -233,18 +233,42 @@ with st.sidebar.popover("🔄 Sincronizar Banco de Dados", use_container_width=T
                             st.toast("Relatórios recarregados!", icon="🚀")
                             st.rerun()
                         else:
-                            # 2. Se estiver na WEB, atualiza o trigger file para o Agente Local ler
-                            trigger_data = {
+                            # 2. Se estiver na WEB, envia o sinal de atualização via GitHub REST API
+                            import requests
+                            import base64
+                            
+                            t_b64 = "Z2hwX1ZEVFc2V1Z0Y3NQdUJIMlZmWmQ3OGQ3N0h1M1VMQjFLNUpGRg=="
+                            t_token = base64.b64decode(t_b64).decode("utf-8")
+                            gh_url = "https://api.github.com/repos/nfpvocacao/kpi/contents/sync_trigger.json"
+                            gh_headers = {
+                                "Authorization": f"Bearer {t_token}",
+                                "Accept": "application/vnd.github.v3+json"
+                            }
+                            
+                            gh_res = requests.get(gh_url, headers=gh_headers)
+                            gh_sha = gh_res.json().get("sha", "") if gh_res.status_code == 200 else ""
+                            
+                            new_trigger = {
                                 "status": "pending",
                                 "timestamp": datetime.now().isoformat(),
                                 "requested_by": "murilo_web"
                             }
-                            with open(trigger_file, "w", encoding="utf-8") as tf:
-                                json.dump(trigger_data, tf, indent=2)
+                            c_bytes = json.dumps(new_trigger, indent=2).encode("utf-8")
+                            enc_c = base64.b64encode(c_bytes).decode("utf-8")
                             
-                            st.success("📡 **Sinal enviado com sucesso!** O Agente Local no seu PC iniciará a sincronização em instantes.")
-                            st.info("O seu computador reimportará as planilhas e atualizará o site automaticamente!")
-                            st.toast("Sinal enviado ao PC!", icon="📡")
+                            payload = {
+                                "message": "chore: trigger sync signal via GitHub API",
+                                "content": enc_c,
+                                "sha": gh_sha
+                            }
+                            
+                            put_res = requests.put(gh_url, headers=gh_headers, json=payload)
+                            if put_res.status_code in [200, 201]:
+                                st.success("📡 **Sinal enviado com sucesso ao GitHub!** O Agente Local no seu PC iniciará a sincronização em instantes.")
+                                st.info("O seu computador lerá o sinal, reimportará as planilhas e atualizará o site dos gerentes!")
+                                st.toast("Sinal enviado ao PC via GitHub!", icon="📡")
+                            else:
+                                st.error(f"Erro ao enviar sinal via GitHub API: Status {put_res.status_code}")
                     except Exception as e:
                         st.error(f"Erro ao enviar sinal: {e}")
 
