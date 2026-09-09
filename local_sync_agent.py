@@ -5,14 +5,20 @@ import sys
 import subprocess
 from datetime import datetime
 
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 REPO_DIR = os.path.dirname(os.path.abspath(__file__))
 TRIGGER_FILE = os.path.join(REPO_DIR, "sync_trigger.json")
 
 print("==================================================")
-print("🚀 Agente de Sincronização Local NFP Iniciado!")
+print("--- Agente de Sincronizacao Local NFP Iniciado! ---")
 print("==================================================")
-print(f"Monitorando o repositório em: {REPO_DIR}")
-print("Aguardando solicitações enviadas pelo site web...")
+print(f"Monitorando o repositorio em: {REPO_DIR}")
+print("Aguardando solicitacoes enviadas pelo site web...")
 print("Pressione Ctrl+C para encerrar.\n")
 
 def check_and_execute_sync():
