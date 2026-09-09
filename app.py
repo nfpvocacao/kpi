@@ -182,61 +182,40 @@ meses_selecionados = st.sidebar.multiselect(
     format_func=lambda x: meses_nomes[x]
 )
 
-# Sincronização de Dados (Protegido por Servidor Raiz & Senha em Form)
+# Sincronização de Dados (Protegido por Assinatura de Dispositivo e Senha)
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🔄 Sincronização de Dados")
 
 import os
 import sys
-import subprocess
-import getpass
 
 with st.sidebar.popover("🔄 Sincronizar Banco de Dados", use_container_width=True):
     st.markdown("#### 🔐 Confirmação do Servidor Raiz")
-    st.caption("Digite a senha e confirme a execução da atualização no Servidor Raiz autorizado:")
+    st.caption("Digite a senha e a chave do dispositivo autorizado para executar a sincronização no site:")
     
-    with st.form("sync_authorization_form"):
-        pwd_input = st.text_input("Senha do Servidor Raiz", type="password", help="Digite a senha nfp2026")
+    with st.form("sync_authorization_web_form"):
+        pwd_input = st.text_input("Senha de Acesso", type="password", help="Digite a senha nfp2026")
+        device_key_input = st.text_input("Chave do Dispositivo Autorizado", type="password", help="Digite a chave da sua máquina autorizado")
         btn_submit_sync = st.form_submit_button("🚀 Confirmar e Executar Sincronização", use_container_width=True)
         
         if btn_submit_sync:
-            # 1. Verificar se a senha está correta
+            # Validar Senha e Chave do Dispositivo
             if pwd_input != "nfp2026":
                 st.error("❌ Senha incorreta! Acesso negado.")
+            elif device_key_input.strip().lower() not in ["raiz-vocacao", "raiz", "murilo"]:
+                st.error("🔒 **Dispositivo Não Autorizado**: A chave informada não pertence ao Servidor Raiz autorizado.")
             else:
-                # 2. Verificar se o computador em execução é o Servidor Raiz autorizado
-                is_authorized_pc = os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "planilhas")) and (
-                    getpass.getuser().lower() in ["murilo", "murilovendramini"] or os.environ.get("USERNAME", "").lower() in ["murilo", "murilovendramini"]
-                )
-                
-                if not is_authorized_pc:
-                    st.error("🔒 **Acesso Negado**: Este ambiente/computador NÃO é o Servidor Raiz autorizado para executar a sincronização das planilhas.")
-                else:
-                    # 3. Disparar a execução da atualização em Python (ETL + Banco)
-                    with st.spinner("Reimportando planilhas Excel e atualizando banco de dados..."):
-                        try:
-                            sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-                            from etl_import import main as run_etl_main
-                            run_etl_main()
-                            st.cache_data.clear()
-                            st.success("✅ 1/2 Planilhas reimportadas e banco atualizado com sucesso!")
-                        except Exception as e:
-                            st.error(f"Erro ao executar ETL Python: {e}")
-                            st.stop()
-
-                    # 4. Publicar atualização no GitHub para o site dos gerentes
-                    with st.spinner("Enviando atualização para o site dos gerentes no GitHub..."):
-                        try:
-                            repo_dir = os.path.dirname(os.path.abspath(__file__))
-                            subprocess.run(["git", "add", "nfp_database.db"], cwd=repo_dir, check=True)
-                            subprocess.run(["git", "commit", "-m", "chore: atualizacao automatica via Servidor Raiz"], cwd=repo_dir, check=True)
-                            subprocess.run(["git", "push"], cwd=repo_dir, check=True)
-                            
-                            st.success("🎉 **Sucesso Total!** Banco atualizado e publicado!")
-                            st.toast("O site dos gerentes foi atualizado!", icon="🚀")
-                            st.rerun()
-                        except Exception as e:
-                            st.warning(f"Banco local atualizado! Aviso no Push: {e}")
+                with st.spinner("Reimportando planilhas e atualizando banco de dados..."):
+                    try:
+                        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+                        from etl_import import main as run_etl_main
+                        run_etl_main()
+                        st.cache_data.clear()
+                        st.success("🎉 **Sucesso!** Planilhas e banco de dados sincronizados com sucesso!")
+                        st.toast("Relatórios e indicadores recarregados no site!", icon="🚀")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Erro ao executar sincronização: {e}")
 
 # Garantir fallback se o usuário desmarcar tudo
 if not anos_selecionados:
