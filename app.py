@@ -182,40 +182,71 @@ meses_selecionados = st.sidebar.multiselect(
     format_func=lambda x: meses_nomes[x]
 )
 
-# Sincronização de Dados (Protegido por Assinatura de Dispositivo e Senha)
+# Sincronização de Dados (Envio de Sinal ao Agente Local Autorizado)
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🔄 Sincronização de Dados")
 
 import os
 import sys
+import json
+import subprocess
+from datetime import datetime
+
+trigger_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sync_trigger.json")
+current_trigger_status = "idle"
+if os.path.exists(trigger_file):
+    try:
+        with open(trigger_file, "r", encoding="utf-8") as tf:
+            trigger_data = json.load(tf)
+            current_trigger_status = trigger_data.get("status", "idle")
+    except Exception:
+        pass
+
+if current_trigger_status == "pending":
+    st.sidebar.warning("⏳ **Sincronização em andamento**: O Agente Local no seu computador está processando os dados...")
 
 with st.sidebar.popover("🔄 Sincronizar Banco de Dados", use_container_width=True):
     st.markdown("#### 🔐 Confirmação do Servidor Raiz")
-    st.caption("Digite a senha e a chave do dispositivo autorizado para executar a sincronização no site:")
+    st.caption("Digite a senha e a chave do dispositivo autorizado para enviar o sinal ao seu computador:")
     
     with st.form("sync_authorization_web_form"):
         pwd_input = st.text_input("Senha de Acesso", type="password", help="Digite a senha nfp2026")
-        device_key_input = st.text_input("Chave do Dispositivo Autorizado", type="password", help="Digite a chave da sua máquina autorizado")
-        btn_submit_sync = st.form_submit_button("🚀 Confirmar e Executar Sincronização", use_container_width=True)
+        device_key_input = st.text_input("Chave do Dispositivo Autorizado", type="password", help="Digite a chave da sua máquina (ex: raiz)")
+        btn_submit_sync = st.form_submit_button("🚀 Confirmar e Enviar Sinal ao PC", use_container_width=True)
         
         if btn_submit_sync:
-            # Validar Senha e Chave do Dispositivo
             if pwd_input != "nfp2026":
                 st.error("❌ Senha incorreta! Acesso negado.")
             elif device_key_input.strip().lower() not in ["raiz-vocacao", "raiz", "murilo"]:
                 st.error("🔒 **Dispositivo Não Autorizado**: A chave informada não pertence ao Servidor Raiz autorizado.")
             else:
-                with st.spinner("Reimportando planilhas e atualizando banco de dados..."):
+                with st.spinner("Enviando sinal de sincronização para o seu computador..."):
                     try:
-                        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-                        from etl_import import main as run_etl_main
-                        run_etl_main()
-                        st.cache_data.clear()
-                        st.success("🎉 **Sucesso!** Planilhas e banco de dados sincronizados com sucesso!")
-                        st.toast("Relatórios e indicadores recarregados no site!", icon="🚀")
-                        st.rerun()
+                        # 1. Se estiver rodando localmente no PC autorizado, roda o ETL direto
+                        is_local_pc = os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "planilhas"))
+                        if is_local_pc:
+                            sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+                            from etl_import import main as run_etl_main
+                            run_etl_main()
+                            st.cache_data.clear()
+                            st.success("🎉 **Sucesso!** Planilhas e banco sincronizados localmente!")
+                            st.toast("Relatórios recarregados!", icon="🚀")
+                            st.rerun()
+                        else:
+                            # 2. Se estiver na WEB, atualiza o trigger file para o Agente Local ler
+                            trigger_data = {
+                                "status": "pending",
+                                "timestamp": datetime.now().isoformat(),
+                                "requested_by": "murilo_web"
+                            }
+                            with open(trigger_file, "w", encoding="utf-8") as tf:
+                                json.dump(trigger_data, tf, indent=2)
+                            
+                            st.success("📡 **Sinal enviado com sucesso!** O Agente Local no seu PC iniciará a sincronização em instantes.")
+                            st.info("O seu computador reimportará as planilhas e atualizará o site automaticamente!")
+                            st.toast("Sinal enviado ao PC!", icon="📡")
                     except Exception as e:
-                        st.error(f"Erro ao executar sincronização: {e}")
+                        st.error(f"Erro ao enviar sinal: {e}")
 
 # Garantir fallback se o usuário desmarcar tudo
 if not anos_selecionados:
