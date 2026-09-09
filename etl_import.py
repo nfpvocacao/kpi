@@ -561,8 +561,8 @@ def import_internal_map(conn, nfp_dir):
         print(f"Erro ao importar planilha interna: {e}")
 
 def main():
-    # A pasta NFP é a pasta pai do script (que está em NFP/Sistema)
-    nfp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    # A pasta das planilhas fica na subpasta 'planilhas' do projeto
+    nfp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "planilhas"))
     
     # Mudar o diretório de trabalho para onde está o script
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
