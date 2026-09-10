@@ -1,6 +1,5 @@
 {
-  "status": "completed",
-  "timestamp": "2026-09-09T19:32:25.287472",
-  "requested_by": "murilo_web_test",
-  "completed_at": "2026-09-09T19:35:12.596045"
+  "status": "idle",
+  "timestamp": "2026-09-10T18:50:00Z",
+  "requested_by": ""
 }
