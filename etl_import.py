@@ -1,13 +1,26 @@
 import os
-import pandas as pd
-import sqlite3
-import glob
 import re
+import glob
+import sqlite3
+import pandas as pd
+from urllib.parse import quote_plus
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+
+load_dotenv()
 
 DB_NAME = "nfp_database.db"
 
 def get_db_connection():
     return sqlite3.connect(DB_NAME)
+
+def get_mysql_engine():
+    user = os.getenv('MYSQL_USER')
+    password = quote_plus(os.getenv('MYSQL_PASSWORD', ''))
+    host = os.getenv('MYSQL_HOST')
+    port = os.getenv('MYSQL_PORT', '3306')
+    database = os.getenv('MYSQL_DATABASE', 'backoffice')
+    return create_engine(f'mysql+pymysql://{user}:{password}@{host}:{port}/{database}')
 
 def clean_cnpj(val):
     if pd.isna(val):
@@ -147,8 +160,187 @@ def setup_database(conn):
     )
     """)
     
+    # 6. Tabela de Resumo Mensal Empresas
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS vocacao_resumo_mensal_empresas (
+        ano INTEGER,
+        mes INTEGER,
+        cnpj TEXT,
+        nome_empresa TEXT,
+        total_cupons INTEGER,
+        cupons_processados INTEGER,
+        cupons_validos INTEGER,
+        cupons_cadastro INTEGER,
+        cupons_doacao INTEGER,
+        total_valor_nf REAL,
+        total_credito_apurado REAL,
+        credito_cadastro REAL,
+        credito_doacao REAL,
+        PRIMARY KEY (ano, mes, cnpj)
+    )
+    """)
+
+    # 7. Tabela de Resumo Mensal Doadores
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS vocacao_resumo_mensal_doadores (
+        ano INTEGER,
+        mes INTEGER,
+        cpf_doador TEXT,
+        nome_doador TEXT,
+        celular TEXT,
+        tipo_ligacao TEXT,
+        total_cupons INTEGER,
+        cupons_validos INTEGER,
+        total_valor_nf REAL,
+        total_credito_apurado REAL,
+        credito_doacao_automatica REAL,
+        credito_doacao_direta REAL,
+        PRIMARY KEY (ano, mes, cpf_doador)
+    )
+    """)
+
+    # 8. Tabela Doador x Estabelecimento Mensal
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS vocacao_doador_estabelecimento_mensal (
+        ano INTEGER,
+        mes INTEGER,
+        cpf_doador TEXT,
+        nome_doador TEXT,
+        cnpj_empresa TEXT,
+        nome_empresa TEXT,
+        total_cupons INTEGER,
+        total_valor_nf REAL,
+        total_credito_apurado REAL,
+        PRIMARY KEY (ano, mes, cpf_doador, cnpj_empresa)
+    )
+    """)
+
     conn.commit()
     print("Tabelas criadas com sucesso.")
+
+def clean_str_val(val):
+    if pd.isna(val) or val is None:
+        return ''
+    return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', str(val)).strip()
+
+def sync_kpi_tables_from_mysql(sqlite_conn, ano=2026, mes=5):
+    """
+    Sincroniza as 3 tabelas analíticas no SQLite local a partir do MySQL na nuvem
+    """
+    print(f"\n--- SINCRONIZANDO TABELAS ANALÍTICAS DO MYSQL PARA SQLITE ({mes:02d}/{ano}) ---")
+    try:
+        engine = get_mysql_engine()
+        
+        # 1. Resumo Empresas
+        q_emp = f"""
+        SELECT 
+            {int(ano)} AS ano, {int(mes)} AS mes, c.CNPJ AS cnpj,
+            COALESCE(NULLIF(TRIM(e.Empresa), ''), NULLIF(TRIM(e.Fantasia), ''), 'Empresa Não Cadastrada') AS nome_empresa,
+            COUNT(*) AS total_cupons,
+            SUM(CASE WHEN c.Processado = 'Sim' THEN 1 ELSE 0 END) AS cupons_processados,
+            SUM(CASE WHEN c.StatusdoPedido = 'Pedido com documento encontrado.' THEN 1 ELSE 0 END) AS cupons_validos,
+            SUM(CASE WHEN c.TipoDoacao = 'CADASTRO' THEN 1 ELSE 0 END) AS cupons_cadastro,
+            SUM(CASE WHEN c.TipoDoacao IN ('DOACAO_AUTOMATICA', 'DOACAO') THEN 1 ELSE 0 END) AS cupons_doacao,
+            SUM(COALESCE(c.ValorNF, 0)) AS total_valor_nf,
+            SUM(COALESCE(c.CreditoApurado, 0)) AS total_credito_apurado,
+            SUM(CASE WHEN c.TipoDoacao = 'CADASTRO' THEN COALESCE(c.CreditoApurado, 0) ELSE 0 END) AS credito_cadastro,
+            SUM(CASE WHEN c.TipoDoacao IN ('DOACAO_AUTOMATICA', 'DOACAO') THEN COALESCE(c.CreditoApurado, 0) ELSE 0 END) AS credito_doacao
+        FROM nfp_cupons_capturados c
+        LEFT JOIN nfp_empresas e ON e.CNPJ = c.CNPJ
+        WHERE c.Ano = {int(ano)} AND c.Mes = {int(mes)}
+        GROUP BY c.CNPJ, nome_empresa
+        """
+        df_emp = pd.read_sql(q_emp, engine)
+        df_emp['nome_empresa'] = df_emp['nome_empresa'].apply(clean_str_val)
+        
+        # 2. Resumo Doadores (apenas DOACAO e DOACAO_AUTOMATICA)
+        q_doad = f"""
+        SELECT 
+            {int(ano)} AS ano, {int(mes)} AS mes,
+            COALESCE(c.CPFDoador, 'SEM_CPF') AS cpf_doador,
+            COALESCE(NULLIF(TRIM(d.Doador), ''), 'Doador Não Cadastrado') AS nome_doador,
+            COALESCE(d.celular, '') AS celular,
+            COALESCE(d.Ligação, 'Não Informado') AS tipo_ligacao,
+            COUNT(*) AS total_cupons,
+            SUM(CASE WHEN c.StatusdoPedido = 'Pedido com documento encontrado.' THEN 1 ELSE 0 END) AS cupons_validos,
+            SUM(COALESCE(c.ValorNF, 0)) AS total_valor_nf,
+            SUM(COALESCE(c.CreditoApurado, 0)) AS total_credito_apurado,
+            SUM(CASE WHEN c.TipoDoacao = 'DOACAO_AUTOMATICA' THEN COALESCE(c.CreditoApurado, 0) ELSE 0 END) AS credito_doacao_automatica,
+            SUM(CASE WHEN c.TipoDoacao = 'DOACAO' THEN COALESCE(c.CreditoApurado, 0) ELSE 0 END) AS credito_doacao_direta
+        FROM nfp_cupons_capturados c
+        LEFT JOIN nfp_doadores d ON REPLACE(REPLACE(d.cpf, '.', ''), '-', '') = c.CPFDoador
+        WHERE c.Ano = {int(ano)} AND c.Mes = {int(mes)}
+          AND c.TipoDoacao IN ('DOACAO_AUTOMATICA', 'DOACAO')
+        GROUP BY c.CPFDoador, nome_doador, d.celular, d.Ligação
+        """
+        df_doad = pd.read_sql(q_doad, engine)
+        df_doad['nome_doador'] = df_doad['nome_doador'].apply(clean_str_val)
+        df_doad['celular'] = df_doad['celular'].apply(clean_str_val)
+        df_doad['tipo_ligacao'] = df_doad['tipo_ligacao'].apply(clean_str_val)
+
+        # 3. Doador x Estabelecimento
+        q_doad_emp = f"""
+        SELECT 
+            {int(ano)} AS ano, {int(mes)} AS mes,
+            COALESCE(c.CPFDoador, 'SEM_CPF') AS cpf_doador,
+            COALESCE(NULLIF(TRIM(d.Doador), ''), 'Doador Não Cadastrado') AS nome_doador,
+            c.CNPJ AS cnpj_empresa,
+            COALESCE(NULLIF(TRIM(e.Empresa), ''), NULLIF(TRIM(e.Fantasia), ''), 'Empresa Não Cadastrada') AS nome_empresa,
+            COUNT(*) AS total_cupons,
+            SUM(COALESCE(c.ValorNF, 0)) AS total_valor_nf,
+            SUM(COALESCE(c.CreditoApurado, 0)) AS total_credito_apurado
+        FROM nfp_cupons_capturados c
+        LEFT JOIN nfp_doadores d ON REPLACE(REPLACE(d.cpf, '.', ''), '-', '') = c.CPFDoador
+        LEFT JOIN nfp_empresas e ON e.CNPJ = c.CNPJ
+        WHERE c.Ano = {int(ano)} AND c.Mes = {int(mes)}
+          AND c.TipoDoacao IN ('DOACAO_AUTOMATICA', 'DOACAO')
+        GROUP BY c.CPFDoador, nome_doador, c.CNPJ, nome_empresa
+        """
+        df_doad_emp = pd.read_sql(q_doad_emp, engine)
+        df_doad_emp['nome_doador'] = df_doad_emp['nome_doador'].apply(clean_str_val)
+        df_doad_emp['nome_empresa'] = df_doad_emp['nome_empresa'].apply(clean_str_val)
+
+        # Gravar no SQLite
+        cursor = sqlite_conn.cursor()
+        
+        cursor.executemany("""
+        INSERT OR REPLACE INTO vocacao_resumo_mensal_empresas (
+            ano, mes, cnpj, nome_empresa, total_cupons, cupons_processados, cupons_validos,
+            cupons_cadastro, cupons_doacao, total_valor_nf, total_credito_apurado,
+            credito_cadastro, credito_doacao
+        ) VALUES (
+            :ano, :mes, :cnpj, :nome_empresa, :total_cupons, :cupons_processados, :cupons_validos,
+            :cupons_cadastro, :cupons_doacao, :total_valor_nf, :total_credito_apurado,
+            :credito_cadastro, :credito_doacao
+        );
+        """, df_emp.to_dict(orient='records'))
+
+        cursor.executemany("""
+        INSERT OR REPLACE INTO vocacao_resumo_mensal_doadores (
+            ano, mes, cpf_doador, nome_doador, celular, tipo_ligacao,
+            total_cupons, cupons_validos, total_valor_nf, total_credito_apurado,
+            credito_doacao_automatica, credito_doacao_direta
+        ) VALUES (
+            :ano, :mes, :cpf_doador, :nome_doador, :celular, :tipo_ligacao,
+            :total_cupons, :cupons_validos, :total_valor_nf, :total_credito_apurado,
+            :credito_doacao_automatica, :credito_doacao_direta
+        );
+        """, df_doad.to_dict(orient='records'))
+
+        cursor.executemany("""
+        INSERT OR REPLACE INTO vocacao_doador_estabelecimento_mensal (
+            ano, mes, cpf_doador, nome_doador, cnpj_empresa, nome_empresa,
+            total_cupons, total_valor_nf, total_credito_apurado
+        ) VALUES (
+            :ano, :mes, :cpf_doador, :nome_doador, :cnpj_empresa, :nome_empresa,
+            :total_cupons, :total_valor_nf, :total_credito_apurado
+        );
+        """, df_doad_emp.to_dict(orient='records'))
+
+        sqlite_conn.commit()
+        print(f"  Sincronização concluída com SUCESSO: {len(df_emp):,} empresas e {len(df_doad):,} doadores gravados no SQLite local.")
+    except Exception as e:
+        print(f"Erro ao sincronizar tabelas do MySQL para o SQLite: {e}")
 
 def import_annual_files(conn, nfp_dir):
     print("\n--- IMPORTANDO ARQUIVOS ANUAIS (2023, 2024, 2025) ---")
@@ -573,6 +765,13 @@ def main():
         import_annual_files(conn, nfp_dir)
         import_valores_distribuidos(conn, nfp_dir)
         import_internal_map(conn, nfp_dir)
+
+        # Sincronizar tabelas analíticas do MySQL para o SQLite local
+        try:
+            sync_kpi_tables_from_mysql(conn, 2026, 5)
+        except Exception as e_sync:
+            print(f"Aviso na sincronização do MySQL: {e_sync}")
+
         print("\nProcesso de ETL concluído com sucesso!")
         
         # Mostrar algumas estatísticas rápidas
@@ -587,6 +786,12 @@ def main():
         print(f"Total de registros consolidados internos da Vocação: {cursor.fetchone()[0]}")
         cursor.execute("SELECT COUNT(*) FROM vocacao_mapa_interno")
         print(f"Total de registros de indicadores mensais (Mapa): {cursor.fetchone()[0]}")
+        cursor.execute("SELECT COUNT(*) FROM vocacao_resumo_mensal_empresas")
+        print(f"Total de registros no resumo de empresas: {cursor.fetchone()[0]}")
+        cursor.execute("SELECT COUNT(*) FROM vocacao_resumo_mensal_doadores")
+        print(f"Total de registros no resumo de doadores: {cursor.fetchone()[0]}")
+        cursor.execute("SELECT COUNT(*) FROM vocacao_doador_estabelecimento_mensal")
+        print(f"Total de registros Doador x Estabelecimento: {cursor.fetchone()[0]}")
         
     finally:
         conn.close()

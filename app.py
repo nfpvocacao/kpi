@@ -126,6 +126,36 @@ def load_vocacao_mapa():
     return df
 
 @st.cache_data(ttl=600)
+def load_vocacao_empresas():
+    conn = get_db_connection()
+    try:
+        df = pd.read_sql_query("SELECT * FROM vocacao_resumo_mensal_empresas ORDER BY total_credito_apurado DESC", conn)
+    except Exception:
+        df = pd.DataFrame()
+    conn.close()
+    return df
+
+@st.cache_data(ttl=600)
+def load_vocacao_doadores():
+    conn = get_db_connection()
+    try:
+        df = pd.read_sql_query("SELECT * FROM vocacao_resumo_mensal_doadores ORDER BY total_credito_apurado DESC", conn)
+    except Exception:
+        df = pd.DataFrame()
+    conn.close()
+    return df
+
+@st.cache_data(ttl=600)
+def load_vocacao_doador_loja():
+    conn = get_db_connection()
+    try:
+        df = pd.read_sql_query("SELECT * FROM vocacao_doador_estabelecimento_mensal ORDER BY total_credito_apurado DESC", conn)
+    except Exception:
+        df = pd.DataFrame()
+    conn.close()
+    return df
+
+@st.cache_data(ttl=600)
 def get_benchmarking_data(target_date="2023-01-01"):
     conn = get_db_connection()
     
@@ -295,9 +325,11 @@ anos_anteriores = [y - 1 for y in anos_selecionados]
 df_cons_anterior = df_cons[df_cons['ano'].isin(anos_anteriores) & df_cons['mes'].isin(meses_selecionados)]
 
 # Layout de abas principais
-tab_geral, tab_doadores, tab_market = st.tabs([
-    "📈 Desempenho & Faturamento", 
-    "👥 Doadores Automáticos", 
+tab_geral, tab_empresas, tab_doadores_nfp, tab_doadores, tab_market = st.tabs([
+    "📈 Desempenho & Faturamento",
+    "🏢 Operações por Empresa",
+    "❤️ Análise de Doadores",
+    "👥 Doadores Automáticos (Histórico)", 
     "🎯 Benchmarking & Prospecção"
 ])
 
@@ -487,7 +519,398 @@ with tab_geral:
         st.plotly_chart(fig_pie, use_container_width=True)
 
 # ==========================================
-# ABA 2: DOADORES AUTOMÁTICOS
+# ABA 2: OPERAÇÕES POR EMPRESA
+# ==========================================
+with tab_empresas:
+    st.markdown("### 🏢 Operações e Desempenho por Empresa Parceira")
+    st.markdown("Acompanhamento das empresas que capturam cupons da Vocação, com separação entre Urnas (Digitação) e Doações.")
+    
+    df_emp_raw = load_vocacao_empresas()
+    
+    if len(df_emp_raw) > 0:
+        # Filtrar por anos e meses selecionados na barra lateral
+        df_emp_filtered = df_emp_raw[df_emp_raw['ano'].isin(anos_selecionados) & df_emp_raw['mes'].isin(meses_selecionados)].copy()
+        
+        # Filtro textual de busca
+        search_emp = st.text_input("🔍 Buscar por Nome da Empresa ou CNPJ:", "", key="search_emp_input")
+        if search_emp.strip():
+            term = search_emp.strip().lower()
+            df_emp_filtered = df_emp_filtered[
+                df_emp_filtered['nome_empresa'].str.lower().str.contains(term, na=False) |
+                df_emp_filtered['cnpj'].str.lower().str.contains(term, na=False)
+            ]
+            
+        # Agrupar por Empresa caso haja múltiplos meses/anos no filtro
+        df_emp_grp = df_emp_filtered.groupby(['cnpj', 'nome_empresa'], as_index=False).agg({
+            'total_cupons': 'sum',
+            'cupons_validos': 'sum',
+            'total_valor_nf': 'sum',
+            'total_credito_apurado': 'sum',
+            'credito_cadastro': 'sum',
+            'credito_doacao': 'sum'
+        }).sort_values(by='total_credito_apurado', ascending=False)
+        
+        # KPIs da Aba Empresas
+        ecol1, ecol2, ecol3, ecol4 = st.columns(4)
+        
+        tot_empresas = len(df_emp_grp)
+        tot_cup_emp = df_emp_grp['total_cupons'].sum()
+        tot_nf_emp = df_emp_grp['total_valor_nf'].sum()
+        tot_cred_emp = df_emp_grp['total_credito_apurado'].sum()
+        tot_cred_cad = df_emp_grp['credito_cadastro'].sum()
+        tot_cred_doa = df_emp_grp['credito_doacao'].sum()
+        
+        with ecol1:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Empresas Parceiras</div>
+                <div class="kpi-val">{tot_empresas:,}</div>
+                <div class="kpi-sub">Empresas ativas no período</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with ecol2:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Cupons Capturados</div>
+                <div class="kpi-val">{tot_cup_emp:,}</div>
+                <div class="kpi-sub">Total de cupons no período</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with ecol3:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Valor Emissão (Notas)</div>
+                <div class="kpi-val">R$ {tot_nf_emp:,.2f}</div>
+                <div class="kpi-sub">Volume total emitido nas lojas</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with ecol4:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Crédito Apurado Total</div>
+                <div class="kpi-val">R$ {tot_cred_emp:,.2f}</div>
+                <div class="kpi-sub">Urnas: R$ {tot_cred_cad:,.2f} | Doações: R$ {tot_cred_doa:,.2f}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        # Gráficos Top Empresas
+        ecol_chart1, ecol_chart2 = st.columns(2)
+        
+        with ecol_chart1:
+            st.markdown("#### Top 15 Empresas por Crédito Apurado (R$)")
+            df_top_emp_cred = df_emp_grp.head(15).copy()
+            df_top_emp_cred['CNPJ Formatado'] = df_top_emp_cred['cnpj'].apply(format_cnpj)
+            df_top_emp_cred['Label'] = df_top_emp_cred['nome_empresa'] + " (" + df_top_emp_cred['CNPJ Formatado'] + ")"
+            
+            fig_top_emp = px.bar(
+                df_top_emp_cred,
+                y='nome_empresa',
+                x='total_credito_apurado',
+                orientation='h',
+                color='total_credito_apurado',
+                color_continuous_scale='Viridis',
+                labels={'total_credito_apurado': 'Crédito Apurado (R$)', 'nome_empresa': 'Empresa'},
+                template='plotly_dark'
+            )
+            fig_top_emp.update_layout(
+                margin=dict(l=10, r=10, t=10, b=10),
+                yaxis={'categoryorder': 'total ascending'},
+                font_family="Outfit",
+                coloraxis_showscale=False
+            )
+            st.plotly_chart(fig_top_emp, use_container_width=True)
+            
+        with ecol_chart2:
+            st.markdown("#### Top 15 Empresas por Volume de Cupons")
+            df_top_emp_cup = df_emp_grp.sort_values(by='total_cupons', ascending=False).head(15).copy()
+            
+            fig_top_cup = px.bar(
+                df_top_emp_cup,
+                y='nome_empresa',
+                x='total_cupons',
+                orientation='h',
+                color='total_cupons',
+                color_continuous_scale='Plasma',
+                labels={'total_cupons': 'Cupons Capturados', 'nome_empresa': 'Empresa'},
+                template='plotly_dark'
+            )
+            fig_top_cup.update_layout(
+                margin=dict(l=10, r=10, t=10, b=10),
+                yaxis={'categoryorder': 'total ascending'},
+                font_family="Outfit",
+                coloraxis_showscale=False
+            )
+            st.plotly_chart(fig_top_cup, use_container_width=True)
+
+        # Tabela Detalhada das Empresas
+        st.markdown("---")
+        st.markdown("#### 📑 Detalhamento Completo das Empresas")
+        
+        df_emp_table = df_emp_grp.copy()
+        df_emp_table['CNPJ Formatado'] = df_emp_table['cnpj'].apply(format_cnpj)
+        
+        df_emp_disp = df_emp_table[[
+            'CNPJ Formatado', 'nome_empresa', 'total_cupons', 'cupons_validos', 
+            'total_valor_nf', 'credito_cadastro', 'credito_doacao', 'total_credito_apurado'
+        ]].rename(columns={
+            'CNPJ Formatado': 'CNPJ',
+            'nome_empresa': 'Razão Social / Fantasia',
+            'total_cupons': 'Total Cupons',
+            'cupons_validos': 'Cupons Válidos',
+            'total_valor_nf': 'Valor Total NF (R$)',
+            'credito_cadastro': 'Crédito Urnas (R$)',
+            'credito_doacao': 'Crédito Doações (R$)',
+            'total_credito_apurado': 'Crédito Total (R$)'
+        })
+        
+        st.dataframe(
+            df_emp_disp.style.format({
+                'Total Cupons': '{:,}',
+                'Cupons Válidos': '{:,}',
+                'Valor Total NF (R$)': 'R$ {:,.2f}',
+                'Crédito Urnas (R$)': 'R$ {:,.2f}',
+                'Crédito Doações (R$)': 'R$ {:,.2f}',
+                'Crédito Total (R$)': 'R$ {:,.2f}'
+            }),
+            use_container_width=True,
+            hide_index=True
+        )
+    else:
+        st.warning("Não há dados de empresas para exibir no período selecionado.")
+
+# ==========================================
+# ABA 3: ANÁLISE DE DOADORES
+# ==========================================
+with tab_doadores_nfp:
+    st.markdown("### ❤️ Análise Individual de Doadores e Interação com Lojas")
+    st.markdown("Visualização detalhada dos doadores cadastrados, modalidades de doação e histórico de lojas onde efetuaram compras.")
+    
+    df_doad_raw = load_vocacao_doadores()
+    df_doad_loja_raw = load_vocacao_doador_loja()
+    
+    if len(df_doad_raw) > 0:
+        # Filtrar por anos e meses selecionados na barra lateral
+        df_doad_filtered = df_doad_raw[df_doad_raw['ano'].isin(anos_selecionados) & df_doad_raw['mes'].isin(meses_selecionados)].copy()
+        
+        # Filtro de busca por nome ou CPF
+        search_doad = st.text_input("🔍 Buscar por Nome do Doador ou CPF:", "", key="search_doad_input")
+        if search_doad.strip():
+            term = search_doad.strip().lower()
+            df_doad_filtered = df_doad_filtered[
+                df_doad_filtered['nome_doador'].str.lower().str.contains(term, na=False) |
+                df_doad_filtered['cpf_doador'].str.lower().str.contains(term, na=False)
+            ]
+            
+        # Agrupar por doador
+        df_doad_grp = df_doad_filtered.groupby(['cpf_doador', 'nome_doador', 'celular', 'tipo_ligacao'], as_index=False).agg({
+            'total_cupons': 'sum',
+            'cupons_validos': 'sum',
+            'total_valor_nf': 'sum',
+            'total_credito_apurado': 'sum',
+            'credito_doacao_automatica': 'sum',
+            'credito_doacao_direta': 'sum'
+        }).sort_values(by='total_credito_apurado', ascending=False)
+        
+        # KPIs da Aba Doadores
+        dcol1, dcol2, dcol3, dcol4 = st.columns(4)
+        
+        tot_doadores = len(df_doad_grp)
+        tot_cup_doad = df_doad_grp['total_cupons'].sum()
+        tot_cred_doad = df_doad_grp['total_credito_apurado'].sum()
+        tot_cred_aut = df_doad_grp['credito_doacao_automatica'].sum()
+        tot_cred_dir = df_doad_grp['credito_doacao_direta'].sum()
+        ticket_medio_doador = tot_cred_doad / tot_doadores if tot_doadores > 0 else 0.0
+        
+        with dcol1:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Doadores Reais Ativos</div>
+                <div class="kpi-val">{tot_doadores:,}</div>
+                <div class="kpi-sub">Pessoas físicas que doaram</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with dcol2:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Cupons Doados</div>
+                <div class="kpi-val">{tot_cup_doad:,}</div>
+                <div class="kpi-sub">Total de cupons doados</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with dcol3:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Crédito Gerado por Doadores</div>
+                <div class="kpi-val">R$ {tot_cred_doad:,.2f}</div>
+                <div class="kpi-sub">Retorno médio: R$ {ticket_medio_doador:,.2f}/doador</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with dcol4:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Modalidade de Doação</div>
+                <div class="kpi-val">R$ {tot_cred_aut:,.2f}</div>
+                <div class="kpi-sub">Automáticas: R$ {tot_cred_aut:,.2f} | Diretas: R$ {tot_cred_dir:,.2f}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        # Top 15 Doadores Gráfico e Composição
+        dcol_chart1, dcol_chart2 = st.columns(2)
+        
+        with dcol_chart1:
+            st.markdown("#### Top 15 Doadores por Crédito Gerado (R$)")
+            df_top_doad = df_doad_grp.head(15).copy()
+            
+            fig_top_doad = px.bar(
+                df_top_doad,
+                y='nome_doador',
+                x='total_credito_apurado',
+                orientation='h',
+                color='total_credito_apurado',
+                color_continuous_scale='Tealgrn',
+                labels={'total_credito_apurado': 'Crédito Gerado (R$)', 'nome_doador': 'Doador'},
+                template='plotly_dark'
+            )
+            fig_top_doad.update_layout(
+                margin=dict(l=10, r=10, t=10, b=10),
+                yaxis={'categoryorder': 'total ascending'},
+                font_family="Outfit",
+                coloraxis_showscale=False
+            )
+            st.plotly_chart(fig_top_doad, use_container_width=True)
+            
+        with dcol_chart2:
+            st.markdown("#### Distribuição por Modalidade de Doação")
+            df_mod = pd.DataFrame([
+                {'Modalidade': 'Doação Automática', 'Valor': tot_cred_aut},
+                {'Modalidade': 'Doação Direta (App/Site)', 'Valor': tot_cred_dir}
+            ])
+            fig_mod = px.pie(
+                df_mod,
+                values='Valor',
+                names='Modalidade',
+                hole=0.4,
+                color_discrete_sequence=['#00f2fe', '#4facfe'],
+                template='plotly_dark'
+            )
+            fig_mod.update_layout(margin=dict(l=10, r=10, t=10, b=10), font_family="Outfit")
+            st.plotly_chart(fig_mod, use_container_width=True)
+
+        # SEÇÃO: Módulo Interativo Doador x Estabelecimento (Lojas Onde Compra)
+        st.markdown("---")
+        st.markdown("### 🏪 Cruzamento: Doador x Lojas Onde Comprou")
+        st.markdown("Selecione um doador para identificar em quais estabelecimentos ele realizou compras e gerou créditos para a Vocação.")
+        
+        if len(df_doad_loja_raw) > 0:
+            df_dl_filtered = df_doad_loja_raw[df_doad_loja_raw['ano'].isin(anos_selecionados) & df_doad_loja_raw['mes'].isin(meses_selecionados)].copy()
+            
+            # Opções de doadores para o selectbox
+            doadores_opt = df_doad_grp.copy()
+            doadores_opt['label'] = doadores_opt['nome_doador'] + " (CPF: " + doadores_opt['cpf_doador'] + " - Crédito: R$ " + doadores_opt['total_credito_apurado'].map(lambda x: f"{x:,.2f}") + ")"
+            
+            list_opts = doadores_opt['label'].tolist()
+            cpf_map = dict(zip(doadores_opt['label'], doadores_opt['cpf_doador']))
+            
+            if list_opts:
+                sel_doad_lbl = st.selectbox("Selecione o Doador:", list_opts, key="sel_doad_loja_box")
+                sel_cpf = cpf_map[sel_doad_lbl]
+                
+                # Filtrar lojas deste doador
+                df_this_doad_lojas = df_dl_filtered[df_dl_filtered['cpf_doador'] == sel_cpf].groupby(
+                    ['cnpj_empresa', 'nome_empresa'], as_index=False
+                ).agg({
+                    'total_cupons': 'sum',
+                    'total_valor_nf': 'sum',
+                    'total_credito_apurado': 'sum'
+                }).sort_values(by='total_credito_apurado', ascending=False)
+                
+                if len(df_this_doad_lojas) > 0:
+                    st.markdown(f"**Lojas frequentadas por este doador ({len(df_this_doad_lojas)} estabelecimentos encontrados):**")
+                    
+                    df_this_doad_lojas['CNPJ Formatado'] = df_this_doad_lojas['cnpj_empresa'].apply(format_cnpj)
+                    
+                    # Gráfico de barras das principais lojas deste doador
+                    fig_doad_lojas = px.bar(
+                        df_this_doad_lojas.head(10),
+                        y='nome_empresa',
+                        x='total_credito_apurado',
+                        orientation='h',
+                        color='total_credito_apurado',
+                        color_continuous_scale='Cyan',
+                        labels={'total_credito_apurado': 'Crédito Gerado (R$)', 'nome_empresa': 'Loja / Estabelecimento'},
+                        template='plotly_dark'
+                    )
+                    fig_doad_lojas.update_layout(
+                        margin=dict(l=10, r=10, t=10, b=10),
+                        yaxis={'categoryorder': 'total ascending'},
+                        font_family="Outfit",
+                        coloraxis_showscale=False
+                    )
+                    st.plotly_chart(fig_doad_lojas, use_container_width=True)
+                    
+                    st.dataframe(
+                        df_this_doad_lojas[[
+                            'CNPJ Formatado', 'nome_empresa', 'total_cupons', 'total_valor_nf', 'total_credito_apurado'
+                        ]].rename(columns={
+                            'CNPJ Formatado': 'CNPJ Loja',
+                            'nome_empresa': 'Nome da Loja / Empresa',
+                            'total_cupons': 'Cupons Comprados',
+                            'total_valor_nf': 'Valor das Compras (R$)',
+                            'total_credito_apurado': 'Crédito Gerado (R$)'
+                        }).style.format({
+                            'Cupons Comprados': '{:,}',
+                            'Valor das Compras (R$)': 'R$ {:,.2f}',
+                            'Crédito Gerado (R$)': 'R$ {:,.2f}'
+                        }),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info("Nenhuma compra registrada para este doador nas lojas parceiras no período selecionado.")
+                    
+        # Tabela Completa de Doadores
+        st.markdown("---")
+        st.markdown("#### 📑 Detalhamento Completo da Base de Doadores")
+        
+        df_doad_table = df_doad_grp.copy()
+        
+        df_doad_disp = df_doad_table[[
+            'cpf_doador', 'nome_doador', 'celular', 'tipo_ligacao', 'total_cupons', 
+            'total_valor_nf', 'credito_doacao_automatica', 'credito_doacao_direta', 'total_credito_apurado'
+        ]].rename(columns={
+            'cpf_doador': 'CPF Doador',
+            'nome_doador': 'Nome Completo',
+            'celular': 'Celular / Contato',
+            'tipo_ligacao': 'Origem / Ligação',
+            'total_cupons': 'Total Cupons',
+            'total_valor_nf': 'Valor Total NF (R$)',
+            'credito_doacao_automatica': 'Crédito Automático (R$)',
+            'credito_doacao_direta': 'Crédito Direto (R$)',
+            'total_credito_apurado': 'Crédito Total (R$)'
+        })
+        
+        st.dataframe(
+            df_doad_disp.style.format({
+                'Total Cupons': '{:,}',
+                'Valor Total NF (R$)': 'R$ {:,.2f}',
+                'Crédito Automático (R$)': 'R$ {:,.2f}',
+                'Crédito Direto (R$)': 'R$ {:,.2f}',
+                'Crédito Total (R$)': 'R$ {:,.2f}'
+            }),
+            use_container_width=True,
+            hide_index=True
+        )
+    else:
+        st.warning("Não há dados de doadores para exibir no período selecionado.")
+
+# ==========================================
+# ABA 4: DOADORES AUTOMÁTICOS (HISTÓRICO)
 # ==========================================
 with tab_doadores:
     st.markdown("### Análise da Base de Doadores Automáticos (Fidelidade)")
