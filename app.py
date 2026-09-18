@@ -842,7 +842,7 @@ with tab_doadores_nfp:
                         x='total_credito_apurado',
                         orientation='h',
                         color='total_credito_apurado',
-                        color_continuous_scale='Cyan',
+                        color_continuous_scale='Teal',
                         labels={'total_credito_apurado': 'Crédito Gerado (R$)', 'nome_empresa': 'Loja / Estabelecimento'},
                         template='plotly_dark'
                     )
