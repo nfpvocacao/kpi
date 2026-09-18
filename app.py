@@ -19,77 +19,111 @@ DB_PATH = "nfp_database.db"
 def get_db_connection():
     return sqlite3.connect(DB_PATH)
 
-# Injeção de estilo CSS para visualização Premium
+# Injeção de estilo CSS baseado no Manual de Marca Oficial da Vocação (v1.1)
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
     
-    /* Configuração geral de fonte */
+    /* Configuração geral de fonte e temas */
     html, body, [class*="css"], .stMarkdown {
-        font-family: 'Outfit', sans-serif;
+        font-family: 'Raleway', sans-serif !important;
     }
     
     /* Customização do container principal */
-    .reportview-container {
-        background: #0e1117;
+    .stApp {
+        background-color: #081119;
     }
     
-    /* Título principal e cabeçalho */
-    .main-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 5px;
-    }
-    .sub-title {
-        color: #8892b0;
-        font-size: 1.1rem;
+    /* Header Institucional Vocação */
+    .main-header-box {
+        background: linear-gradient(135deg, #002a3a 0%, #004a6d 100%);
+        border-left: 6px solid #00e3e6;
+        border-radius: 14px;
+        padding: 24px 30px;
         margin-bottom: 25px;
-        font-weight: 400;
+        box-shadow: 0 10px 30px rgba(0, 74, 109, 0.3);
     }
     
-    /* Cards de KPI com efeito Glassmorphism */
+    .vocacao-tagline {
+        display: inline-block;
+        background: #edcd01;
+        color: #002a3a;
+        font-weight: 800;
+        font-size: 0.8rem;
+        padding: 4px 14px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+    }
+    
+    .main-title {
+        font-size: 2.3rem;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 4px;
+        letter-spacing: -0.5px;
+    }
+    
+    .sub-title {
+        color: #d9fbff;
+        font-size: 1.05rem;
+        font-weight: 400;
+        margin-bottom: 0px;
+    }
+    
+    /* Cards de KPI com paleta oficial (Azul Petróleo + Turquesa) */
     .kpi-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: #002a3a;
+        border: 1px solid rgba(0, 227, 230, 0.25);
         border-radius: 12px;
         padding: 20px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
         margin-bottom: 15px;
-        transition: transform 0.2s ease-in-out;
+        transition: transform 0.2s ease-in-out, border-color 0.2s ease-in-out;
     }
     .kpi-card:hover {
         transform: translateY(-3px);
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(0, 242, 254, 0.3);
+        border-color: #00e3e6;
+        box-shadow: 0 12px 28px rgba(0, 227, 230, 0.2);
     }
     .kpi-label {
-        font-size: 0.85rem;
-        color: #8892b0;
+        font-size: 0.8rem;
+        color: #d9fbff;
         text-transform: uppercase;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: 0.8px;
     }
     .kpi-val {
-        font-size: 1.8rem;
-        color: #ffffff;
-        font-weight: 700;
-        margin-top: 5px;
+        font-size: 1.85rem;
+        color: #00e3e6;
+        font-weight: 800;
+        margin-top: 6px;
         margin-bottom: 0px;
     }
     .kpi-sub {
         font-size: 0.8rem;
-        color: #00e676;
-        margin-top: 4px;
-        font-weight: 500;
+        color: #00e04b;
+        margin-top: 5px;
+        font-weight: 600;
     }
     .kpi-sub-red {
         font-size: 0.8rem;
-        color: #ff1744;
-        margin-top: 4px;
-        font-weight: 500;
+        color: #fd3168;
+        margin-top: 5px;
+        font-weight: 600;
+    }
+    
+    /* Customização dos Tabs do Streamlit */
+    button[data-baseweb="tab"] {
+        font-family: 'Raleway', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
+        color: #8892b0 !important;
+    }
+    button[aria-selected="true"] {
+        color: #00e3e6 !important;
+        border-bottom-color: #00e3e6 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -184,9 +218,14 @@ def get_benchmarking_data(target_date="2023-01-01"):
 df_cons = load_vocacao_consolidado()
 df_mapa = load_vocacao_mapa()
 
-# Cabeçalho Principal
-st.markdown("<div class='main-title'>Nota Fiscal Paulista - Analytics</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-title'>Painel Estratégico de Indicadores, Captação e Prospecção da Vocação</div>", unsafe_allow_html=True)
+# Cabeçalho Principal Institucional Vocação
+st.markdown("""
+<div class="main-header-box">
+    <div class="vocacao-tagline">Onde potencial encontra caminho</div>
+    <div class="main-title">Nota Fiscal Paulista — Analytics</div>
+    <div class="sub-title">Painel Estratégico de Indicadores, Captação e Prospecção da Vocação</div>
+</div>
+""", unsafe_allow_html=True)
 
 # Barra Lateral (Sidebar) de Filtros
 st.sidebar.markdown("### Filtros de Análise")
@@ -449,10 +488,10 @@ with tab_geral:
         y='Crédito', 
         color='Categoria',
         color_discrete_map={
-            'Urnas / Digitação (CAD)': '#4facfe',
-            'Doações Comuns (App/Site)': '#00f2fe',
-            'Doações Automáticas (AUT)': '#b92b27',
-            'Consumo Próprio': '#8892b0'
+            'Urnas / Digitação (CAD)': '#004a6d',
+            'Doações Comuns (App/Site)': '#00e3e6',
+            'Doações Automáticas (AUT)': '#edcd01',
+            'Consumo Próprio': '#00e04b'
         },
         labels={'Período': 'Período de Emissão', 'Crédito': 'Créditos Recebidos (R$)'},
         template='plotly_dark'
@@ -460,7 +499,7 @@ with tab_geral:
     fig_area_cred.update_layout(
         margin=dict(l=10, r=10, t=10, b=10),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        font_family="Outfit"
+        font_family="Raleway"
     )
     st.plotly_chart(fig_area_cred, use_container_width=True)
  
@@ -489,15 +528,15 @@ with tab_geral:
             y='Notas', 
             color='Categoria',
             color_discrete_map={
-                'Urnas / Digitação (CAD)': '#4facfe',
-                'Doações Comuns (App/Site)': '#00f2fe',
-                'Doações Automáticas (AUT)': '#b92b27',
-                'Consumo Próprio': '#8892b0'
+                'Urnas / Digitação (CAD)': '#004a6d',
+                'Doações Comuns (App/Site)': '#00e3e6',
+                'Doações Automáticas (AUT)': '#edcd01',
+                'Consumo Próprio': '#00e04b'
             },
             labels={'Período': 'Período de Emissão', 'Notas': 'Cupons Processados'},
             template='plotly_dark'
         )
-        fig_area_cup.update_layout(margin=dict(l=10, r=10, t=10, b=10), legend=dict(visible=False), font_family="Outfit")
+        fig_area_cup.update_layout(margin=dict(l=10, r=10, t=10, b=10), legend=dict(visible=False), font_family="Raleway")
         st.plotly_chart(fig_area_cup, use_container_width=True)
         
     with col_chart2:
@@ -512,10 +551,10 @@ with tab_geral:
             values='Valor', 
             names='Categoria', 
             hole=0.4,
-            color_discrete_sequence=['#4facfe', '#00f2fe', '#b92b27', '#8892b0'],
+            color_discrete_sequence=['#004a6d', '#00e3e6', '#edcd01', '#00e04b'],
             template='plotly_dark'
         )
-        fig_pie.update_layout(margin=dict(l=10, r=10, t=10, b=10), font_family="Outfit")
+        fig_pie.update_layout(margin=dict(l=10, r=10, t=10, b=10), font_family="Raleway")
         st.plotly_chart(fig_pie, use_container_width=True)
 
 # ==========================================
@@ -611,14 +650,14 @@ with tab_empresas:
                 x='total_credito_apurado',
                 orientation='h',
                 color='total_credito_apurado',
-                color_continuous_scale='Viridis',
+                color_continuous_scale=['#004a6d', '#00e3e6'],
                 labels={'total_credito_apurado': 'Crédito Apurado (R$)', 'nome_empresa': 'Empresa'},
                 template='plotly_dark'
             )
             fig_top_emp.update_layout(
                 margin=dict(l=10, r=10, t=10, b=10),
                 yaxis={'categoryorder': 'total ascending'},
-                font_family="Outfit",
+                font_family="Raleway",
                 coloraxis_showscale=False
             )
             st.plotly_chart(fig_top_emp, use_container_width=True)
@@ -633,14 +672,14 @@ with tab_empresas:
                 x='total_cupons',
                 orientation='h',
                 color='total_cupons',
-                color_continuous_scale='Plasma',
+                color_continuous_scale=['#002a3a', '#edcd01'],
                 labels={'total_cupons': 'Cupons Capturados', 'nome_empresa': 'Empresa'},
                 template='plotly_dark'
             )
             fig_top_cup.update_layout(
                 margin=dict(l=10, r=10, t=10, b=10),
                 yaxis={'categoryorder': 'total ascending'},
-                font_family="Outfit",
+                font_family="Raleway",
                 coloraxis_showscale=False
             )
             st.plotly_chart(fig_top_cup, use_container_width=True)
@@ -773,14 +812,14 @@ with tab_doadores_nfp:
                 x='total_credito_apurado',
                 orientation='h',
                 color='total_credito_apurado',
-                color_continuous_scale='Tealgrn',
+                color_continuous_scale=['#004a6d', '#00e3e6'],
                 labels={'total_credito_apurado': 'Crédito Gerado (R$)', 'nome_doador': 'Doador'},
                 template='plotly_dark'
             )
             fig_top_doad.update_layout(
                 margin=dict(l=10, r=10, t=10, b=10),
                 yaxis={'categoryorder': 'total ascending'},
-                font_family="Outfit",
+                font_family="Raleway",
                 coloraxis_showscale=False
             )
             st.plotly_chart(fig_top_doad, use_container_width=True)
@@ -796,10 +835,10 @@ with tab_doadores_nfp:
                 values='Valor',
                 names='Modalidade',
                 hole=0.4,
-                color_discrete_sequence=['#00f2fe', '#4facfe'],
+                color_discrete_sequence=['#00e3e6', '#004a6d'],
                 template='plotly_dark'
             )
-            fig_mod.update_layout(margin=dict(l=10, r=10, t=10, b=10), font_family="Outfit")
+            fig_mod.update_layout(margin=dict(l=10, r=10, t=10, b=10), font_family="Raleway")
             st.plotly_chart(fig_mod, use_container_width=True)
 
         # SEÇÃO: Módulo Interativo Doador x Estabelecimento (Lojas Onde Compra)
@@ -842,14 +881,14 @@ with tab_doadores_nfp:
                         x='total_credito_apurado',
                         orientation='h',
                         color='total_credito_apurado',
-                        color_continuous_scale='Teal',
+                        color_continuous_scale=['#002a3a', '#00e3e6'],
                         labels={'total_credito_apurado': 'Crédito Gerado (R$)', 'nome_empresa': 'Loja / Estabelecimento'},
                         template='plotly_dark'
                     )
                     fig_doad_lojas.update_layout(
                         margin=dict(l=10, r=10, t=10, b=10),
                         yaxis={'categoryorder': 'total ascending'},
-                        font_family="Outfit",
+                        font_family="Raleway",
                         coloraxis_showscale=False
                     )
                     st.plotly_chart(fig_doad_lojas, use_container_width=True)
@@ -981,18 +1020,18 @@ with tab_doadores:
         fig_doadores.add_trace(go.Scatter(
             x=df_mapa_valid['data'], y=df_mapa_valid['doadores_plenos'],
             mode='lines+markers', name='Doadores Plenos (Geram Créditos)',
-            line=dict(color='#00f2fe', width=3),
+            line=dict(color='#00e3e6', width=3),
             marker=dict(size=6)
         ))
         fig_doadores.add_trace(go.Scatter(
             x=df_mapa_valid['data'], y=df_mapa_valid['doadores_restritos'],
             mode='lines', name='Doadores Restritos',
-            line=dict(color='#ff1744', width=2, dash='dot')
+            line=dict(color='#fd3168', width=2, dash='dot')
         ))
         fig_doadores.add_trace(go.Bar(
             x=df_mapa_valid['data'], y=df_mapa_valid['total_doadores'],
             name='Total de Doadores',
-            marker_color='rgba(255, 255, 255, 0.05)',
+            marker_color='rgba(0, 227, 230, 0.1)',
             yaxis='y'
         ))
         
@@ -1000,7 +1039,7 @@ with tab_doadores:
             template='plotly_dark',
             margin=dict(l=10, r=10, t=10, b=10),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            font_family="Outfit"
+            font_family="Raleway"
         )
         st.plotly_chart(fig_doadores, use_container_width=True)
 
@@ -1011,25 +1050,25 @@ with tab_doadores:
         fig_ticket.add_trace(go.Scatter(
             x=df_mapa_valid['data'], y=df_mapa_valid['medio'],
             mode='lines+markers', name='Ticket Médio Doação Automática (AUT)',
-            line=dict(color='#00e676', width=3)
+            line=dict(color='#00e04b', width=3)
         ))
         fig_ticket.add_trace(go.Scatter(
             x=df_mapa_valid['data'], y=df_mapa_valid['medio_1'],
             mode='lines', name='Ticket Médio Geral (Outros)',
-            line=dict(color='#8892b0', width=2, dash='dash')
+            line=dict(color='#d9fbff', width=2, dash='dash')
         ))
         fig_ticket.update_layout(
             template='plotly_dark',
             margin=dict(l=10, r=10, t=10, b=10),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            font_family="Outfit"
+            font_family="Raleway"
         )
         st.plotly_chart(fig_ticket, use_container_width=True)
     else:
         st.warning("Não há dados históricos de doadores automáticos disponíveis nas datas filtradas.")
 
 # ==========================================
-# ABA 3: BENCHMARKING & PROSPECÇÃO
+# ABA 5: BENCHMARKING & PROSPECÇÃO
 # ==========================================
 with tab_market:
     st.markdown("### Análise de Mercado (Benchmarking) & Prospecção de Metas")
@@ -1136,8 +1175,8 @@ with tab_market:
             x='total', 
             color='Cor',
             color_discrete_map={
-                'Vocação (Destaque)': '#00f2fe',
-                'Outras Entidades': '#4facfe'
+                'Vocação (Destaque)': '#00e3e6',
+                'Outras Entidades': '#004a6d'
             },
             orientation='h',
             labels={'total': 'Créditos + Sorteios Recebidos (R$)', 'razao_social': 'Entidade'},
@@ -1147,7 +1186,7 @@ with tab_market:
             margin=dict(l=10, r=10, t=10, b=10),
             yaxis={'categoryorder': 'total ascending'},
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            font_family="Outfit"
+            font_family="Raleway"
         )
         st.plotly_chart(fig_ranking, use_container_width=True)
 
@@ -1195,9 +1234,9 @@ with tab_market:
             faturamento_anual_estimado = faturamento_estimado_aut * 12
             
             st.markdown(f"""
-            <div class="kpi-card" style="border-left: 5px solid #00e676;">
+            <div class="kpi-card" style="border-left: 5px solid #00e04b;">
                 <div class="kpi-label">Faturamento Mensal Estimado (AUT)</div>
-                <div class="kpi-val" style="color: #00e676;">R$ {faturamento_estimado_aut:,.2f}</div>
+                <div class="kpi-val" style="color: #00e04b;">R$ {faturamento_estimado_aut:,.2f}</div>
                 <div class="kpi-sub" style="color: #ffffff;">Faturamento Anual Projetado: R$ {faturamento_anual_estimado:,.2f}</div>
             </div>
             """, unsafe_allow_html=True)
@@ -1315,8 +1354,8 @@ with tab_market:
                     x='Valor (R$)',
                     color='Cor',
                     color_discrete_map={
-                        'Vocação (Sua Entidade)': '#00f2fe',
-                        'Outras Entidades': '#4facfe'
+                        'Vocação (Sua Entidade)': '#00e3e6',
+                        'Outras Entidades': '#004a6d'
                     },
                     orientation='h',
                     labels={'Valor (R$)': 'Valor Recebido (R$)', 'Razão Social': 'Entidade'},
@@ -1326,7 +1365,7 @@ with tab_market:
                     margin=dict(l=10, r=10, t=10, b=10),
                     yaxis={'categoryorder': 'total ascending'},
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                    font_family="Outfit"
+                    font_family="Raleway"
                 )
                 st.plotly_chart(fig_rank_explore, use_container_width=True)
                 
