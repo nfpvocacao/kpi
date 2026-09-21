@@ -19,29 +19,43 @@ DB_PATH = "nfp_database.db"
 def get_db_connection():
     return sqlite3.connect(DB_PATH)
 
-# Injeção de estilo CSS baseado no Manual de Marca Oficial da Vocação (v1.1)
+# Injeção de estilo CSS baseado no Manual de Marca Oficial da Vocação (v1.1 | Pág 31)
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
     
-    /* Configuração geral de fonte e temas */
+    /* Fundo principal da aplicação: Azul Profundo (#004a6d) */
+    .stAppViewContainer, .stApp {
+        background-color: #004a6d !important;
+        color: #ffffff;
+    }
+    
     html, body, [class*="css"], .stMarkdown {
         font-family: 'Raleway', sans-serif !important;
     }
     
-    /* Customização do container principal */
-    .stApp {
-        background-color: #081119;
+    /* Sidebar Customizada: Azul Petróleo (#002a3a) */
+    [data-testid="stSidebar"] {
+        background-color: #002a3a !important;
+        border-right: 2px solid rgba(0, 227, 230, 0.3) !important;
+    }
+    [data-testid="stSidebar"] * {
+        color: #d9fbff !important;
+        font-family: 'Raleway', sans-serif !important;
+    }
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        color: #00e3e6 !important;
+        font-weight: 800 !important;
     }
     
     /* Header Institucional Vocação */
     .main-header-box {
-        background: linear-gradient(135deg, #002a3a 0%, #004a6d 100%);
-        border-left: 6px solid #00e3e6;
-        border-radius: 14px;
-        padding: 24px 30px;
+        background: #002a3a;
+        border-left: 8px solid #00e3e6;
+        border-radius: 20px;
+        padding: 26px 36px;
         margin-bottom: 25px;
-        box-shadow: 0 10px 30px rgba(0, 74, 109, 0.3);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
     }
     
     .vocacao-tagline {
@@ -50,16 +64,16 @@ st.markdown("""
         color: #002a3a;
         font-weight: 800;
         font-size: 0.8rem;
-        padding: 4px 14px;
+        padding: 5px 16px;
         border-radius: 20px;
         text-transform: uppercase;
         letter-spacing: 1px;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
     
     .main-title {
-        font-size: 2.3rem;
-        font-weight: 800;
+        font-size: 2.4rem;
+        font-weight: 900;
         color: #ffffff;
         margin-bottom: 4px;
         letter-spacing: -0.5px;
@@ -72,59 +86,76 @@ st.markdown("""
         margin-bottom: 0px;
     }
     
-    /* Cards de KPI com paleta oficial (Azul Petróleo + Turquesa) */
-    .kpi-card {
-        background: #002a3a;
-        border: 1px solid rgba(0, 227, 230, 0.25);
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        margin-bottom: 15px;
-        transition: transform 0.2s ease-in-out, border-color 0.2s ease-in-out;
-    }
-    .kpi-card:hover {
-        transform: translateY(-3px);
-        border-color: #00e3e6;
-        box-shadow: 0 12px 28px rgba(0, 227, 230, 0.2);
-    }
-    .kpi-label {
-        font-size: 0.8rem;
-        color: #d9fbff;
-        text-transform: uppercase;
-        font-weight: 700;
-        letter-spacing: 0.8px;
-    }
-    .kpi-val {
-        font-size: 1.85rem;
-        color: #00e3e6;
-        font-weight: 800;
-        margin-top: 6px;
-        margin-bottom: 0px;
-    }
-    .kpi-sub {
-        font-size: 0.8rem;
-        color: #00e04b;
-        margin-top: 5px;
-        font-weight: 600;
-    }
-    .kpi-sub-red {
-        font-size: 0.8rem;
-        color: #fd3168;
-        margin-top: 5px;
-        font-weight: 600;
-    }
-    
-    /* Customização dos Tabs do Streamlit */
+    /* Customização dos Tabs */
     button[data-baseweb="tab"] {
         font-family: 'Raleway', sans-serif !important;
         font-weight: 700 !important;
-        font-size: 0.95rem !important;
-        color: #8892b0 !important;
+        font-size: 1rem !important;
+        color: #d9fbff !important;
+        background-color: transparent !important;
+        padding: 10px 20px !important;
     }
     button[aria-selected="true"] {
-        color: #00e3e6 !important;
-        border-bottom-color: #00e3e6 !important;
+        color: #edcd01 !important;
+        border-bottom: 3px solid #edcd01 !important;
     }
+    
+    /* Customização de Inputs e Selectboxes */
+    div[data-baseweb="input"], div[data-baseweb="select"] > div, input {
+        background-color: #002a3a !important;
+        color: #ffffff !important;
+        border: 1px solid #00e3e6 !important;
+        border-radius: 10px !important;
+    }
+    div[data-baseweb="select"] * {
+        color: #ffffff !important;
+    }
+    
+    /* Cards de KPI com Blocos de Cores Oficiais da Marca (Manual Pág 31) */
+    .kpi-card {
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+        margin-bottom: 15px;
+        transition: transform 0.2s ease-in-out;
+    }
+    .kpi-card:hover {
+        transform: translateY(-4px);
+    }
+    
+    .kpi-card-turquesa {
+        background: #00e3e6;
+        color: #002a3a;
+    }
+    .kpi-card-turquesa .kpi-label { color: #002a3a; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; }
+    .kpi-card-turquesa .kpi-val { color: #002a3a; font-size: 1.85rem; font-weight: 900; margin-top: 4px; }
+    .kpi-card-turquesa .kpi-sub { color: #004a6d; font-size: 0.8rem; font-weight: 700; margin-top: 4px; }
+    
+    .kpi-card-petroleo {
+        background: #002a3a;
+        color: #ffffff;
+        border: 1px solid rgba(0, 227, 230, 0.4);
+    }
+    .kpi-card-petroleo .kpi-label { color: #d9fbff; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; }
+    .kpi-card-petroleo .kpi-val { color: #00e3e6; font-size: 1.85rem; font-weight: 900; margin-top: 4px; }
+    .kpi-card-petroleo .kpi-sub { color: #00e04b; font-size: 0.8rem; font-weight: 700; margin-top: 4px; }
+    .kpi-card-petroleo .kpi-sub-red { color: #fd3168; font-size: 0.8rem; font-weight: 700; margin-top: 4px; }
+
+    .kpi-card-amarelo {
+        background: #edcd01;
+        color: #002a3a;
+    }
+    .kpi-card-amarelo .kpi-label { color: #002a3a; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; }
+    .kpi-card-amarelo .kpi-val { color: #002a3a; font-size: 1.85rem; font-weight: 900; margin-top: 4px; }
+    .kpi-card-amarelo .kpi-sub { color: #004a6d; font-size: 0.8rem; font-weight: 700; margin-top: 4px; }
+    
+    .kpi-card-verde {
+        background: #00e04b;
+        color: #002a3a;
+    }
+    .kpi-card-verde .kpi-label { color: #002a3a; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; }
+    .kpi-card-verde .kpi-val { color: #002a3a; font-size: 1.85rem; font-weight: 900; margin-top: 4px; }
+    .kpi-card-verde .kpi-sub { color: #004a6d; font-size: 0.8rem; font-weight: 700; margin-top: 4px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -134,33 +165,89 @@ def format_cnpj(cnpj):
         return cnpj
     return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:]}"
 
+def ensure_database_ready():
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nfp_database.db")
+    if os.path.exists(db_path) and os.path.getsize(db_path) < 1000:
+        try:
+            os.remove(db_path)
+        except Exception:
+            pass
+
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='vocacao_consolidado_interno'")
+        row = cur.fetchone()
+        if not row:
+            import sys
+            sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+            from etl_import import setup_database, sync_kpi_tables_from_mysql
+            setup_database(conn)
+            try:
+                sync_kpi_tables_from_mysql(conn, ano=2026, mes=5)
+            except Exception:
+                pass
+    except Exception:
+        try:
+            conn.close()
+            if os.path.exists(db_path):
+                os.remove(db_path)
+            conn = get_db_connection()
+            import sys
+            sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+            from etl_import import setup_database, sync_kpi_tables_from_mysql
+            setup_database(conn)
+            try:
+                sync_kpi_tables_from_mysql(conn, ano=2026, mes=5)
+            except Exception:
+                pass
+        except Exception:
+            pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
 # Carregar dados
 @st.cache_data(ttl=600)
 def load_vocacao_consolidado():
+    ensure_database_ready()
     conn = get_db_connection()
-    df = pd.read_sql_query("SELECT * FROM vocacao_consolidado_interno ORDER BY ano_mes ASC", conn)
+    try:
+        df = pd.read_sql_query("SELECT * FROM vocacao_consolidado_interno ORDER BY ano_mes ASC", conn)
+    except Exception:
+        conn.close()
+        return pd.DataFrame()
     conn.close()
     
-    # Criar coluna formatada de data/mês
+    if len(df) == 0:
+        return pd.DataFrame()
+        
     df['ano'] = df['ano_mes'] // 100
     df['mes'] = df['ano_mes'] % 100
-    
-    # Filtrar apenas anos e meses válidos para evitar crashes com registros inconsistentes
     df = df[(df['ano'] >= 2000) & (df['ano'] <= 2100) & (df['mes'] >= 1) & (df['mes'] <= 12)].copy()
-    
-    df['data'] = pd.to_datetime(df.apply(lambda r: f"{int(r['ano'])}-{int(r['mes']):02d}-01", axis=1))
+    if len(df) > 0:
+        df['data'] = pd.to_datetime(df.apply(lambda r: f"{int(r['ano'])}-{int(r['mes']):02d}-01", axis=1))
     return df
 
 @st.cache_data(ttl=600)
 def load_vocacao_mapa():
+    ensure_database_ready()
     conn = get_db_connection()
-    df = pd.read_sql_query("SELECT * FROM vocacao_mapa_interno ORDER BY mes ASC", conn)
+    try:
+        df = pd.read_sql_query("SELECT * FROM vocacao_mapa_interno ORDER BY mes ASC", conn)
+    except Exception:
+        conn.close()
+        return pd.DataFrame()
     conn.close()
-    df['data'] = pd.to_datetime(df['mes'])
+    if len(df) > 0:
+        df['data'] = pd.to_datetime(df['mes'])
     return df
 
 @st.cache_data(ttl=600)
 def load_vocacao_empresas():
+    ensure_database_ready()
     conn = get_db_connection()
     try:
         df = pd.read_sql_query("SELECT * FROM vocacao_resumo_mensal_empresas ORDER BY total_credito_apurado DESC", conn)
@@ -171,6 +258,7 @@ def load_vocacao_empresas():
 
 @st.cache_data(ttl=600)
 def load_vocacao_doadores():
+    ensure_database_ready()
     conn = get_db_connection()
     try:
         df = pd.read_sql_query("SELECT * FROM vocacao_resumo_mensal_doadores ORDER BY total_credito_apurado DESC", conn)
@@ -181,6 +269,7 @@ def load_vocacao_doadores():
 
 @st.cache_data(ttl=600)
 def load_vocacao_doador_loja():
+    ensure_database_ready()
     conn = get_db_connection()
     try:
         df = pd.read_sql_query("SELECT * FROM vocacao_doador_estabelecimento_mensal ORDER BY total_credito_apurado DESC", conn)
@@ -191,26 +280,27 @@ def load_vocacao_doador_loja():
 
 @st.cache_data(ttl=600)
 def get_benchmarking_data(target_date="2023-01-01"):
+    ensure_database_ready()
     conn = get_db_connection()
-    
-    # Obter ranking geral de Assistência Social no estado
-    df_state = pd.read_sql_query(f"""
-        SELECT 
-            cnpj, 
-            razao_social, 
-            municipio, 
-            area_atuacao,
-            qtd_docs,
-            cred_distribuidos,
-            cred_doados,
-            premios_sorteio,
-            total
-        FROM historico_distribuicao
-        JOIN entidades USING(cnpj)
-        WHERE mes_referencia = '{target_date}' AND area_atuacao = 'Assistência Social'
-        ORDER BY total DESC
-    """, conn)
-    
+    try:
+        df_state = pd.read_sql_query(f"""
+            SELECT 
+                cnpj, 
+                razao_social, 
+                municipio, 
+                area_atuacao,
+                qtd_docs,
+                cred_distribuidos,
+                cred_doados,
+                premios_sorteio,
+                total
+            FROM historico_distribuicao
+            JOIN entidades USING(cnpj)
+            WHERE mes_referencia = '{target_date}' AND area_atuacao = 'Assistência Social'
+            ORDER BY total DESC
+        """, conn)
+    except Exception:
+        df_state = pd.DataFrame()
     conn.close()
     return df_state
 
@@ -221,21 +311,29 @@ df_mapa = load_vocacao_mapa()
 # Cabeçalho Principal Institucional Vocação
 st.markdown("""
 <div class="main-header-box">
-    <div class="vocacao-tagline">Onde potencial encontra caminho</div>
-    <div class="main-title">Nota Fiscal Paulista — Analytics</div>
-    <div class="sub-title">Painel Estratégico de Indicadores, Captação e Prospecção da Vocação</div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div class="vocacao-tagline">Onde potencial encontra caminho</div>
+            <div class="main-title">V∩CAÇÃO — NFP Analytics</div>
+            <div class="sub-title">Painel Estratégico de Indicadores, Captação e Prospecção</div>
+        </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
 # Barra Lateral (Sidebar) de Filtros
 st.sidebar.markdown("### Filtros de Análise")
 
-anos_disponiveis = sorted(df_cons['ano'].unique().tolist())
+if not df_cons.empty and 'ano' in df_cons.columns:
+    anos_disponiveis = sorted(df_cons['ano'].unique().tolist())
+else:
+    anos_disponiveis = [2026]
+
 # Seleção de múltiplos anos (combo/multiselect)
 anos_selecionados = st.sidebar.multiselect(
     "Selecione o(s) Ano(s) de Emissão:", 
     anos_disponiveis, 
-    default=[anos_disponiveis[-2]] if len(anos_disponiveis) >= 2 else anos_disponiveis
+    default=[anos_disponiveis[-1]] if len(anos_disponiveis) >= 1 else anos_disponiveis
 )
 
 # Seleção de múltiplos meses (combo/multiselect)
@@ -1076,8 +1174,12 @@ with tab_market:
 
     # Carregar as datas disponíveis no histórico de distribuição (rateio de 2009 a 2023)
     conn = get_db_connection()
-    datas_dist_db = pd.read_sql_query("SELECT DISTINCT mes_referencia FROM historico_distribuicao ORDER BY mes_referencia DESC", conn)
-    conn.close()
+    try:
+        datas_dist_db = pd.read_sql_query("SELECT DISTINCT mes_referencia FROM historico_distribuicao ORDER BY mes_referencia DESC", conn)
+    except Exception:
+        datas_dist_db = pd.DataFrame()
+    finally:
+        conn.close()
     
     if len(datas_dist_db) > 0:
         list_datas_dist = datas_dist_db['mes_referencia'].tolist()
@@ -1257,8 +1359,12 @@ with tab_market:
         
         # Carregar lista de períodos disponíveis no banco
         conn = get_db_connection()
-        periodos_db = pd.read_sql_query("SELECT DISTINCT ano_mes FROM historico_detalhado ORDER BY ano_mes DESC", conn)
-        conn.close()
+        try:
+            periodos_db = pd.read_sql_query("SELECT DISTINCT ano_mes FROM historico_detalhado ORDER BY ano_mes DESC", conn)
+        except Exception:
+            periodos_db = pd.DataFrame()
+        finally:
+            conn.close()
         
         if len(periodos_db) > 0:
             list_ano_mes = periodos_db['ano_mes'].tolist()
@@ -1312,19 +1418,23 @@ with tab_market:
             
             # Executar consulta completa para calcular posições reais no estado
             conn = get_db_connection()
-            df_full_rank = pd.read_sql_query(f"""
-                SELECT 
-                    e.cnpj as "CNPJ",
-                    e.razao_social as "Razão Social", 
-                    e.municipio as "Município", 
-                    e.area_atuacao as "Área", 
-                    {col_db} as "Valor (R$)"
-                FROM historico_detalhado h
-                JOIN entidades e ON h.cnpj = e.cnpj
-                WHERE h.ano_mes = {sel_periodo}
-                ORDER BY "Valor (R$)" DESC
-            """, conn)
-            conn.close()
+            try:
+                df_full_rank = pd.read_sql_query(f"""
+                    SELECT 
+                        e.cnpj as "CNPJ",
+                        e.razao_social as "Razão Social", 
+                        e.municipio as "Município", 
+                        e.area_atuacao as "Área", 
+                        {col_db} as "Valor (R$)"
+                    FROM historico_detalhado h
+                    JOIN entidades e ON h.cnpj = e.cnpj
+                    WHERE h.ano_mes = {sel_periodo}
+                    ORDER BY "Valor (R$)" DESC
+                """, conn)
+            except Exception:
+                df_full_rank = pd.DataFrame()
+            finally:
+                conn.close()
             
             if len(df_full_rank) > 0:
                 # Adicionar coluna de posição (1-indexed)
