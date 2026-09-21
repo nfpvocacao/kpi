@@ -150,6 +150,21 @@ def apply_custom_styles():
         font-weight: 800 !important;
     }
 
+    /* Customização dos Botões de Popover */
+    div[data-testid="stPopover"] > button {
+        background: linear-gradient(135deg, #002a3a 0%, #004a6d 100%) !important;
+        border: 1px solid #00e3e6 !important;
+        color: #00e3e6 !important;
+        font-weight: 700 !important;
+        border-radius: 10px !important;
+        padding: 8px 16px !important;
+    }
+    div[data-testid="stPopover"] > button:hover {
+        background: #00e3e6 !important;
+        color: #002a3a !important;
+        border-color: #ffffff !important;
+    }
+
     /* Modais Pop-up */
     .modal-box {
         background-color: #002a3a;
