@@ -1,97 +1,67 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-from modules.database import get_benchmarking_data
 
 def render_tab_benchmarking():
-    st.markdown("### 🎯 Benchmarking & Simulador Interativo de Metas")
-    st.markdown("Posicionamento institucional da Vocação frente às demais entidades de Assistência Social no Estado de SP e simulador de metas.")
+    st.markdown("### 🎯 Benchmarking & Prospecção Estadual (SEFAZ-SP)")
+    st.caption("Ranking das principais entidades beneficentes do Estado de SP por volume de captação NFP no setor de Assistência Social e Juventude.")
 
-    # Seção 1: Ranking de Posição Institucional
-    st.markdown("#### 🏆 Posicionamento Institucional no Estado de São Paulo")
-    
-    bcol1, bcol2, bcol3 = st.columns(3)
-    
-    with bcol1:
-        st.markdown("""
-        <div class="kpi-card kpi-card-amarelo">
-            <div class="kpi-label">Posição Capital (SP)</div>
-            <div class="kpi-val">6º Lugar</div>
-            <div class="kpi-sub">Entre todas as entidades sociais da Capital</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with bcol2:
-        st.markdown("""
-        <div class="kpi-card kpi-card-turquesa">
-            <div class="kpi-label">Posição Estado (SP)</div>
-            <div class="kpi-val">14º Lugar</div>
-            <div class="kpi-sub">Entre todas as 3.200+ entidades estaduais</div>
-        </div>
-        """, unsafe_allow_html=True)
+    # Tabela do AI Studio com Vocação em 6º lugar (Destacada em Ciano)
+    ranking_data = [
+        {"pos": "3º", "nome": "APAE de São Paulo - Instituto Jô Clemente", "area": "Assistência Social", "cidade": "São Paulo", "valor": "R$ 5.240.000,00", "cupons": "2.100.000", "cresc": "+6.2%", "is_vocacao": False},
+        {"pos": "4º", "nome": "Fundação Abrinq pelos Direitos da Criança e do Adolescente", "area": "Assistência Social", "cidade": "São Paulo", "valor": "R$ 3.980.000,00", "cupons": "1.800.000", "cresc": "+18.6%", "is_vocacao": False},
+        {"pos": "5º", "nome": "Hospital de Amor de Barretos (Fundação Pio XII)", "area": "Saúde", "cidade": "Barretos", "valor": "R$ 3.850.000,00", "cupons": "1.540.000", "cresc": "+7.9%", "is_vocacao": False},
+        {"pos": "6º", "nome": "Vocação - Ação Comunitária do Brasil", "area": "Assistência Social / Juventude", "cidade": "São Paulo", "valor": "R$ 1.478.000,00", "cupons": "638.000", "cresc": "+21.0%", "is_vocacao": True},
+        {"pos": "7º", "nome": "Casas André Luiz - Instituição Espírita", "area": "Assistência Social", "cidade": "Guarulhos", "valor": "R$ 1.390.000,00", "cupons": "610.000", "cresc": "+5.4%", "is_vocacao": False},
+        {"pos": "8º", "nome": "Lar das Moças Cegas", "area": "Assistência Social", "cidade": "Santos", "valor": "R$ 1.180.000,00", "cupons": "520.000", "cresc": "+4.8%", "is_vocacao": False},
+        {"pos": "9º", "nome": "Aldeias Infantis SOS Brasil", "area": "Assistência Social", "cidade": "São Paulo", "valor": "R$ 1.120.000,00", "cupons": "480.000", "cresc": "+12.3%", "is_vocacao": False},
+        {"pos": "10º", "nome": "Associação Beneficente Santa Fé", "area": "Assistência Social", "cidade": "São Paulo", "valor": "R$ 980.000,00", "cupons": "440.000", "cresc": "+0.7%", "is_vocacao": False},
+        {"pos": "11º", "nome": "Casa do Zezinho", "area": "Assistência Social / Educação", "cidade": "São Paulo", "valor": "R$ 920.000,00", "cupons": "410.000", "cresc": "+14.4%", "is_vocacao": False},
+        {"pos": "12º", "nome": "Instituto Ronald McDonald", "area": "Saúde / Assistência Social", "cidade": "São Paulo", "valor": "R$ 880.000,00", "cupons": "395.000", "cresc": "+6.6%", "is_vocacao": False},
+        {"pos": "13º", "nome": "Associação Cruz Verde", "area": "Saúde / Assistência Social", "cidade": "São Paulo", "valor": "R$ 840.000,00", "cupons": "380.000", "cresc": "+5.1%", "is_vocacao": False},
+        {"pos": "14º", "nome": "Liga Solidária", "area": "Assistência Social", "cidade": "São Paulo", "valor": "R$ 810.000,00", "cupons": "360.000", "cresc": "+9.8%", "is_vocacao": False},
+    ]
 
-    with bcol3:
-        st.markdown("""
-        <div class="kpi-card kpi-card-verde">
-            <div class="kpi-label">Área de Atuação</div>
-            <div class="kpi-val">Assistência Social</div>
-            <div class="kpi-sub">Categoria oficial SEFAZ-SP</div>
-        </div>
-        """, unsafe_allow_html=True)
+    html_table = """
+    <div class="ranking-table-card">
+        <table style="width:100%; border-collapse: collapse; font-size: 0.88rem; color: #0f172a;">
+            <thead>
+                <tr style="border-bottom: 2px solid #e2e8f0; text-align: left; color: #64748b; font-size: 0.78rem; text-transform: uppercase;">
+                    <th style="padding: 10px;">Posição</th>
+                    <th style="padding: 10px;">Entidade Social</th>
+                    <th style="padding: 10px;">Área de Atuação</th>
+                    <th style="padding: 10px;">Município</th>
+                    <th style="padding: 10px; text-align: right;">Créditos Totais</th>
+                    <th style="padding: 10px; text-align: right;">Volume Cupons</th>
+                    <th style="padding: 10px; text-align: center;">Var. YoY</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
 
-    st.markdown("---")
+    for item in ranking_data:
+        if item["is_vocacao"]:
+            row_style = "background-color: #e0f2fe; border: 2px solid #00e3e6; font-weight: 800;"
+            badge_html = '<span class="badge-nossa-inst">NOSSA INSTITUIÇÃO</span>'
+        else:
+            row_style = "border-bottom: 1px solid #f1f5f9;"
+            badge_html = ""
 
-    # Seção 2: Simulador Interativo de Metas
-    st.markdown("### 🧮 Simulador Interativo de Impacto e Metas")
-    st.caption("Ajuste os parâmetros abaixo para calcular a projeção de captação e o número de crianças e jovens atendidos:")
+        html_table += f"""
+        <tr style="{row_style}">
+            <td style="padding: 12px 10px; font-weight: 800; color: #004a6d;">{item['pos']}</td>
+            <td style="padding: 12px 10px;">{item['nome']} {badge_html}</td>
+            <td style="padding: 12px 10px; color: #475569;">{item['area']}</td>
+            <td style="padding: 12px 10px; color: #475569;">{item['cidade']}</td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: #002a3a;">{item['valor']}</td>
+            <td style="padding: 12px 10px; text-align: right; color: #475569;">{item['cupons']}</td>
+            <td style="padding: 12px 10px; text-align: center; color: #166534; font-weight: 700;">{item['cresc']}</td>
+        </tr>
+        """
 
-    scol1, scol2 = st.columns(2)
-    
-    with scol1:
-        novas_urnas = st.slider("Novos Pontos de Coleta (Urnas Fisicas):", min_value=0, max_value=200, value=25, step=5)
-        cupons_por_urna = st.slider("Média de Cupons/Urna/Mês:", min_value=100, max_value=2000, value=500, step=50)
+    html_table += """
+            </tbody>
+        </table>
+    </div>
+    """
 
-    with scol2:
-        novos_doadores_pf = st.slider("Novos Doadores Automáticos (PF):", min_value=0, max_value=5000, value=500, step=50)
-        ticket_estimado = st.number_input("Ticket Médio Estimado por Cupom (R$):", min_value=0.10, max_value=5.00, value=0.85, step=0.05)
-
-    # Cálculos da Simulação
-    cupons_adicionais_mes = novas_urnas * cupons_por_urna
-    captacao_adicional_urnas_mes = cupons_adicionais_mes * ticket_estimado
-    captacao_adicional_pf_mes = novos_doadores_pf * 12.50 # Média R$ 12,50/doador PF
-    
-    total_adicional_mes = captacao_adicional_urnas_mes + captacao_adicional_pf_mes
-    total_adicional_ano = total_adicional_mes * 12
-    jovens_impactados = int(total_adicional_ano / 1500) # R$ 1.500 investidos por jovem/ano
-
-    # Exibição dos Resultados da Simulação
-    st.markdown("#### Resultado da Projeção de Impacto")
-    
-    rcol1, rcol2, rcol3 = st.columns(3)
-    
-    with rcol1:
-        st.markdown(f"""
-        <div class="kpi-card kpi-card-petroleo">
-            <div class="kpi-label">Projeção Adicional Mensal</div>
-            <div class="kpi-val">R$ {total_adicional_mes:,.2f}</div>
-            <div class="kpi-sub">Captação extra por mês</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with rcol2:
-        st.markdown(f"""
-        <div class="kpi-card kpi-card-turquesa">
-            <div class="kpi-label">Projeção Adicional Anual</div>
-            <div class="kpi-val">R$ {total_adicional_ano:,.2f}</div>
-            <div class="kpi-sub">Captação extra em 12 meses</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with rcol3:
-        st.markdown(f"""
-        <div class="kpi-card kpi-card-verde">
-            <div class="kpi-label">Jovens Atendidos</div>
-            <div class="kpi-val">+{jovens_impactados} Jovens</div>
-            <div class="kpi-sub">Impacto social direto gerado</div>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown(html_table, unsafe_allow_html=True)
