@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .font-script {
+    font-family: 'Caveat', cursive, sans-serif !important;
+    font-style: italic !important;
+  }
+  .font-raleway {
+    font-family: 'Raleway', sans-serif !important;
+  }
+}
+
+body {
+  font-family: 'Raleway', sans-serif;
+  color: #002a3a;
+  background-color: #f6fafd;
+  margin: 0;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #eef5f8;
+}
+::-webkit-scrollbar-thumb {
+  background: #bcd3df;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #004a6d;
+}
