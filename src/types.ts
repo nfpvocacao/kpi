@@ -111,3 +111,12 @@ export interface DatabaseState {
   tempoRespostaMs: number;
   host: string;
 }
+
+export interface PeriodFilter {
+  years: number[];
+  months: number[]; // 1 = Jan, 12 = Dez
+  preset?: 'ALL' | 'LAST_12' | '2026' | '2025' | '2024' | 'CUSTOM' | 'RANGE';
+  startMonthYear?: string; // Ex: "2025-06"
+  endMonthYear?: string;   // Ex: "2026-05"
+}
+

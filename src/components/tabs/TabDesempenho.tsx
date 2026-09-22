@@ -111,8 +111,8 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
 
         <div className="relative z-10 shrink-0 self-start md:self-auto">
           <div className="bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2.5 rounded-xl text-right">
-            <span className="text-xs text-[#00E3E6] font-bold block">Tagline Oficial</span>
-            <BrandBadge highlightText="potencial" prefix="Onde" suffix="encontra caminho" colorVariant="yellow" size="sm" />
+            <span className="text-[11px] text-[#00E3E6] font-bold uppercase tracking-wider block mb-1">Slogan Institucional</span>
+            <BrandBadge prefix="Onde potencial encontra" highlightText="caminho" colorVariant="yellow" size="sm" className="text-white font-bold" />
           </div>
         </div>
       </div>

@@ -21,58 +21,69 @@ import {
   EMPRESAS_PARCEIRAS, 
   DOADORES_REAIS 
 } from './data/mockDatabase';
-import { DatabaseState } from './types';
+import { DatabaseState, PeriodFilter } from './types';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('desempenho');
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('2026');
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({
+    years: [2026],
+    months: [1, 2, 3, 4, 5, 6, 7, 8],
+    preset: '2026'
+  });
   const [databaseState, setDatabaseState] = useState<DatabaseState>(INITIAL_DATABASE_STATE);
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Filter metrics based on selected period
+  // Filter metrics based on selected period filter (supports mixed years & months AND exact date ranges)
   const { metricasFiltradas, metricasAnterior, periodoLabel } = useMemo(() => {
-    if (selectedPeriod === '2026') {
-      const current = METRICAS_MENSAIS.filter(m => m.ano === 2026);
-      const prior = METRICAS_MENSAIS.filter(m => m.ano === 2025).slice(0, current.length);
-      return {
-        metricasFiltradas: current,
-        metricasAnterior: prior,
-        periodoLabel: 'Ano de 2026 (Janeiro a Agosto)'
-      };
-    } else if (selectedPeriod === '2025') {
-      const current = METRICAS_MENSAIS.filter(m => m.ano === 2025);
-      const prior = METRICAS_MENSAIS.filter(m => m.ano === 2024);
-      return {
-        metricasFiltradas: current,
-        metricasAnterior: prior,
-        periodoLabel: 'Ano de 2025 (Consolidado)'
-      };
-    } else if (selectedPeriod === '2024') {
-      const current = METRICAS_MENSAIS.filter(m => m.ano === 2024);
-      return {
-        metricasFiltradas: current,
-        metricasAnterior: [],
-        periodoLabel: 'Ano de 2024 (Histórico Inicial)'
-      };
-    } else if (selectedPeriod === 'LAST_12') {
-      const current = METRICAS_MENSAIS.slice(-12);
-      const prior = METRICAS_MENSAIS.slice(-24, -12);
-      return {
-        metricasFiltradas: current,
-        metricasAnterior: prior,
-        periodoLabel: 'Últimos 12 Meses'
-      };
+    let filtered = METRICAS_MENSAIS;
+
+    if (periodFilter.preset === 'RANGE' && periodFilter.startMonthYear && periodFilter.endMonthYear) {
+      filtered = METRICAS_MENSAIS.filter(
+        m => m.mes >= periodFilter.startMonthYear! && m.mes <= periodFilter.endMonthYear!
+      );
+    } else if (periodFilter.preset === 'LAST_12') {
+      filtered = METRICAS_MENSAIS.slice(-12);
     } else {
-      // ALL
-      return {
-        metricasFiltradas: METRICAS_MENSAIS,
-        metricasAnterior: [],
-        periodoLabel: 'Histórico Completo (2024 a 2026)'
-      };
+      filtered = METRICAS_MENSAIS.filter(m => {
+        const matchesYear = periodFilter.years.includes(m.ano);
+        const monthNum = parseInt(m.mes.split('-')[1], 10);
+        const matchesMonth = periodFilter.months.length === 0 || periodFilter.months.includes(monthNum);
+        return matchesYear && matchesMonth;
+      });
     }
-  }, [selectedPeriod]);
+
+    // Dynamic Header Label
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    let label = `Período Personalizado`;
+
+    if (periodFilter.preset === 'RANGE' && periodFilter.startMonthYear && periodFilter.endMonthYear) {
+      const [startY, startM] = periodFilter.startMonthYear.split('-');
+      const [endY, endM] = periodFilter.endMonthYear.split('-');
+      label = `Intervalo: ${monthNames[parseInt(startM, 10)-1]}/${startY} a ${monthNames[parseInt(endM, 10)-1]}/${endY}`;
+    } else if (periodFilter.preset === 'ALL') {
+      label = 'Histórico Completo (2009 a 2026)';
+    } else if (periodFilter.preset === 'LAST_12') {
+      label = 'Últimos 12 Meses';
+    } else {
+      const yearsStr = [...periodFilter.years].sort((a,b) => a-b).join('+');
+      if (periodFilter.months.length === 1) {
+        label = `${monthNames[periodFilter.months[0] - 1]} de ${yearsStr}`;
+      } else if (periodFilter.months.length > 0 && periodFilter.months.length < 12) {
+        label = `${periodFilter.months.length} Meses Mistas (${yearsStr})`;
+      } else {
+        label = `Ano ${yearsStr}`;
+      }
+    }
+
+    return {
+      metricasFiltradas: filtered,
+      metricasAnterior: [],
+      periodoLabel: label
+    };
+  }, [periodFilter]);
+
 
   // Sync simulation handler
   const handleSync = () => {
@@ -111,14 +122,15 @@ export default function App() {
       
       {/* Top Application Header */}
       <Header
-        selectedPeriod={selectedPeriod}
-        onPeriodChange={setSelectedPeriod}
+        periodFilter={periodFilter}
+        onPeriodChange={setPeriodFilter}
         databaseState={databaseState}
         onOpenDatabaseModal={() => setIsDatabaseModalOpen(true)}
         onOpenRulesModal={() => setIsRulesModalOpen(true)}
         onSyncDatabase={handleSync}
         isSyncing={isSyncing}
       />
+
 
       {/* 5-Tabs Navigation Bar */}
       <NavigationTabs
@@ -179,51 +191,21 @@ export default function App() {
 
           <div className="flex items-center gap-2">
             <BrandBadge 
-              highlightText="potencial" 
-              prefix="Onde" 
-              suffix="encontra caminho" 
+              prefix="Onde potencial encontra" 
+              highlightText="caminho" 
               colorVariant="yellow" 
               size="sm" 
             />
           </div>
 
           <div className="flex items-center gap-4 text-xs font-semibold text-[#004A6D]">
-            <button
-              onClick={() => setIsRulesModalOpen(true)}
-              className="hover:underline cursor-pointer"
-            >
-              Regras SEFAZ-SP
-            </button>
-            <span>•</span>
-            <button
-              onClick={() => setIsDatabaseModalOpen(true)}
-              className="hover:underline cursor-pointer"
-            >
-              Arquitetura de Dados
-            </button>
-            <span>•</span>
             <span className="text-[11px] text-[#004A6D]/60">
-              Manual de Marca V 1.1
+              Manual de Marca V 1.1 &bull; SEFAZ-SP Compliant
             </span>
           </div>
 
         </div>
       </footer>
-
-      {/* Modals */}
-      <DatabaseStatusModal
-        isOpen={isDatabaseModalOpen}
-        onClose={() => setIsDatabaseModalOpen(false)}
-        databaseState={databaseState}
-        onToggleFallback={handleToggleFallback}
-        onSync={handleSync}
-        isSyncing={isSyncing}
-      />
-
-      <BusinessRulesModal
-        isOpen={isRulesModalOpen}
-        onClose={() => setIsRulesModalOpen(false)}
-      />
 
     </div>
   );

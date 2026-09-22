@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShieldCheck, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
+import { X, ShieldCheck, CheckCircle2, FileText, Percent, Scale, Coins } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 
 interface BusinessRulesModalProps {
@@ -15,18 +15,20 @@ export const BusinessRulesModal: React.FC<BusinessRulesModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-      <div className="bg-white border border-[#BCD3DF] rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white border border-[#BCD3DF] rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#004A6D] to-[#002A3A] text-white px-6 py-4 flex items-center justify-between">
+        <div className="bg-[#002A3A] text-white px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <BrandLogo variant="icon" color="cyan" className="w-8 h-5" />
+            <div className="p-2 rounded-xl bg-[#004A6D] text-[#00E3E6]">
+              <ShieldCheck className="w-5 h-5 text-[#00E3E6]" />
+            </div>
             <div>
-              <h3 className="font-extrabold text-base tracking-tight font-['Raleway',sans-serif]">
-                Regras Fundamentais de Cálculo & Compliance
+              <h3 className="font-extrabold text-base tracking-tight">
+                Regras Oficiais de Cálculo & Legislação SEFAZ-SP
               </h3>
-              <p className="text-xs text-white/70">
-                Diretrizes de apuração da Nota Fiscal Paulista para a Vocação
+              <p className="text-xs text-[#BCD3DF]">
+                Parâmetros legais e regras de apuração do Programa Nota Fiscal Paulista
               </p>
             </div>
           </div>
@@ -39,81 +41,96 @@ export const BusinessRulesModal: React.FC<BusinessRulesModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+        <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto text-xs">
           
-          {/* Rule 1 */}
-          <div className="bg-[#F8FCFD] border-2 border-[#004A6D]/30 rounded-xl p-4 space-y-2">
+          {/* Regra 1: Teto por Cupom e UFESP */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-[#004A6D] text-white flex items-center justify-center font-black text-xs">
-                1
-              </span>
-              <h4 className="font-extrabold text-sm text-[#004A6D]">
-                Regra de Cadastradores (Urnas & Digitação)
+              <div className="p-1.5 rounded-lg bg-[#004A6D] text-[#00E3E6]">
+                <Scale className="w-4 h-4" />
+              </div>
+              <h4 className="font-extrabold text-sm text-[#002A3A]">
+                1. Teto Máximo de Crédito por Cupom (10 UFESPs)
               </h4>
             </div>
-            <p className="text-[#002A3A] leading-relaxed pl-8">
-              Cupons cadastrados sob o tipo <code className="bg-[#D9FBFF] px-1.5 py-0.5 rounded font-mono text-[#004A6D] font-bold">TipoDoacao = &apos;CADASTRO&apos;</code> (efetuados por cadastradores físicos e digitadores) representam operações de empresas parceiras e urnas físicas em pontos comerciais. 
+            <p className="text-slate-700 leading-relaxed pl-8">
+              Conforme a legislação e regulamentação oficial da SEFAZ-SP (Resolução SF 56/2009), o valor máximo de crédito que um único cupom fiscal pode gerar é travado no teto de <strong>10 UFESPs</strong> (Unidade Fiscal do Estado de São Paulo).
             </p>
-            <div className="pl-8 flex items-center gap-2 text-[#E03F2A] font-bold">
-              <AlertTriangle className="w-4 h-4 text-[#E03F2A]" />
-              <span>NÃO devem ser contabilizados como doações pessoais de pessoas físicas.</span>
+            <div className="pl-8 flex items-center gap-2 text-[#004A6D] font-bold text-[11px] bg-sky-50 p-2 rounded-xl border border-sky-200">
+              <Coins className="w-4 h-4 text-[#00E3E6]" />
+              <span>Evita distorções com compras de altíssimo valor e limita o crédito máximo por nota (R$ 384,20).</span>
             </div>
           </div>
 
-          {/* Rule 2 */}
-          <div className="bg-[#F8FCFD] border-2 border-[#00E3E6]/60 rounded-xl p-4 space-y-2">
+          {/* Regra 2: Reserva de 60% e Percentual de ICMS */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-[#00E3E6] text-[#002A3A] flex items-center justify-center font-black text-xs">
-                2
-              </span>
-              <h4 className="font-extrabold text-sm text-[#004A6D]">
-                Regra de Doadores Reais (Pessoas Físicas)
+              <div className="p-1.5 rounded-lg bg-[#004A6D] text-[#00E3E6]">
+                <Percent className="w-4 h-4" />
+              </div>
+              <h4 className="font-extrabold text-sm text-[#002A3A]">
+                2. Reserva Exclusiva para Entidades (60% do ICMS Devolvido)
               </h4>
             </div>
-            <p className="text-[#002A3A] leading-relaxed pl-8">
-              Doações reais de pessoas físicas são estritamente filtradas por:
+            <p className="text-slate-700 leading-relaxed pl-8">
+              Do montante total de ICMS devolvido pelo Estado de São Paulo no programa NFP, <strong>60% são destinados exclusivamente para Entidades Beneficentes Cadastradas</strong> (Assistência Social, Saúde, Educação e Proteção Animal).
             </p>
-            <div className="pl-8">
-              <div className="bg-white border border-[#BCD3DF] rounded-lg p-2.5 font-mono text-[#004A6D] font-bold">
-                WHERE TipoDoacao IN (&apos;DOACAO_AUTOMATICA&apos;, &apos;DOACAO&apos;)
-              </div>
+            <div className="pl-8 text-slate-600 text-[11px] leading-relaxed">
+              O repasse por estabelecimento comercial tem um teto de até <strong>7,5% do ICMS recolhido pela loja</strong>, sendo distribuído proporcionalmente entre os cupons doados à instituição.
             </div>
-            <p className="text-[#004A6D]/80 leading-relaxed pl-8 text-[11px]">
-              Esses cupons contêm CPF do doador e vinculação individual, permitindo métricas de LTV, recorrência e análise loja a loja.
-            </p>
           </div>
 
-          {/* Rule 3 */}
-          <div className="bg-[#F8FCFD] border-2 border-[#00E04B]/60 rounded-xl p-4 space-y-2">
+          {/* Regra 3: Modalidades de Doação (Automática vs Urna/Digitador) */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-[#00E04B] text-[#002A3A] flex items-center justify-center font-black text-xs">
-                3
-              </span>
-              <h4 className="font-extrabold text-sm text-[#004A6D]">
-                Regra de Desduplicação de Cupons
+              <div className="p-1.5 rounded-lg bg-[#004A6D] text-[#00E3E6]">
+                <FileText className="w-4 h-4" />
+              </div>
+              <h4 className="font-extrabold text-sm text-[#002A3A]">
+                3. Modalidades de Captação Reconhecidas
               </h4>
             </div>
-            <p className="text-[#002A3A] leading-relaxed pl-8">
-              Em cupons fiscais duplicados no banco de dados (ex: importação preliminar vs apuração definitiva), priorizar sempre o registro que possui:
-            </p>
-            <div className="pl-8">
-              <div className="bg-white border border-[#00E04B] rounded-lg p-2.5 font-mono text-[#006E24] font-bold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#00E04B]" />
-                StatusdoPedido = &apos;Pedido com documento encontrado.&apos;
+            <div className="pl-8 space-y-2">
+              <div className="bg-white border border-slate-200 rounded-xl p-3">
+                <strong className="text-[#004A6D] block mb-0.5">Doação Automática (Com CPF):</strong>
+                <p className="text-slate-600 text-[11px]">
+                  O doador cadastra o CNPJ da Vocação no aplicativo Nota Fiscal Paulista. Qualquer compra com CPF gera crédito automático e recorrente para a instituição.
+                </p>
+              </div>
+              <div className="bg-white border border-slate-200 rounded-xl p-3">
+                <strong className="text-[#004A6D] block mb-0.5">Doação Direta (Urna / Digitador):</strong>
+                <p className="text-slate-600 text-[11px]">
+                  Cupons fiscais sem CPF depositados em urnas parceiras. Devem ser registrados no sistema SEFAZ no prazo regulamentar (até o dia 20 do mês subsequente à emissão).
+                </p>
               </div>
             </div>
-            <p className="text-[#004A6D]/80 leading-relaxed pl-8 text-[11px]">
-              Cupons com outros status temporários (&apos;Pedido em processamento&apos;) são desconsiderados caso exista o registro definitivo validado.
+          </div>
+
+          {/* Regra 4: Prazos e Validade dos Créditos */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-[#004A6D] text-[#00E3E6]">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <h4 className="font-extrabold text-sm text-[#002A3A]">
+                4. Cronograma de Liberação e Validade de Resgate
+              </h4>
+            </div>
+            <p className="text-slate-700 leading-relaxed pl-8">
+              A SEFAZ-SP libera os créditos calculados semestralmente/mensalmente diretamente no portal oficial. 
             </p>
+            <div className="pl-8 font-bold text-[#004A6D] text-[11px]">
+              &bull; Prazo de resgate: Os créditos possuem validade de 12 meses a contar da data de liberação oficial pela Fazenda Estadual.
+            </div>
           </div>
 
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 bg-[#F4F9FA] border-t border-[#BCD3DF] flex justify-end">
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-[#004A6D] text-white hover:bg-[#002A3A] transition-colors cursor-pointer"
+            className="px-5 py-2.5 rounded-xl text-xs font-black bg-[#004A6D] text-white hover:bg-[#002A3A] transition-colors cursor-pointer shadow-md"
           >
             Entendido
           </button>

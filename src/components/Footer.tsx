@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
         </div>
         
         <div className="font-bold text-[#002a3a] text-xs">
-          <BrandBadge prefix="Onde" highlightText="potencial" suffix="encontra caminho" colorVariant="yellow" size="sm" />
+          <BrandBadge prefix="Onde potencial encontra" highlightText="caminho" colorVariant="yellow" size="sm" />
         </div>
 
         <div className="flex items-center gap-2 font-semibold text-[#004a6d] text-[11px]">

@@ -33,11 +33,11 @@ export const BrandBadge: React.FC<BrandBadgeProps> = ({
 
   return (
     <span className={`inline-flex items-center gap-1 font-medium ${className}`}>
-      {prefix && <span className="text-[#004A6D]">{prefix}</span>}
+      {prefix && <span className="text-current">{prefix}</span>}
       <span className={`font-['Caveat',cursive] font-bold tracking-wide shadow-xs ${bgStyles} ${sizeStyles}`}>
         {highlightText}
       </span>
-      {suffix && <span className="text-[#004A6D]">{suffix}</span>}
+      {suffix && <span className="text-current">{suffix}</span>}
     </span>
   );
 };
