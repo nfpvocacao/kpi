@@ -104,7 +104,7 @@ export interface SimuladorProjecao {
 
 export interface DatabaseState {
   status: 'online' | 'syncing' | 'offline_fallback';
-  fontePrimaria: 'SQLite Local Cache (nfp_database.db)' | 'AWS RDS MySQL (backoffice.nfp_cupons_capturados)';
+  fontePrimaria: 'SQLite Local Cache (nfp_database.db)' | 'AWS RDS MySQL (backoffice.nfp_cupons_capturados)' | 'Supabase PostgreSQL (Cloud 24/7)';
   ultimaSincronizacao: string;
   totalRegistrosCupons: number;
   cuponsDesduplicados: number;

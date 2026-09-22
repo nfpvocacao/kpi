@@ -347,110 +347,52 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
 
       </div>
 
-      {/* Secondary Row: Volume de Cupons Capturados (Bar) + Regras de Negócio Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {/* Volume de Cupons Mensais */}
-        <div className="lg:col-span-2 bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-[#F0F5F8]">
-            <div>
-              <h2 className="text-base font-bold text-[#002A3A] flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-[#00E3E6]" />
-                Volume Mensal de Cupons Válidos Processados
-              </h2>
-              <p className="text-xs text-[#004A6D]/70">
-                Quantidade de documentos fiscais apurados com sucesso pela SEFAZ
-              </p>
-            </div>
-            <span className="text-xs font-bold text-[#004A6D] bg-[#D9FBFF] px-2.5 py-1 rounded-full border border-[#00E3E6]/40">
-              Média: {formatarNumero(Math.round(totalCupons / (metricasFiltradas.length || 1)))} / mês
-            </span>
-          </div>
-
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={metricasFiltradas} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
-                <XAxis
-                  dataKey="mesNome"
-                  tick={{ fontSize: 11, fill: '#004A6D' }}
-                  axisLine={{ stroke: '#BCD3DF' }}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: '#004A6D' }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`}
-                />
-                <Tooltip
-                  formatter={(value: any) => [`${formatarNumero(Number(value))} cupons`, 'Volume Válido']}
-                  contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
-                />
-                <Bar
-                  dataKey="cuponsValidos"
-                  fill="#004A6D"
-                  radius={[6, 6, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Business Logic Adherence Card */}
-        <div className="bg-gradient-to-br from-[#F4F9FA] to-[#E9F5F8] border border-[#BCD3DF] rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+      {/* Secondary Row: Volume de Cupons Capturados (Bar) */}
+      <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
+        <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-[#F0F5F8]">
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="p-2 rounded-lg bg-[#004A6D] text-white">
-                <Sparkles className="w-4 h-4 text-[#00E3E6]" />
-              </span>
-              <div>
-                <h3 className="text-sm font-black text-[#004A6D] uppercase tracking-wide">
-                  Regras de Apuração Ativas
-                </h3>
-                <p className="text-[11px] text-[#004A6D]/70 font-medium">Compliance e Auditoria Interna</p>
-              </div>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="bg-white p-3 rounded-xl border border-[#BCD3DF]/70">
-                <div className="flex items-center gap-1.5 font-bold text-[#004A6D] mb-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#00E04B]" />
-                  <span>1. Regra de Cadastradores (Urnas)</span>
-                </div>
-                <p className="text-[#002A3A]/80 leading-relaxed text-[11px]">
-                  Cupons com <code className="bg-[#D9FBFF] px-1 py-0.5 rounded text-[#004A6D] font-mono">TipoDoacao = &apos;CADASTRO&apos;</code> pertencem à operação de Urnas e empresas parceiras. Não contabilizados como doadores individuais.
-                </p>
-              </div>
-
-              <div className="bg-white p-3 rounded-xl border border-[#BCD3DF]/70">
-                <div className="flex items-center gap-1.5 font-bold text-[#004A6D] mb-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#00E04B]" />
-                  <span>2. Regra de Doadores Reais (PF)</span>
-                </div>
-                <p className="text-[#002A3A]/80 leading-relaxed text-[11px]">
-                  Pessoas físicas filtradas por <code className="bg-[#D9FBFF] px-1 py-0.5 rounded text-[#004A6D] font-mono">TipoDoacao IN (&apos;DOACAO_AUTOMATICA&apos;, &apos;DOACAO&apos;)</code>.
-                </p>
-              </div>
-
-              <div className="bg-white p-3 rounded-xl border border-[#BCD3DF]/70">
-                <div className="flex items-center gap-1.5 font-bold text-[#004A6D] mb-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#00E04B]" />
-                  <span>3. Desduplicação Automática</span>
-                </div>
-                <p className="text-[#002A3A]/80 leading-relaxed text-[11px]">
-                  Em registros duplicados, prioridade estrita para cupons com status: <strong className="text-[#004A6D]">&apos;Pedido com documento encontrado.&apos;</strong>
-                </p>
-              </div>
-            </div>
+            <h2 className="text-base font-bold text-[#002A3A] flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-[#00E3E6]" />
+              Volume Mensal de Cupons Válidos Processados
+            </h2>
+            <p className="text-xs text-[#004A6D]/70">
+              Quantidade de documentos fiscais apurados com sucesso pela SEFAZ
+            </p>
           </div>
-
-          <div className="mt-4 pt-3 border-t border-[#BCD3DF]/80 flex items-center justify-between text-[11px] text-[#004A6D]">
-            <span className="font-semibold">Base SEFAZ-SP Atualizada</span>
-            <span className="font-mono bg-white px-2 py-0.5 rounded-sm border border-[#BCD3DF]">100% Auditado</span>
-          </div>
+          <span className="text-xs font-bold text-[#004A6D] bg-[#D9FBFF] px-2.5 py-1 rounded-full border border-[#00E3E6]/40">
+            Média: {formatarNumero(Math.round(totalCupons / (metricasFiltradas.length || 1)))} / mês
+          </span>
         </div>
 
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={metricasFiltradas} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
+              <XAxis
+                dataKey="mesNome"
+                tick={{ fontSize: 11, fill: '#004A6D' }}
+                axisLine={{ stroke: '#BCD3DF' }}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: '#004A6D' }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`}
+              />
+              <Tooltip
+                formatter={(value: any) => [`${formatarNumero(Number(value))} cupons`, 'Volume Válido']}
+                contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                itemStyle={{ color: '#FFFFFF' }}
+              />
+              <Bar
+                dataKey="cuponsValidos"
+                fill="#004A6D"
+                radius={[6, 6, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
     </div>

@@ -21,6 +21,7 @@ import {
   EMPRESAS_PARCEIRAS, 
   DOADORES_REAIS 
 } from './data/mockDatabase';
+import { useSupabaseMetricas } from './hooks/useSupabaseMetricas';
 import { DatabaseState, PeriodFilter } from './types';
 
 export default function App() {
@@ -30,23 +31,28 @@ export default function App() {
     months: [1, 2, 3, 4, 5, 6, 7, 8],
     preset: '2026'
   });
-  const [databaseState, setDatabaseState] = useState<DatabaseState>(INITIAL_DATABASE_STATE);
+  const { metricas: metricasBase, isLoading: isSupabaseLoading } = useSupabaseMetricas();
+  const [databaseState, setDatabaseState] = useState<DatabaseState>({
+    ...INITIAL_DATABASE_STATE,
+    fontePrimaria: 'Supabase PostgreSQL (Cloud 24/7)',
+    status: 'online'
+  });
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Filter metrics based on selected period filter (supports mixed years & months AND exact date ranges)
   const { metricasFiltradas, metricasAnterior, periodoLabel } = useMemo(() => {
-    let filtered = METRICAS_MENSAIS;
+    let filtered = metricasBase;
 
     if (periodFilter.preset === 'RANGE' && periodFilter.startMonthYear && periodFilter.endMonthYear) {
-      filtered = METRICAS_MENSAIS.filter(
+      filtered = metricasBase.filter(
         m => m.mes >= periodFilter.startMonthYear! && m.mes <= periodFilter.endMonthYear!
       );
     } else if (periodFilter.preset === 'LAST_12') {
-      filtered = METRICAS_MENSAIS.slice(-12);
+      filtered = metricasBase.slice(-12);
     } else {
-      filtered = METRICAS_MENSAIS.filter(m => {
+      filtered = metricasBase.filter(m => {
         const matchesYear = periodFilter.years.includes(m.ano);
         const monthNum = parseInt(m.mes.split('-')[1], 10);
         const matchesMonth = periodFilter.months.length === 0 || periodFilter.months.includes(monthNum);
