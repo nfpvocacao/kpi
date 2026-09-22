@@ -2,16 +2,15 @@ import React, { useState, useMemo } from 'react';
 import { 
   Building2, 
   Search, 
-  Filter, 
   Download, 
   Receipt, 
   DollarSign, 
   Store, 
-  Layers, 
-  ExternalLink,
   ChevronUp,
   ChevronDown,
-  Box
+  Box,
+  Loader2,
+  Calendar
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -26,32 +25,46 @@ import {
 import { KPICard } from '../KPICard';
 import { BrandBadge } from '../BrandBadge';
 import { EmpresaParceira } from '../../types';
-import { EMPRESAS_PARCEIRAS, formatarMoeda, formatarNumero } from '../../data/mockDatabase';
+import { EMPRESAS_PARCEIRAS as FALLBACK_EMPRESAS, formatarMoeda, formatarNumero } from '../../data/mockDatabase';
+import { useSupabaseEmpresas } from '../../hooks/useSupabaseEmpresas';
 
 interface TabEmpresasProps {
+  selectedYears?: number[];
   onSelectEmpresaParaFiltro?: (empresa: EmpresaParceira) => void;
 }
 
 export const TabEmpresas: React.FC<TabEmpresasProps> = ({
+  selectedYears = [2026],
   onSelectEmpresaParaFiltro
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState<string>('TODAS');
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [sortField, setSortField] = useState<keyof EmpresaParceira>('creditoTotal');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [activeChartMetric, setActiveChartMetric] = useState<'credito' | 'cupons'>('credito');
+  const [activeChartMetric, setActiveChartMetric] = useState<'credito' | 'cupons' | 'doacoes'>('credito');
 
-  // Filter companies
+  const {
+    topEmpresas,
+    totalEmpresasContagem,
+    kpis,
+    isLoading,
+    isExporting,
+    downloadFullCSV,
+  } = useSupabaseEmpresas({
+    selectedYears,
+    selectedMonth,
+    searchTerm,
+    limit: 100,
+  });
+
+  const empresasLista = topEmpresas.length > 0 ? topEmpresas : FALLBACK_EMPRESAS;
+
+  // Filter companies client-side for category pills or sort
   const empresasFiltradas = useMemo(() => {
-    return EMPRESAS_PARCEIRAS.filter((emp) => {
-      const matchText = 
-        emp.nomeFantasia.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.razaoSocial.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.cnpj.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''));
-      
+    return empresasLista.filter((emp) => {
       const matchCategoria = selectedCategoria === 'TODAS' || emp.categoria === selectedCategoria;
-
-      return matchText && matchCategoria;
+      return matchCategoria;
     }).sort((a, b) => {
       const valA = a[sortField];
       const valB = b[sortField];
@@ -62,20 +75,19 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
         ? String(valA).localeCompare(String(valB)) 
         : String(valB).localeCompare(String(valA));
     });
-  }, [searchTerm, selectedCategoria, sortField, sortDirection]);
+  }, [empresasLista, selectedCategoria, sortField, sortDirection]);
 
   // Aggregate KPIs
-  const totalEmpresasAtivas = EMPRESAS_PARCEIRAS.filter(e => e.status === 'Ativa').length;
-  const totalCuponsCapturados = EMPRESAS_PARCEIRAS.reduce((acc, e) => acc + e.cuponsValidos, 0);
-  const valorTotalEmitidoNF = EMPRESAS_PARCEIRAS.reduce((acc, e) => acc + e.valorTotalNotas, 0);
-  const creditoApuradoTotal = EMPRESAS_PARCEIRAS.reduce((acc, e) => acc + e.creditoTotal, 0);
-  const creditoUrnasTotal = EMPRESAS_PARCEIRAS.reduce((acc, e) => acc + e.creditoUrnas, 0);
-  const creditoDoacoesTotal = EMPRESAS_PARCEIRAS.reduce((acc, e) => acc + e.creditoDoacoes, 0);
-  const totalUrnas = EMPRESAS_PARCEIRAS.reduce((acc, e) => acc + e.urnasInstaladas, 0);
+  const totalEmpresasAtivas = totalEmpresasContagem > 0 ? totalEmpresasContagem : empresasLista.length;
+  const totalCuponsCapturados = kpis.totalCupons > 0 ? kpis.totalCupons : empresasLista.reduce((acc, e) => acc + e.cuponsValidos, 0);
+  const valorTotalEmitidoNF = kpis.totalValorNF > 0 ? kpis.totalValorNF : empresasLista.reduce((acc, e) => acc + e.valorTotalNotas, 0);
+  const creditoApuradoTotal = kpis.totalCredito > 0 ? kpis.totalCredito : empresasLista.reduce((acc, e) => acc + e.creditoTotal, 0);
+  const creditoUrnasTotal = kpis.totalCreditoUrnas > 0 ? kpis.totalCreditoUrnas : empresasLista.reduce((acc, e) => acc + e.creditoUrnas, 0);
+  const creditoDoacoesTotal = kpis.totalCreditoDoacoes > 0 ? kpis.totalCreditoDoacoes : empresasLista.reduce((acc, e) => acc + e.creditoDoacoes, 0);
 
   // Top 15 data for charts
   const top15Credito = useMemo(() => {
-    return [...EMPRESAS_PARCEIRAS]
+    return [...empresasLista]
       .sort((a, b) => b.creditoTotal - a.creditoTotal)
       .slice(0, 15)
       .map(e => ({
@@ -85,10 +97,10 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
         creditoDoacoes: e.creditoDoacoes,
         cupons: e.cuponsValidos
       }));
-  }, []);
+  }, [empresasLista]);
 
   const top15Cupons = useMemo(() => {
-    return [...EMPRESAS_PARCEIRAS]
+    return [...empresasLista]
       .sort((a, b) => b.cuponsValidos - a.cuponsValidos)
       .slice(0, 15)
       .map(e => ({
@@ -96,7 +108,19 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
         cupons: e.cuponsValidos,
         creditoTotal: e.creditoTotal
       }));
-  }, []);
+  }, [empresasLista]);
+
+  const top15Doacoes = useMemo(() => {
+    return [...empresasLista]
+      .sort((a, b) => b.creditoDoacoes - a.creditoDoacoes)
+      .slice(0, 15)
+      .map(e => ({
+        name: e.nomeFantasia.split('&')[0].split(' - ')[0].trim().slice(0, 18),
+        creditoDoacoes: e.creditoDoacoes,
+        creditoTotal: e.creditoTotal,
+        cupons: e.cuponsValidos
+      }));
+  }, [empresasLista]);
 
   const handleSort = (field: keyof EmpresaParceira) => {
     if (sortField === field) {
@@ -107,22 +131,23 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
     }
   };
 
-  const exportCSV = () => {
-    const headers = ['CNPJ,Nome Fantasia,Razao Social,Categoria,Cupons Validos,Valor Notas (R$),Credito Total (R$),Credito Urnas (R$),Credito Doacoes (R$),Ticket Medio (R$),Urnas'];
-    const rows = empresasFiltradas.map(e => 
-      `"${e.cnpj}","${e.nomeFantasia}","${e.razaoSocial}","${e.categoria}",${e.cuponsValidos},${e.valorTotalNotas},${e.creditoTotal},${e.creditoUrnas},${e.creditoDoacoes},${e.ticketMedioCupom.toFixed(2)},${e.urnasInstaladas}`
-    );
-    const blob = new Blob([headers.concat(rows).join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `nfp_empresas_parceiras_vocacao_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const categorias = [
+    'TODAS',
+    'Supermercados',
+    'Farmácias',
+    'Varejo & Moda',
+    'Construção & Casa',
+    'Restaurantes & Alimentos',
+    'Pet & Serviços',
+    'Atacado & Distribuição',
+    'Postos & Conveniência',
+    'Serviços & Outros'
+  ];
 
-  const categorias = ['TODAS', 'Supermercados', 'Farmácias', 'Varejo & Moda', 'Construção & Casa', 'Restaurantes & Alimentos', 'Pet & Serviços'];
+  const meses = [
+    { value: null, label: 'Todos os Meses' },
+    { value: 5, label: 'Maio / 2026' }
+  ];
 
   return (
     <div className="space-y-6">
@@ -141,13 +166,32 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={exportCSV}
-          className="inline-flex items-center gap-2 bg-white hover:bg-[#D9FBFF] border border-[#BCD3DF] text-[#004A6D] px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs self-start sm:self-auto cursor-pointer"
-        >
-          <Download className="w-4 h-4 text-[#004A6D]" />
-          <span>Exportar Relatório CSV</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Mês filter dropdown */}
+          <div className="flex items-center gap-1.5 bg-white border border-[#BCD3DF] rounded-xl px-3 py-1.5 shadow-2xs">
+            <Calendar className="w-4 h-4 text-[#004A6D]" />
+            <select
+              value={selectedMonth ?? ''}
+              onChange={(e) => setSelectedMonth(e.target.value ? Number(e.target.value) : null)}
+              className="bg-transparent text-xs font-bold text-[#004A6D] focus:outline-none cursor-pointer"
+            >
+              {meses.map(m => (
+                <option key={m.value ?? 'all'} value={m.value ?? ''}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            onClick={downloadFullCSV}
+            disabled={isExporting}
+            className="inline-flex items-center gap-2 bg-[#004A6D] hover:bg-[#002A3A] text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs self-start sm:self-auto cursor-pointer disabled:opacity-50"
+          >
+            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-white" />}
+            <span>{isExporting ? 'Gerando CSV...' : 'Baixar Base Completa'}</span>
+          </button>
+        </div>
       </div>
 
       {/* 4 KPIs for Tab 2 */}
@@ -155,8 +199,8 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
         <KPICard
           id="kpi-empresas-ativas"
           title="Empresas Parceiras"
-          value={`${totalEmpresasAtivas} Redes`}
-          subValue={`${totalUrnas} urnas físicas instaladas`}
+          value={`${formatarNumero(totalEmpresasAtivas)} Lojas`}
+          subValue="Registradas no período selecionado"
           icon={Store}
           iconBgColor="bg-[#004A6D]"
           iconColor="text-white"
@@ -204,13 +248,17 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
             <h2 className="text-base font-bold text-[#002A3A] flex items-center gap-2">
               <Building2 className="w-4 h-4 text-[#004A6D]" />
               {activeChartMetric === 'credito' 
-                ? 'Top 15 Empresas Parceiras por Crédito Apurado (R$)' 
+                ? 'Top 15 Empresas Parceiras por Crédito Apurado Total (R$)' 
+                : activeChartMetric === 'doacoes'
+                ? 'Top 15 Empresas Parceiras por Crédito de Doações Pessoais (AUT / Direta)'
                 : 'Top 15 Empresas Parceiras por Volume de Cupons Capturados'}
             </h2>
             <p className="text-xs text-[#004A6D]/70">
               {activeChartMetric === 'credito'
-                ? 'Comparativo de crédito gerado com detalhamento entre Urnas físicas e Doações diretas/automáticas'
-                : 'Ranking das maiores redes parceiras por volume total de notas processadas'}
+                ? 'Ranking das 15 maiores empresas no período com detalhamento de Urnas vs Doações Pessoais'
+                : activeChartMetric === 'doacoes'
+                ? 'Ranking das 15 maiores empresas em repasse via Doações Automáticas e Diretas com CPF'
+                : 'Ranking das 15 maiores empresas por volume total de notas no período'}
             </p>
           </div>
 
@@ -223,7 +271,17 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   : 'text-[#004A6D] hover:bg-[#D9FBFF]'
               }`}
             >
-              Por Crédito (R$)
+              Por Crédito Total (R$)
+            </button>
+            <button
+              onClick={() => setActiveChartMetric('doacoes')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeChartMetric === 'doacoes'
+                  ? 'bg-[#00E3E6] text-[#002A3A] shadow-2xs'
+                  : 'text-[#004A6D] hover:bg-[#D9FBFF]'
+              }`}
+            >
+              Por Doações (R$)
             </button>
             <button
               onClick={() => setActiveChartMetric('cupons')}
@@ -233,7 +291,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   : 'text-[#004A6D] hover:bg-[#D9FBFF]'
               }`}
             >
-              Por Volume de Cupons
+              Por Volume
             </button>
           </div>
         </div>
@@ -265,6 +323,32 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                 />
                 <Bar dataKey="creditoUrnas" name="creditoUrnas" stackId="a" fill="#004A6D" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="creditoDoacoes" name="creditoDoacoes" stackId="a" fill="#00E3E6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            ) : activeChartMetric === 'doacoes' ? (
+              <BarChart data={top15Doacoes} margin={{ top: 10, right: 10, left: 10, bottom: 50 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 10, fill: '#004A6D' }} 
+                  interval={0} 
+                  angle={-35} 
+                  textAnchor="end" 
+                  height={50}
+                />
+                <YAxis 
+                  tick={{ fontSize: 11, fill: '#004A6D' }} 
+                  tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`} 
+                />
+                <Tooltip 
+                  formatter={(val: any) => [formatarMoeda(Number(val)), 'Crédito Doações Pessoais']}
+                  contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                  itemStyle={{ color: '#FFFFFF' }}
+                />
+                <Bar dataKey="creditoDoacoes" fill="#00E3E6" radius={[4, 4, 0, 0]}>
+                  {top15Doacoes.map((_, index) => (
+                    <Cell key={`cell-doacao-${index}`} fill={index < 3 ? '#004A6D' : '#00E3E6'} />
+                  ))}
+                </Bar>
               </BarChart>
             ) : (
               <BarChart data={top15Cupons} margin={{ top: 10, right: 10, left: 10, bottom: 50 }}>
@@ -319,7 +403,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
               <Search className="w-4 h-4 text-[#004A6D]/60 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Buscar por Nome da Empresa ou CNPJ..."
+                placeholder="Buscar no banco por Nome da Empresa ou CNPJ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 bg-[#F4F9FA] border border-[#BCD3DF] rounded-xl text-xs sm:text-sm font-medium text-[#002A3A] focus:outline-none focus:border-[#004A6D] focus:ring-1 focus:ring-[#004A6D]"
@@ -327,8 +411,8 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
             </div>
 
             {/* Category Pill Filter */}
-            <div className="hidden lg:flex items-center gap-1 overflow-x-auto no-scrollbar">
-              {categorias.slice(0, 5).map((cat) => (
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-xl">
+              {categorias.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategoria(cat)}
@@ -344,10 +428,11 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-[#004A6D] font-semibold">
+          <div className="flex items-center gap-2 text-xs text-[#004A6D] font-semibold whitespace-nowrap">
+            {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#004A6D]" />}
             <span>Exibindo:</span>
             <span className="bg-[#D9FBFF] px-2 py-0.5 rounded-md font-bold text-[#004A6D]">
-              {empresasFiltradas.length} de {EMPRESAS_PARCEIRAS.length} empresas
+              Top {empresasFiltradas.length} de {formatarNumero(totalEmpresasAtivas)} lojas
             </span>
           </div>
         </div>
@@ -371,20 +456,30 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                     {sortField === 'cuponsValidos' && (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                   </div>
                 </th>
+                <th className="py-3 px-3 text-right cursor-pointer hover:text-[#002A3A]" onClick={() => handleSort('creditoUrnas')}>
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Crédito Urnas (R$)</span>
+                    {sortField === 'creditoUrnas' && (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                  </div>
+                </th>
+                <th className="py-3 px-3 text-right cursor-pointer hover:text-[#002A3A]" onClick={() => handleSort('creditoDoacoes')}>
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Doações Pessoais (R$)</span>
+                    {sortField === 'creditoDoacoes' && (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                  </div>
+                </th>
                 <th className="py-3 px-3 text-right cursor-pointer hover:text-[#002A3A]" onClick={() => handleSort('creditoTotal')}>
                   <div className="flex items-center justify-end gap-1">
                     <span>Crédito Total (R$)</span>
                     {sortField === 'creditoTotal' && (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                   </div>
                 </th>
-                <th className="py-3 px-3 text-right">Separação (Urnas vs Doações)</th>
                 <th className="py-3 px-3 text-right cursor-pointer hover:text-[#002A3A]" onClick={() => handleSort('ticketMedioCupom')}>
                   <div className="flex items-center justify-end gap-1">
                     <span>Ticket Médio</span>
                     {sortField === 'ticketMedioCupom' && (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                   </div>
                 </th>
-                <th className="py-3 px-3 text-center">Urnas</th>
                 <th className="py-3 px-3 text-center">Status</th>
               </tr>
             </thead>
@@ -410,29 +505,19 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   <td className="py-3 px-3 text-right font-bold text-[#002A3A]">
                     {formatarNumero(emp.cuponsValidos)}
                   </td>
-                  <td className="py-3 px-3 text-right">
-                    <div className="font-black text-[#004A6D] text-sm">
-                      {formatarMoeda(emp.creditoTotal)}
-                    </div>
-                    <div className="text-[10px] text-[#00E04B] font-bold">
-                      +{emp.crescimentoYoY}% YoY
-                    </div>
+                  <td className="py-3 px-3 text-right font-bold text-[#004A6D]">
+                    {formatarMoeda(emp.creditoUrnas)}
+                  </td>
+                  <td className="py-3 px-3 text-right font-bold text-[#00E04B]">
+                    {formatarMoeda(emp.creditoDoacoes)}
                   </td>
                   <td className="py-3 px-3 text-right">
-                    <div className="text-[11px] font-semibold text-[#004A6D]">
-                      Urnas: {formatarMoeda(emp.creditoUrnas)}
-                    </div>
-                    <div className="text-[10px] text-[#004A6D]/70">
-                      Doações: {formatarMoeda(emp.creditoDoacoes)}
+                    <div className="font-black text-[#002A3A] text-sm">
+                      {formatarMoeda(emp.creditoTotal)}
                     </div>
                   </td>
                   <td className="py-3 px-3 text-right font-bold text-[#002A3A]">
                     {formatarMoeda(emp.ticketMedioCupom)}
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <span className="inline-flex items-center gap-1 font-bold text-xs bg-[#F4F9FA] px-2 py-0.5 rounded-md border border-[#BCD3DF]">
-                      <Box className="w-3 h-3 text-[#EDCD01]" /> {emp.urnasInstaladas}
-                    </span>
                   </td>
                   <td className="py-3 px-3 text-center">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${

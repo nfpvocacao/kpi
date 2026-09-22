@@ -32,7 +32,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
       label: 'Empresas',
       fullTitle: 'Operações por Empresas Parceiras',
       icon: Building2,
-      badgeText: metricsBadgeCounts ? `${metricsBadgeCounts.empresasAtivas}` : '20',
+      badgeText: null,
       badgeColor: 'bg-[#EDCD01] text-[#002A3A]'
     },
     {
@@ -40,7 +40,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
       label: 'Doadores Reais',
       fullTitle: 'Análise de Doadores de Pessoa Física',
       icon: HeartHandshake,
-      badgeText: metricsBadgeCounts ? `${metricsBadgeCounts.doadoresReais} PF` : '15 PF',
+      badgeText: null,
       badgeColor: 'bg-[#FD3168] text-white'
     },
     {
@@ -48,7 +48,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
       label: 'Doadores Auto',
       fullTitle: 'Doadores Automáticos Cadastrados',
       icon: Users,
-      badgeText: metricsBadgeCounts ? `${metricsBadgeCounts.doadoresAuto} AUT` : '13 AUT',
+      badgeText: null,
       badgeColor: 'bg-[#00E04B] text-[#002A3A]'
     },
     {

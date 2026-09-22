@@ -27,7 +27,7 @@ export interface EmpresaParceira {
   cnpj: string;
   razaoSocial: string;
   nomeFantasia: string;
-  categoria: 'Supermercados' | 'Farmácias' | 'Varejo & Moda' | 'Construção & Casa' | 'Restaurantes & Alimentos' | 'Pet & Serviços';
+  categoria: 'Supermercados' | 'Farmácias' | 'Varejo & Moda' | 'Construção & Casa' | 'Restaurantes & Alimentos' | 'Pet & Serviços' | 'Atacado & Distribuição' | 'Postos & Conveniência' | 'Serviços & Outros';
   cuponsValidos: number;
   valorTotalNotas: number;
   creditoTotal: number;

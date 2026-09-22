@@ -160,7 +160,7 @@ export default function App() {
         )}
 
         {activeTab === 'empresas' && (
-          <TabEmpresas />
+          <TabEmpresas selectedYears={periodFilter.years} />
         )}
 
         {activeTab === 'doadores' && (
