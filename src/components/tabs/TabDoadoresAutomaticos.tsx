@@ -195,6 +195,7 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
                   name === 'doadoresPlenos' ? 'Doadores Plenos' : 'Doadores Restritos'
                 ]}
                 contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                itemStyle={{ color: '#FFFFFF' }}
               />
               <Area 
                 type="monotone" 

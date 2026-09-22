@@ -1,29 +1,29 @@
 import React from 'react';
-import { 
-  DollarSign, 
-  Receipt, 
-  Percent, 
-  TrendingUp, 
-  Sparkles, 
-  ArrowUpRight, 
-  CheckCircle2, 
+import {
+  DollarSign,
+  Receipt,
+  Percent,
+  TrendingUp,
+  Sparkles,
+  ArrowUpRight,
+  CheckCircle2,
   Layers,
   Calendar
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  Area, 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend 
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend
 } from 'recharts';
 import { KPICard } from '../KPICard';
 import { BrandBadge } from '../BrandBadge';
@@ -55,24 +55,24 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
   const totalCreditosAnterior = metricasAnterior.reduce((acc, m) => acc + m.creditoTotal, 0);
   const totalCuponsAnterior = metricasAnterior.reduce((acc, m) => acc + m.cuponsValidos, 0);
   const ticketAnterior = totalCuponsAnterior > 0 ? totalCreditosAnterior / totalCuponsAnterior : 0;
-  const autoAnterior = totalCreditosAnterior > 0 
-    ? (metricasAnterior.reduce((acc, m) => acc + m.creditoAutomatica, 0) / totalCreditosAnterior) * 100 
+  const autoAnterior = totalCreditosAnterior > 0
+    ? (metricasAnterior.reduce((acc, m) => acc + m.creditoAutomatica, 0) / totalCreditosAnterior) * 100
     : 0;
 
-  const crescimentoCreditosYoY = totalCreditosAnterior > 0 
-    ? ((totalCreditos - totalCreditosAnterior) / totalCreditosAnterior) * 100 
+  const crescimentoCreditosYoY = totalCreditosAnterior > 0
+    ? ((totalCreditos - totalCreditosAnterior) / totalCreditosAnterior) * 100
     : 18.5;
 
-  const crescimentoCuponsYoY = totalCuponsAnterior > 0 
-    ? ((totalCupons - totalCuponsAnterior) / totalCuponsAnterior) * 100 
+  const crescimentoCuponsYoY = totalCuponsAnterior > 0
+    ? ((totalCupons - totalCuponsAnterior) / totalCuponsAnterior) * 100
     : 14.2;
 
-  const crescimentoTicketYoY = ticketAnterior > 0 
-    ? ((ticketMedioGeral - ticketAnterior) / ticketAnterior) * 100 
+  const crescimentoTicketYoY = ticketAnterior > 0
+    ? ((ticketMedioGeral - ticketAnterior) / ticketAnterior) * 100
     : 3.8;
 
-  const variacaoAutoYoY = autoAnterior > 0 
-    ? participacaoAuto - autoAnterior 
+  const variacaoAutoYoY = autoAnterior > 0
+    ? participacaoAuto - autoAnterior
     : 6.4;
 
   // Donut data for composition
@@ -84,13 +84,13 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
 
   return (
     <div className="space-y-6">
-      
+
       {/* Top Banner with Brand Tagline & Context */}
       <div className="bg-gradient-to-r from-[#004A6D] via-[#003B57] to-[#002A3A] rounded-2xl p-6 text-white shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Subtle decorative brand circles */}
         <div className="absolute -right-10 -bottom-10 w-48 h-48 rounded-full bg-[#00E3E6]/10 pointer-events-none blur-2xl"></div>
         <div className="absolute left-1/3 -top-10 w-32 h-32 rounded-full bg-[#EDCD01]/10 pointer-events-none blur-xl"></div>
-        
+
         <div className="relative z-10 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold uppercase tracking-wider text-[#00E3E6]">
@@ -102,7 +102,7 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
             </span>
           </div>
           <h1 className="text-2xl lg:text-3xl font-black tracking-tight font-['Raleway',sans-serif]">
-            Desempenho & Faturamento NFP
+            Desempenho & Captação NFP
           </h1>
           <p className="text-sm text-white/80 max-w-2xl font-normal">
             Acompanhamento consolidado de créditos definitivos apurados pela Secretaria da Fazenda de SP e volume operacional de notas capturadas.
@@ -186,7 +186,7 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
 
       {/* Main Charts Row: Stacked Area + Donut */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Stacked Area Chart: Evolução Mensal de Créditos por Categoria */}
         <div className="lg:col-span-2 bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-[#F0F5F8]">
@@ -217,62 +217,63 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
               <AreaChart data={metricasFiltradas} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorAuto" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#004A6D" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#004A6D" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#004A6D" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#004A6D" stopOpacity={0.1} />
                   </linearGradient>
                   <linearGradient id="colorUrnas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#EDCD01" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#EDCD01" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#EDCD01" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#EDCD01" stopOpacity={0.1} />
                   </linearGradient>
                   <linearGradient id="colorDireta" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00E3E6" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#00E3E6" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#00E3E6" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#00E3E6" stopOpacity={0.1} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
-                <XAxis 
-                  dataKey="mesNome" 
-                  tick={{ fontSize: 11, fill: '#004A6D' }} 
-                  axisLine={{ stroke: '#BCD3DF' }} 
-                  tickLine={false} 
-                />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: '#004A6D' }} 
-                  axisLine={false} 
+                <XAxis
+                  dataKey="mesNome"
+                  tick={{ fontSize: 11, fill: '#004A6D' }}
+                  axisLine={{ stroke: '#BCD3DF' }}
                   tickLine={false}
-                  tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`} 
                 />
-                <Tooltip 
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#004A6D' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
                   formatter={(value: any, name: any) => [
-                    formatarMoeda(Number(value)), 
+                    formatarMoeda(Number(value)),
                     name === 'creditoAutomatica' ? 'Doação Automática' :
-                    name === 'creditoUrnas' ? 'Urnas / CADASTRO' : 'Doação Direta'
+                      name === 'creditoUrnas' ? 'Urnas / CADASTRO' : 'Doação Direta'
                   ]}
                   labelFormatter={(label) => `Mês: ${label}`}
                   contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                  itemStyle={{ color: '#FFFFFF' }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="creditoAutomatica" 
-                  stackId="1" 
-                  stroke="#004A6D" 
-                  fill="url(#colorAuto)" 
+                <Area
+                  type="monotone"
+                  dataKey="creditoAutomatica"
+                  stackId="1"
+                  stroke="#004A6D"
+                  fill="url(#colorAuto)"
                   strokeWidth={2}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="creditoUrnas" 
-                  stackId="1" 
-                  stroke="#EDCD01" 
-                  fill="url(#colorUrnas)" 
+                <Area
+                  type="monotone"
+                  dataKey="creditoUrnas"
+                  stackId="1"
+                  stroke="#EDCD01"
+                  fill="url(#colorUrnas)"
                   strokeWidth={2}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="creditoDireta" 
-                  stackId="1" 
-                  stroke="#00E3E6" 
-                  fill="url(#colorDireta)" 
+                <Area
+                  type="monotone"
+                  dataKey="creditoDireta"
+                  stackId="1"
+                  stroke="#00E3E6"
+                  fill="url(#colorDireta)"
                   strokeWidth={2}
                 />
               </AreaChart>
@@ -288,7 +289,7 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
                 Composição de Receitas
               </h2>
               <p className="text-xs text-[#004A6D]/70">
-                Divisão proporcional do faturamento por modalidade
+                Divisão proporcional de receita por modalidade
               </p>
             </div>
 
@@ -308,9 +309,10 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: any) => formatarMoeda(Number(value))}
                     contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                    itemStyle={{ color: '#FFFFFF' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -347,7 +349,7 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
 
       {/* Secondary Row: Volume de Cupons Capturados (Bar) + Regras de Negócio Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Volume de Cupons Mensais */}
         <div className="lg:col-span-2 bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
           <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-[#F0F5F8]">
@@ -369,26 +371,26 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={metricasFiltradas} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
-                <XAxis 
-                  dataKey="mesNome" 
-                  tick={{ fontSize: 11, fill: '#004A6D' }} 
-                  axisLine={{ stroke: '#BCD3DF' }} 
-                  tickLine={false} 
-                />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: '#004A6D' }} 
-                  axisLine={false} 
+                <XAxis
+                  dataKey="mesNome"
+                  tick={{ fontSize: 11, fill: '#004A6D' }}
+                  axisLine={{ stroke: '#BCD3DF' }}
                   tickLine={false}
-                  tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`} 
                 />
-                <Tooltip 
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#004A6D' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
                   formatter={(value: any) => [`${formatarNumero(Number(value))} cupons`, 'Volume Válido']}
                   contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
                 />
-                <Bar 
-                  dataKey="cuponsValidos" 
-                  fill="#004A6D" 
-                  radius={[6, 6, 0, 0]} 
+                <Bar
+                  dataKey="cuponsValidos"
+                  fill="#004A6D"
+                  radius={[6, 6, 0, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>

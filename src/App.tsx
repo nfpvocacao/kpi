@@ -184,7 +184,7 @@ export default function App() {
                 NFP Analytics • Plataforma Estratégica de Gestão
               </p>
               <p className="text-[11px] text-[#004A6D]/60">
-                Ação Comunitária do Brasil • Vocação | CNPJ 60.912.870/0001-38
+                Ação Comunitária do Brasil • Vocação | CNPJ 61.750.246/0001-75
               </p>
             </div>
           </div>
@@ -196,12 +196,6 @@ export default function App() {
               colorVariant="yellow" 
               size="sm" 
             />
-          </div>
-
-          <div className="flex items-center gap-4 text-xs font-semibold text-[#004A6D]">
-            <span className="text-[11px] text-[#004A6D]/60">
-              Manual de Marca V 1.1 &bull; SEFAZ-SP Compliant
-            </span>
           </div>
 
         </div>

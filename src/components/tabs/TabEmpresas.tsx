@@ -182,7 +182,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
           icon={DollarSign}
           iconBgColor="bg-[#EDCD01]/25"
           iconColor="text-[#002A3A]"
-          badge={{ text: 'Faturamento Lojas', color: 'bg-[#00E04B]/20 text-[#006E24]' }}
+          badge={{ text: 'Compras nas Lojas', color: 'bg-[#00E04B]/20 text-[#006E24]' }}
         />
 
         <KPICard
@@ -261,6 +261,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                     name === 'creditoUrnas' ? 'Crédito Urnas (CADASTRO)' : 'Crédito Doações (PF)'
                   ]}
                   contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                  itemStyle={{ color: '#FFFFFF' }}
                 />
                 <Bar dataKey="creditoUrnas" name="creditoUrnas" stackId="a" fill="#004A6D" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="creditoDoacoes" name="creditoDoacoes" stackId="a" fill="#00E3E6" radius={[4, 4, 0, 0]} />
@@ -283,6 +284,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                 <Tooltip 
                   formatter={(val: any) => [`${formatarNumero(Number(val))} cupons`, 'Volume']}
                   contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                  itemStyle={{ color: '#FFFFFF' }}
                 />
                 <Bar dataKey="cupons" fill="#EDCD01" radius={[4, 4, 0, 0]}>
                   {top15Cupons.map((_, index) => (

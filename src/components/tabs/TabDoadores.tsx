@@ -222,6 +222,7 @@ export const TabDoadores: React.FC = () => {
                 <Tooltip 
                   formatter={(val: any) => [formatarMoeda(Number(val)), 'Crédito Gerado']}
                   contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                  itemStyle={{ color: '#FFFFFF' }}
                 />
                 <Bar 
                   dataKey="credito" 
@@ -274,6 +275,7 @@ export const TabDoadores: React.FC = () => {
                   <Tooltip 
                     formatter={(value: any) => formatarMoeda(Number(value))}
                     contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                    itemStyle={{ color: '#FFFFFF' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
