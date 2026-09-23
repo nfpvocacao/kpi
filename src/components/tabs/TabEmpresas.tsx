@@ -30,11 +30,13 @@ import { useSupabaseEmpresas } from '../../hooks/useSupabaseEmpresas';
 
 interface TabEmpresasProps {
   selectedYears?: number[];
+  selectedMonths?: number[];
   onSelectEmpresaParaFiltro?: (empresa: EmpresaParceira) => void;
 }
 
 export const TabEmpresas: React.FC<TabEmpresasProps> = ({
   selectedYears = [2026],
+  selectedMonths = [],
   onSelectEmpresaParaFiltro
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,12 +55,12 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
     downloadFullCSV,
   } = useSupabaseEmpresas({
     selectedYears,
-    selectedMonth,
+    selectedMonths: selectedMonth ? [selectedMonth] : [], // Se selectedMonth for nulo, traz todo o mês do banco (7.505 registros)
     searchTerm,
     limit: 100,
   });
 
-  const empresasLista = topEmpresas.length > 0 ? topEmpresas : FALLBACK_EMPRESAS;
+  const empresasLista = topEmpresas;
 
   // Filter companies client-side for category pills or sort
   const empresasFiltradas = useMemo(() => {
@@ -77,13 +79,13 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
     });
   }, [empresasLista, selectedCategoria, sortField, sortDirection]);
 
-  // Aggregate KPIs
-  const totalEmpresasAtivas = totalEmpresasContagem > 0 ? totalEmpresasContagem : empresasLista.length;
-  const totalCuponsCapturados = kpis.totalCupons > 0 ? kpis.totalCupons : empresasLista.reduce((acc, e) => acc + e.cuponsValidos, 0);
-  const valorTotalEmitidoNF = kpis.totalValorNF > 0 ? kpis.totalValorNF : empresasLista.reduce((acc, e) => acc + e.valorTotalNotas, 0);
-  const creditoApuradoTotal = kpis.totalCredito > 0 ? kpis.totalCredito : empresasLista.reduce((acc, e) => acc + e.creditoTotal, 0);
-  const creditoUrnasTotal = kpis.totalCreditoUrnas > 0 ? kpis.totalCreditoUrnas : empresasLista.reduce((acc, e) => acc + e.creditoUrnas, 0);
-  const creditoDoacoesTotal = kpis.totalCreditoDoacoes > 0 ? kpis.totalCreditoDoacoes : empresasLista.reduce((acc, e) => acc + e.creditoDoacoes, 0);
+  // Aggregate KPIs vindos do Supabase
+  const totalEmpresasAtivas = totalEmpresasContagem;
+  const totalCuponsCapturados = kpis.totalCupons;
+  const valorTotalEmitidoNF = kpis.totalValorNF;
+  const creditoApuradoTotal = kpis.totalCredito;
+  const creditoUrnasTotal = kpis.totalCreditoUrnas;
+  const creditoDoacoesTotal = kpis.totalCreditoDoacoes;
 
   // Top 15 data for charts
   const top15Credito = useMemo(() => {

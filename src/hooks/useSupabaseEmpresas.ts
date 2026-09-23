@@ -4,13 +4,13 @@ import { EmpresaParceira } from '../types';
 
 export interface UseEmpresasParams {
   selectedYears?: number[];
-  selectedMonth?: number | null; // e.g. 5 for Maio
+  selectedMonths?: number[];
   searchTerm?: string;
   limit?: number;
 }
 
 export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
-  const { selectedYears = [2026], selectedMonth = null, searchTerm = '', limit = 100 } = params;
+  const { selectedYears = [2026], selectedMonths = [], searchTerm = '', limit = 100 } = params;
 
   const [topEmpresas, setTopEmpresas] = useState<EmpresaParceira[]>([]);
   const [totalEmpresasContagem, setTotalEmpresasContagem] = useState<number>(0);
@@ -31,25 +31,38 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
         setIsLoading(true);
         setError(null);
 
-        // 1. Contagem total e agregados gerais para os KPIs (sem puxar todas as 7.505 linhas)
+        // 1. Contagem total e agregados gerais para os KPIs carregando o dataset completo via range
         let queryKpi = supabase
           .from('vocacao_resumo_mensal_empresas')
-          .select('cnpj, total_cupons, total_valor_nf, total_credito_apurado, credito_cadastro, credito_doacao', { count: 'exact' });
+          .select('total_cupons, total_valor_nf, total_credito_apurado, credito_cadastro, credito_doacao');
 
-        if (selectedYears && selectedYears.length > 0) {
-          queryKpi = queryKpi.in('ano', selectedYears);
-        }
-        if (selectedMonth) {
-          queryKpi = queryKpi.eq('mes', selectedMonth);
+        if (selectedMonths && selectedMonths.length > 0) {
+          queryKpi = queryKpi.in('mes', selectedMonths);
         }
 
-        const { data: kpiData, count, error: kpiError } = await queryKpi;
+        // Buscar todas as páginas do Supabase (para evitar a trava padrão de 1.000 linhas do REST)
+        let allKpiRows: any[] = [];
+        let from = 0;
+        const step = 1000;
+        let hasMore = true;
 
-        if (kpiError) {
-          console.error('Erro ao buscar estatísticas de empresas:', kpiError);
-          setError(kpiError.message);
-          setIsLoading(false);
-          return;
+        while (hasMore) {
+          const { data: pageData, error: pageError } = await queryKpi.range(from, from + step - 1);
+          if (pageError) {
+            console.error('Erro na queryKpi do Supabase:', pageError);
+            setError(pageError.message);
+            setIsLoading(false);
+            return;
+          }
+          if (pageData && pageData.length > 0) {
+            allKpiRows = allKpiRows.concat(pageData);
+            from += step;
+            if (pageData.length < step) {
+              hasMore = false;
+            }
+          } else {
+            hasMore = false;
+          }
         }
 
         let sumCupons = 0;
@@ -58,17 +71,23 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
         let sumCreditoUrnas = 0;
         let sumCreditoDoacoes = 0;
 
-        if (kpiData) {
-          kpiData.forEach((r: any) => {
-            sumCupons += Number(r.total_cupons || 0);
-            sumValorNF += Number(r.total_valor_nf || 0);
-            sumCredito += Number(r.total_credito_apurado || 0);
-            sumCreditoUrnas += Number(r.credito_cadastro || 0);
-            sumCreditoDoacoes += Number(r.credito_doacao || 0);
-          });
-        }
+        allKpiRows.forEach((r: any) => {
+          sumCupons += Number(r.total_cupons || 0);
+          sumValorNF += Number(r.total_valor_nf || 0);
+          sumCredito += Number(r.total_credito_apurado || 0);
+          sumCreditoUrnas += Number(r.credito_cadastro || 0);
+          sumCreditoDoacoes += Number(r.credito_doacao || 0);
+        });
 
-        setTotalEmpresasContagem(count || (kpiData ? kpiData.length : 0));
+        console.log('SUPABASE FETCH COMPLETO:', {
+          totalLinhas: allKpiRows.length,
+          sumCupons,
+          sumCredito: Number(sumCredito.toFixed(2)),
+          sumCreditoUrnas: Number(sumCreditoUrnas.toFixed(2)),
+          sumCreditoDoacoes: Number(sumCreditoDoacoes.toFixed(2))
+        });
+
+        setTotalEmpresasContagem(allKpiRows.length);
         setKpis({
           totalCupons: sumCupons,
           totalValorNF: sumValorNF,
@@ -82,15 +101,23 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
           .from('vocacao_resumo_mensal_empresas')
           .select('*');
 
-        if (selectedYears && selectedYears.length > 0) {
-          queryList = queryList.in('ano', selectedYears);
-        }
-        if (selectedMonth) {
-          queryList = queryList.eq('mes', selectedMonth);
+        if (selectedMonths && selectedMonths.length > 0) {
+          queryList = queryList.in('mes', selectedMonths);
         }
         if (searchTerm.trim()) {
           const s = searchTerm.trim();
-          queryList = queryList.or(`nome_empresa.ilike.%${s}%,cnpj.ilike.%${s}%`);
+          const cleanDigits = s.replace(/\D/g, '');
+
+          if (cleanDigits.length >= 8) {
+            // Se o usuário digitou números (com ou sem pontuação)
+            let formattedCnpj = cleanDigits;
+            if (cleanDigits.length === 14) {
+              formattedCnpj = cleanDigits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+            }
+            queryList = queryList.or(`nome_empresa.ilike.%${s}%,cnpj.ilike.%${s}%,cnpj.ilike.%${cleanDigits}%,cnpj.ilike.%${formattedCnpj}%`);
+          } else {
+            queryList = queryList.or(`nome_empresa.ilike.%${s}%,cnpj.ilike.%${s}%`);
+          }
         }
 
         queryList = queryList.order('total_credito_apurado', { ascending: false }).limit(limit);
@@ -176,7 +203,7 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
     }
 
     fetchData();
-  }, [JSON.stringify(selectedYears), selectedMonth, searchTerm, limit]);
+  }, [JSON.stringify(selectedYears), JSON.stringify(selectedMonths), searchTerm, limit]);
 
   // Função para exportação sob demanda de TODOS os 7.505+ registros baseados no filtro atual
   const downloadFullCSV = async () => {
@@ -189,8 +216,8 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
       if (selectedYears && selectedYears.length > 0) {
         queryFull = queryFull.in('ano', selectedYears);
       }
-      if (selectedMonth) {
-        queryFull = queryFull.eq('mes', selectedMonth);
+      if (selectedMonths && selectedMonths.length > 0 && selectedMonths.length < 12) {
+        queryFull = queryFull.in('mes', selectedMonths);
       }
       if (searchTerm.trim()) {
         const s = searchTerm.trim();
