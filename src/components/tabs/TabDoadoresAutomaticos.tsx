@@ -6,10 +6,9 @@ import {
   ShieldCheck, 
   Repeat, 
   Zap, 
-  Calendar,
   Sparkles,
-  ArrowUpRight,
-  Heart
+  Loader2,
+  Table
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -20,41 +19,79 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
-  Legend 
+  Tooltip 
 } from 'recharts';
 import { KPICard } from '../KPICard';
 import { BrandBadge } from '../BrandBadge';
 import { MetricaMensal } from '../../types';
-import { METRICAS_MENSAIS, formatarMoeda, formatarNumero, formatarPorcentagem } from '../../data/mockDatabase';
+import { formatarMoeda, formatarNumero, formatarPorcentagem } from '../../data/mockDatabase';
+import { useSupabaseMapaInterno, MapaInternoRow } from '../../hooks/useSupabaseMapaInterno';
 
 interface TabDoadoresAutomaticosProps {
-  metricasFiltradas: MetricaMensal[];
+  metricasFiltradas?: MetricaMensal[];
+  selectedYears?: number[];
+  selectedMonths?: number[];
 }
 
 export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
-  metricasFiltradas
+  metricasFiltradas = [],
+  selectedYears = [],
+  selectedMonths = []
 }) => {
-  // Current latest month in the dataset
-  const ultimoMes = metricasFiltradas[metricasFiltradas.length - 1] || METRICAS_MENSAIS[METRICAS_MENSAIS.length - 1];
-  const primeiroMes = metricasFiltradas[0] || METRICAS_MENSAIS[0];
+  const { data: mapaInterno, isLoading, error } = useSupabaseMapaInterno();
 
-  const totalDoadoresAuto = ultimoMes.doadoresAutomaticosAtivos;
-  const doadoresPlenos = ultimoMes.doadoresPlenos;
-  const doadoresRestritos = ultimoMes.doadoresRestritos;
+  // Filtrar dados da vocacao_mapa_interno de acordo com selectedYears e selectedMonths do filtro principal
+  let filteredMapaInterno = mapaInterno;
 
-  const taxaPlenos = totalDoadoresAuto > 0 ? (doadoresPlenos / totalDoadoresAuto) * 100 : 0;
-  const crescimentoBase = primeiroMes.doadoresAutomaticosAtivos > 0 
-    ? ((totalDoadoresAuto - primeiroMes.doadoresAutomaticosAtivos) / primeiroMes.doadoresAutomaticosAtivos) * 100 
-    : 0;
+  if (mapaInterno.length > 0) {
+    if (selectedYears.length > 0 || selectedMonths.length > 0) {
+      filteredMapaInterno = mapaInterno.filter(row => {
+        const matchesYear = selectedYears.length === 0 || (row.ano && selectedYears.includes(row.ano));
+        const matchesMonth = selectedMonths.length === 0 || (row.mes && selectedMonths.includes(row.mes));
+        return matchesYear && matchesMonth;
+      });
+    } else if (metricasFiltradas.length > 0) {
+      const periodosPermitidos = new Set<string>();
+      metricasFiltradas.forEach(m => {
+        let y = m.ano;
+        let mNum = m.mes && m.mes.includes('-') ? parseInt(m.mes.split('-')[1], 10) : Number(m.mes || 0);
+        if (y && mNum) {
+          periodosPermitidos.add(`${y}-${mNum}`);
+        }
+      });
+      filteredMapaInterno = mapaInterno.filter(row => row.ano && row.mes && periodosPermitidos.has(`${row.ano}-${row.mes}`));
+    }
+  }
 
-  // Average ticket comparison
-  const ticketMedioAutoAtual = ultimoMes.ticketMedioAutomatica;
-  const ticketMedioGeralAtual = ultimoMes.ticketMedioGeral;
-  const premiumTicketAuto = ((ticketMedioAutoAtual - ticketMedioGeralAtual) / ticketMedioGeralAtual) * 100;
+  // Dados para gráficos e KPIs ordenados cronologicamente (ASC)
+  const chartData = filteredMapaInterno.slice().sort((a, b) => 
+    String(a.ano_mes || '').localeCompare(String(b.ano_mes || ''))
+  );
 
-  // LTV Projection: based on monthly retention and annual coupons
-  const ticketAnualMedioDoador = ticketMedioAutoAtual * 18 * 12; // ~18 cupons/mês
+  // 1º KPI: Sempre o valor mais atual do filtro (doadores plenos do último mês filtrado)
+  const ultimoMesFiltrado = chartData[chartData.length - 1] || ({} as Partial<MapaInternoRow>);
+  const doadoresPlenosMaisAtual = ultimoMesFiltrado.doadores_plenos || 0;
+  const mesNomeMaisAtual = ultimoMesFiltrado.mesNome || 'Último Mês';
+
+  // 2º KPI: Soma do filtro (total de cupons reconhecidos aut_cup / qtde_cupons)
+  const totalCuponsAuto = chartData.reduce((acc, r) => acc + Number(r.total_cupons_auto || 0), 0);
+
+  // 4º KPI: Soma dos créditos automatizados aut_cred no filtro
+  const totalCreditoAuto = chartData.reduce((acc, r) => acc + Number(r.total_credito_auto || 0), 0);
+
+  // 3º KPI: Média real do ticket médio no período (Crédito Total / Cupons Totais do período, ou média das médias)
+  const arrayTicketsValidos = chartData
+    .map(r => Number(r.ticket_medio_auto || 0))
+    .filter(t => t > 0);
+
+  const mediaDasMediasTicket = totalCuponsAuto > 0
+    ? (totalCreditoAuto / totalCuponsAuto)
+    : (arrayTicketsValidos.length > 0 ? arrayTicketsValidos.reduce((acc, t) => acc + t, 0) / arrayTicketsValidos.length : 0);
+
+  // Tabela Analítica: Linhas da seleção do filtro (respeitando o filtro de data), > 2025 (>= 2026) e ordenadas com o mais recente PRIMEIRO (DESC)
+  const tabelaAnaliticaData = filteredMapaInterno
+    .filter(row => (row.ano || 0) >= 2026)
+    .sort((a, b) => String(b.ano_mes || '').localeCompare(String(a.ano_mes || '')));
 
   return (
     <div className="space-y-6">
@@ -64,80 +101,70 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-[#002A3A] tracking-tight font-['Raleway',sans-serif]">
-              Doadores Automáticos & Recorrência (Histórico)
+              Doadores Automáticos
             </h1>
-            <BrandBadge highlightText="recorrência" prefix="Fidelidade &" suffix="garantida" colorVariant="green" size="sm" />
+            <BrandBadge highlightText="recorrência" prefix="Engajamento &" suffix="fidelidade" colorVariant="green" size="md" />
           </div>
           <p className="text-xs text-[#004A6D]/80">
-            Inteligência de retenção e LTV da modalidade mais sustentável e de maior rentabilidade da Nota Fiscal Paulista.
+            Acompanhamento da base de doadores recorrentes via doação automática da Nota Fiscal Paulista.
           </p>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-bold bg-[#D9FBFF] text-[#004A6D] px-3 py-1.5 rounded-xl border border-[#00E3E6]/40">
-          <Repeat className="w-4 h-4 text-[#004A6D]" />
-          <span>Base Ativa: {formatarNumero(totalDoadoresAuto)} doadores cadastrados</span>
+          {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-[#004A6D]" /> : <Repeat className="w-4 h-4 text-[#004A6D]" />}
+          <span>Mês Mais Atual ({mesNomeMaisAtual}): {formatarNumero(doadoresPlenosMaisAtual)} doadores plenos</span>
         </div>
       </div>
 
-      {/* 4 KPIs for Tab 4 */}
+      {/* 4 KPIs configurados com textos limpos para gestores */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          id="kpi-base-automatica"
-          title="Base de Doadores Automáticos"
-          value={formatarNumero(totalDoadoresAuto)}
-          subValue={`Crescimento de ${formatarPorcentagem(crescimentoBase)} no período`}
-          trend={{
-            value: formatarPorcentagem(crescimentoBase),
-            isPositive: true,
-            label: 'evolução histórica'
-          }}
-          icon={Users}
-          iconBgColor="bg-[#004A6D]"
-          iconColor="text-[#00E3E6]"
-          badge={{ text: 'Alta Fidelidade', color: 'bg-[#D9FBFF] text-[#004A6D]' }}
-        />
-
+        
+        {/* 1º KPI: Doadores Plenos do Mês Mais Atual */}
         <KPICard
           id="kpi-doadores-plenos"
           title="Doadores Plenos (Recorrentes)"
-          value={formatarNumero(doadoresPlenos)}
-          subValue={`${taxaPlenos.toFixed(1)}% da base automática é Plena`}
-          trend={{
-            value: `${taxaPlenos.toFixed(1)}%`,
-            isPositive: true,
-            label: 'índice de engajamento'
-          }}
+          value={formatarNumero(doadoresPlenosMaisAtual)}
+          subValue={`Posição mais recente (${mesNomeMaisAtual}) no filtro`}
           icon={UserCheck}
           iconBgColor="bg-[#00E04B]/20"
           iconColor="text-[#006E24]"
-          badge={{ text: 'Ativos 12m', color: 'bg-[#00E04B]/25 text-[#006E24]' }}
+          badge={{ text: `Atual (${mesNomeMaisAtual})`, color: 'bg-[#00E04B]/25 text-[#006E24]' }}
         />
 
+        {/* 2º KPI: Total de Cupons (Soma do filtro: aut_cup > 0 ? aut_cup : qtde_cupons) */}
         <KPICard
-          id="kpi-ticket-comparativo"
-          title="Ticket Médio / Nota (AUT)"
-          value={formatarMoeda(ticketMedioAutoAtual)}
-          subValue={`+${premiumTicketAuto.toFixed(1)}% superior ao ticket geral (${formatarMoeda(ticketMedioGeralAtual)})`}
-          trend={{
-            value: `+${premiumTicketAuto.toFixed(0)}%`,
-            isPositive: true,
-            label: 'rentabilidade unitária'
-          }}
+          id="kpi-total-cupons-auto"
+          title="Total de Cupons Automatizados"
+          value={formatarNumero(totalCuponsAuto)}
+          subValue="Consolidado no período selecionado"
+          icon={Users}
+          iconBgColor="bg-[#004A6D]"
+          iconColor="text-[#00E3E6]"
+          badge={{ text: 'Consolidado', color: 'bg-[#D9FBFF] text-[#004A6D]' }}
+        />
+
+        {/* 3º KPI: Média dos períodos selecionados */}
+        <KPICard
+          id="kpi-ticket-medio-auto"
+          title="Ticket Médio / Cupom"
+          value={formatarMoeda(mediaDasMediasTicket)}
+          subValue="Média apurada no período selecionado"
           icon={TrendingUp}
           iconBgColor="bg-[#EDCD01]/30"
           iconColor="text-[#002A3A]"
-          badge={{ text: 'Premium SEFAZ', color: 'bg-[#FD3168] text-white' }}
+          badge={{ text: 'Média Apurada', color: 'bg-[#EDCD01]/40 text-[#002A3A]' }}
         />
 
+        {/* 4º KPI: Crédito Total Automatizado */}
         <KPICard
-          id="kpi-ltv-anual"
-          title="LTV Anual Estimado / Doador"
-          value={formatarMoeda(ticketAnualMedioDoador)}
-          subValue="Receita líquida anual por doador pleno"
+          id="kpi-credito-total-auto"
+          title="Crédito Total Automatizado"
+          value={formatarMoeda(totalCreditoAuto)}
+          subValue="Total de créditos de doações automáticas"
           icon={Zap}
           iconBgColor="bg-[#FD3168]/15"
           iconColor="text-[#FD3168]"
-          badge={{ text: 'Receita Projetada', color: 'bg-[#EDCD01]/30 text-[#002A3A]' }}
+          badge={{ text: 'Receita Total', color: 'bg-[#FD3168] text-white' }}
         />
       </div>
 
@@ -147,10 +174,10 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
           <div>
             <h2 className="text-base font-bold text-[#002A3A] flex items-center gap-2">
               <Users className="w-4 h-4 text-[#004A6D]" />
-              Crescimento Histórico da Base de Doadores Automáticos
+              Evolução dos Doadores Automáticos (vocacao_mapa_interno)
             </h2>
             <p className="text-xs text-[#004A6D]/70">
-              Evolução mensal da base ativa segmentada entre Doadores Plenos e Doadores Restritos
+              Série temporal dos doadores automáticos cadastrados segmentada entre Doadores Plenos e Restritos
             </p>
           </div>
 
@@ -166,7 +193,7 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
 
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={metricasFiltradas} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorPlenos" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#004A6D" stopOpacity={0.8}/>
@@ -190,16 +217,23 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
                 tickLine={false} 
               />
               <Tooltip 
-                formatter={(val: any, name: any) => [
-                  `${formatarNumero(Number(val))} doadores`,
-                  name === 'doadoresPlenos' ? 'Doadores Plenos' : 'Doadores Restritos'
-                ]}
-                contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
-                itemStyle={{ color: '#FFFFFF' }}
+                formatter={(val: any) => [`${formatarNumero(Number(val))} doadores`]}
+                contentStyle={{ 
+                  backgroundColor: '#FFFFFF', 
+                  color: '#002A3A', 
+                  borderRadius: '12px', 
+                  border: '1px solid #BCD3DF', 
+                  boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  padding: '10px 14px'
+                }}
+                labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
               />
               <Area 
                 type="monotone" 
-                dataKey="doadoresPlenos" 
+                name="Doadores Plenos"
+                dataKey="doadores_plenos" 
                 stackId="1" 
                 stroke="#004A6D" 
                 fill="url(#colorPlenos)" 
@@ -207,7 +241,8 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
               />
               <Area 
                 type="monotone" 
-                dataKey="doadoresRestritos" 
+                name="Doadores Restritos"
+                dataKey="doadores_restritos" 
                 stackId="1" 
                 stroke="#00E3E6" 
                 fill="url(#colorRestritos)" 
@@ -218,35 +253,29 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
         </div>
       </div>
 
-      {/* Chart 2: Evolução Comparativa do Ticket Médio: Doação Automática vs Geral */}
+      {/* Chart 2: Evolução do Ticket Médio Automatizado */}
       <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#F0F5F8]">
           <div>
             <h2 className="text-base font-bold text-[#002A3A] flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-[#00E04B]" />
-              Evolução Comparativa do Ticket Médio por Cupom (R$)
+              Evolução do Ticket Médio por Cupom (R$)
             </h2>
             <p className="text-xs text-[#004A6D]/70">
-              Comparativo direto: Retorno médio de notas de Doadores Automáticos (AUT) vs Geral (Urnas / Diretas)
+              Retorno médio obtido por cupom fiscal nos doadores automáticos
             </p>
           </div>
 
           <div className="flex items-center gap-4 text-xs font-semibold">
             <span className="flex items-center gap-1.5 text-[#004A6D]">
-              <span className="w-3 h-0.5 bg-[#004A6D]"></span> Ticket AUT (Doação Automática)
-            </span>
-            <span className="flex items-center gap-1.5 text-[#004A6D]">
-              <span className="w-3 h-0.5 bg-[#EDCD01]"></span> Ticket Geral Consolidado
-            </span>
-            <span className="flex items-center gap-1.5 text-[#004A6D]">
-              <span className="w-3 h-0.5 bg-[#BCD3DF]"></span> Ticket Urnas Parceiras
+              <span className="w-2.5 h-2.5 rounded-full bg-[#004A6D]"></span> Ticket Médio / Cupom (AUT)
             </span>
           </div>
         </div>
 
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={metricasFiltradas} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
               <XAxis 
                 dataKey="mesNome" 
@@ -262,66 +291,88 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
                 tickLine={false} 
               />
               <Tooltip 
-                formatter={(val: any, name: any) => [
-                  formatarMoeda(Number(val)),
-                  name === 'ticketMedioAutomatica' ? 'Ticket Automática (AUT)' :
-                  name === 'ticketMedioGeral' ? 'Ticket Médio Geral' : 'Ticket Urnas'
-                ]}
-                contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                formatter={(val: any) => [formatarMoeda(Number(val))]}
+                contentStyle={{ 
+                  backgroundColor: '#FFFFFF', 
+                  color: '#002A3A', 
+                  borderRadius: '12px', 
+                  border: '1px solid #BCD3DF', 
+                  boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  padding: '10px 14px'
+                }}
+                labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
               />
               <Line 
                 type="monotone" 
-                dataKey="ticketMedioAutomatica" 
+                name="Ticket Automática"
+                dataKey="ticket_medio_auto" 
                 stroke="#004A6D" 
                 strokeWidth={3} 
                 dot={{ r: 3, fill: '#004A6D' }} 
                 activeDot={{ r: 6, fill: '#00E3E6' }} 
-              />
-              <Line 
-                type="monotone" 
-                dataKey="ticketMedioGeral" 
-                stroke="#EDCD01" 
-                strokeWidth={2} 
-                strokeDasharray="4 4"
-                dot={{ r: 2, fill: '#EDCD01' }} 
-              />
-              <Line 
-                type="monotone" 
-                dataKey="ticketMedioUrnas" 
-                stroke="#BCD3DF" 
-                strokeWidth={1.5} 
-                dot={false} 
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Strategic Insight Card: Plenos vs Restritos */}
-      <div className="bg-gradient-to-r from-[#004A6D] to-[#002A3A] rounded-2xl p-6 text-white shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-        <div className="md:col-span-2 space-y-2">
+      {/* Tabela Analítica: Dados em Tempo Real da Tabela vocacao_mapa_interno */}
+      <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
+        <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-[#F0F5F8]">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#00E3E6]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#00E3E6]">
-              Inteligência de Retenção Vocação
-            </span>
+            <Table className="w-4 h-4 text-[#004A6D]" />
+            <h2 className="text-base font-bold text-[#002A3A]">
+              Tabela Analítica (vocacao_mapa_interno)
+            </h2>
           </div>
-          <h3 className="text-lg font-black tracking-tight font-['Raleway',sans-serif]">
-            Diferença Estratégica: Doador Pleno vs Doador Restrito
-          </h3>
-          <p className="text-xs text-white/80 leading-relaxed">
-            <strong>Doadores Plenos ({taxaPlenos.toFixed(0)}% da base)</strong> possuem compras registradas em pelo menos 10 dos 12 meses do ano com cupom fiscal automático, gerando uma receita média previsível de R$ 680 a R$ 1.800/ano por pessoa. Estratégias de relacionamento ativo focam em converter doadores restritos em plenos.
-          </p>
+          <span className="text-xs text-[#004A6D] font-semibold bg-[#D9FBFF] px-2.5 py-1 rounded-full">
+            {tabelaAnaliticaData.length} meses exibidos (&gt;2025)
+          </span>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 text-center space-y-1">
-          <span className="text-[11px] text-white/70 uppercase font-semibold block">Taxa de Conversão Plena</span>
-          <div className="text-3xl font-black text-[#00E3E6]">
-            {taxaPlenos.toFixed(1)}%
-          </div>
-          <span className="text-[10px] text-[#00E04B] font-bold block">
-            +4.2% nos últimos 6 meses
-          </span>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-[#F4F9FA] border-b border-[#BCD3DF] text-[#004A6D] font-bold uppercase tracking-wider text-[11px]">
+                <th className="py-2.5 px-3">Mês / Ano</th>
+                <th className="py-2.5 px-3 text-right">Doadores Automáticos</th>
+                <th className="py-2.5 px-3 text-right">Doadores Plenos</th>
+                <th className="py-2.5 px-3 text-right">Doadores Restritos</th>
+                <th className="py-2.5 px-3 text-right">Novos Doadores</th>
+                <th className="py-2.5 px-3 text-right">Ticket Médio (AUT)</th>
+                <th className="py-2.5 px-3 text-right">Crédito Total AUT (R$)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#F0F5F8]">
+              {tabelaAnaliticaData.map((row, idx) => (
+                <tr key={row.id || `${row.ano_mes}-${idx}`} className="hover:bg-[#F8FCFD] transition-colors">
+                  <td className="py-2.5 px-3 font-bold text-[#002A3A]">
+                    {row.mesNome || row.ano_mes}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-black text-[#004A6D]">
+                    {formatarNumero(row.doadores_automaticos || 0)}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-bold text-[#00E04B]">
+                    {formatarNumero(row.doadores_plenos || 0)}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-medium text-[#004A6D]/70">
+                    {formatarNumero(row.doadores_restritos || 0)}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-semibold text-[#002A3A]">
+                    {formatarNumero(row.novos_doadores || 0)}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-bold text-[#002A3A]">
+                    {formatarMoeda(row.ticket_medio_auto || 0)}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-black text-[#004A6D]">
+                    {formatarMoeda(row.total_credito_auto || 0)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 

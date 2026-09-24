@@ -220,12 +220,22 @@ export const TabDoadores: React.FC = () => {
                   tickFormatter={(val) => `R$ ${val}`} 
                 />
                 <Tooltip 
-                  formatter={(val: any) => [formatarMoeda(Number(val)), 'Crédito Gerado']}
-                  contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
-                  itemStyle={{ color: '#FFFFFF' }}
+                  formatter={(val: any) => [formatarMoeda(Number(val))]}
+                  contentStyle={{ 
+                    backgroundColor: '#FFFFFF', 
+                    color: '#002A3A', 
+                    borderRadius: '12px', 
+                    border: '1px solid #BCD3DF', 
+                    boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    padding: '10px 14px'
+                  }}
+                  labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
                 />
                 <Bar 
                   dataKey="credito" 
+                  name="Crédito Gerado"
                   radius={[4, 4, 0, 0]}
                   onClick={(data: any) => {
                     if (data?.id) setSelectedDoadorId(data.id);
@@ -274,8 +284,17 @@ export const TabDoadores: React.FC = () => {
                   </Pie>
                   <Tooltip 
                     formatter={(value: any) => formatarMoeda(Number(value))}
-                    contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
-                    itemStyle={{ color: '#FFFFFF' }}
+                    contentStyle={{ 
+                      backgroundColor: '#FFFFFF', 
+                      color: '#002A3A', 
+                      borderRadius: '12px', 
+                      border: '1px solid #BCD3DF', 
+                      boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      padding: '10px 14px'
+                    }}
+                    labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -416,7 +435,7 @@ export const TabDoadores: React.FC = () => {
                   const ticketLoja = loja.quantidadeCupons > 0 ? loja.creditoGerado / loja.quantidadeCupons : 0;
 
                   return (
-                    <tr key={idx} className="hover:bg-[#F8FCFD] transition-colors">
+                    <tr key={`${loja.nomeLoja}-${idx}`} className="hover:bg-[#F8FCFD] transition-colors">
                       <td className="py-3 px-4">
                         <div className="font-bold text-[#002A3A] flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#00E3E6]"></span>

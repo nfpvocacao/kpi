@@ -243,17 +243,23 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
                   tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
-                  formatter={(value: any, name: any) => [
-                    formatarMoeda(Number(value)),
-                    name === 'creditoAutomatica' ? 'Doação Automática' :
-                      name === 'creditoUrnas' ? 'Urnas / CADASTRO' : 'Doação Direta'
-                  ]}
+                  formatter={(value: any) => [formatarMoeda(Number(value))]}
                   labelFormatter={(label) => `Mês: ${label}`}
-                  contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
-                  itemStyle={{ color: '#FFFFFF' }}
+                  contentStyle={{ 
+                    backgroundColor: '#FFFFFF', 
+                    color: '#002A3A', 
+                    borderRadius: '12px', 
+                    border: '1px solid #BCD3DF', 
+                    boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    padding: '10px 14px'
+                  }}
+                  labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
                 />
                 <Area
                   type="monotone"
+                  name="Doação Automática"
                   dataKey="creditoAutomatica"
                   stackId="1"
                   stroke="#004A6D"
@@ -262,6 +268,7 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
                 />
                 <Area
                   type="monotone"
+                  name="Urnas / CADASTRO"
                   dataKey="creditoUrnas"
                   stackId="1"
                   stroke="#EDCD01"
@@ -270,6 +277,7 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
                 />
                 <Area
                   type="monotone"
+                  name="Doação Direta"
                   dataKey="creditoDireta"
                   stackId="1"
                   stroke="#00E3E6"
@@ -311,8 +319,17 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
                   </Pie>
                   <Tooltip
                     formatter={(value: any) => formatarMoeda(Number(value))}
-                    contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
-                    itemStyle={{ color: '#FFFFFF' }}
+                    contentStyle={{ 
+                      backgroundColor: '#FFFFFF', 
+                      color: '#002A3A', 
+                      borderRadius: '12px', 
+                      border: '1px solid #BCD3DF', 
+                      boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      padding: '10px 14px'
+                    }}
+                    labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -381,12 +398,22 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
                 tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`}
               />
               <Tooltip
-                formatter={(value: any) => [`${formatarNumero(Number(value))} cupons`, 'Volume Válido']}
-                contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
-                itemStyle={{ color: '#FFFFFF' }}
+                formatter={(value: any) => [`${formatarNumero(Number(value))} cupons`]}
+                contentStyle={{ 
+                  backgroundColor: '#FFFFFF', 
+                  color: '#002A3A', 
+                  borderRadius: '12px', 
+                  border: '1px solid #BCD3DF', 
+                  boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  padding: '10px 14px'
+                }}
+                labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
               />
               <Bar
                 dataKey="cuponsValidos"
+                name="Volume Válido"
                 fill="#004A6D"
                 radius={[6, 6, 0, 0]}
               />

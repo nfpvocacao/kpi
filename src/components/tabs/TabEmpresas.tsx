@@ -316,15 +316,23 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`} 
                 />
                 <Tooltip 
-                  formatter={(val: any, name: any) => [
-                    formatarMoeda(Number(val)), 
-                    name === 'creditoUrnas' ? 'Crédito Urnas (CADASTRO)' : 'Crédito Doações (PF)'
+                  formatter={(val: any) => [
+                    formatarMoeda(Number(val))
                   ]}
-                  contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
-                  itemStyle={{ color: '#FFFFFF' }}
+                  contentStyle={{ 
+                    backgroundColor: '#FFFFFF', 
+                    color: '#002A3A', 
+                    borderRadius: '12px', 
+                    border: '1px solid #BCD3DF', 
+                    boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    padding: '10px 14px'
+                  }}
+                  labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
                 />
-                <Bar dataKey="creditoUrnas" name="creditoUrnas" stackId="a" fill="#004A6D" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="creditoDoacoes" name="creditoDoacoes" stackId="a" fill="#00E3E6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="creditoUrnas" name="Crédito Urnas (CADASTRO)" stackId="a" fill="#004A6D" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="creditoDoacoes" name="Crédito Doações (PF)" stackId="a" fill="#00E3E6" radius={[4, 4, 0, 0]} />
               </BarChart>
             ) : activeChartMetric === 'doacoes' ? (
               <BarChart data={top15Doacoes} margin={{ top: 10, right: 10, left: 10, bottom: 50 }}>
@@ -342,11 +350,20 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`} 
                 />
                 <Tooltip 
-                  formatter={(val: any) => [formatarMoeda(Number(val)), 'Crédito Doações Pessoais']}
-                  contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
-                  itemStyle={{ color: '#FFFFFF' }}
+                  formatter={(val: any) => [formatarMoeda(Number(val))]}
+                  contentStyle={{ 
+                    backgroundColor: '#FFFFFF', 
+                    color: '#002A3A', 
+                    borderRadius: '12px', 
+                    border: '1px solid #BCD3DF', 
+                    boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    padding: '10px 14px'
+                  }}
+                  labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
                 />
-                <Bar dataKey="creditoDoacoes" fill="#00E3E6" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="creditoDoacoes" name="Crédito Doações Pessoais" fill="#00E3E6" radius={[4, 4, 0, 0]}>
                   {top15Doacoes.map((_, index) => (
                     <Cell key={`cell-doacao-${index}`} fill={index < 3 ? '#004A6D' : '#00E3E6'} />
                   ))}
@@ -368,11 +385,20 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`} 
                 />
                 <Tooltip 
-                  formatter={(val: any) => [`${formatarNumero(Number(val))} cupons`, 'Volume']}
-                  contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
-                  itemStyle={{ color: '#FFFFFF' }}
+                  formatter={(val: any) => [`${formatarNumero(Number(val))} cupons`]}
+                  contentStyle={{ 
+                    backgroundColor: '#FFFFFF', 
+                    color: '#002A3A', 
+                    borderRadius: '12px', 
+                    border: '1px solid #BCD3DF', 
+                    boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    padding: '10px 14px'
+                  }}
+                  labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
                 />
-                <Bar dataKey="cupons" fill="#EDCD01" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="cupons" name="Volume de Cupons" fill="#EDCD01" radius={[4, 4, 0, 0]}>
                   {top15Cupons.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={index < 3 ? '#004A6D' : '#00E3E6'} />
                   ))}

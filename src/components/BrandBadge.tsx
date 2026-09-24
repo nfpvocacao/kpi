@@ -26,9 +26,9 @@ export const BrandBadge: React.FC<BrandBadgeProps> = ({
   }[colorVariant];
 
   const sizeStyles = {
-    sm: 'text-xs px-2 py-0.5 rounded-sm',
-    md: 'text-sm px-2.5 py-1 rounded-sm',
-    lg: 'text-base px-3 py-1.5 rounded-sm'
+    sm: 'text-sm px-2 py-0.5 rounded-sm',
+    md: 'text-base px-2.5 py-1 rounded-sm',
+    lg: 'text-lg px-3 py-1.5 rounded-sm'
   }[size];
 
   return (

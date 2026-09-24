@@ -173,6 +173,8 @@ export default function App() {
         {activeTab === 'automaticos' && (
           <TabDoadoresAutomaticos
             metricasFiltradas={metricasFiltradas}
+            selectedYears={periodFilter.years}
+            selectedMonths={periodFilter.months}
           />
         )}
 

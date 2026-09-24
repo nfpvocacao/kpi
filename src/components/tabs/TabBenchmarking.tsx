@@ -447,11 +447,20 @@ export const TabBenchmarking: React.FC = () => {
                 tickFormatter={(val) => `R$ ${(val / 1000000).toFixed(1)}M`} 
               />
               <Tooltip 
-                formatter={(val: any) => [formatarMoeda(Number(val)), 'Créditos Semestre']}
-                contentStyle={{ backgroundColor: '#002A3A', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px' }}
-                itemStyle={{ color: '#FFFFFF' }}
+                formatter={(val: any) => [formatarMoeda(Number(val))]}
+                contentStyle={{ 
+                  backgroundColor: '#FFFFFF', 
+                  color: '#002A3A', 
+                  borderRadius: '12px', 
+                  border: '1px solid #BCD3DF', 
+                  boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  padding: '10px 14px'
+                }}
+                labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
               />
-              <Bar dataKey="credito" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="credito" name="Créditos Semestre" radius={[4, 4, 0, 0]}>
                 {chartRankingData.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
