@@ -179,7 +179,10 @@ export default function App() {
         )}
 
         {activeTab === 'benchmarking' && (
-          <TabBenchmarking />
+          <TabBenchmarking 
+            selectedYears={periodFilter.years}
+            selectedMonths={periodFilter.months}
+          />
         )}
       </main>
 
