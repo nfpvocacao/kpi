@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, RefreshCw, ShieldCheck, ChevronDown, Calendar, Filter } from 'lucide-react';
+import { Database, RefreshCw, ShieldCheck, ChevronDown, Calendar, Filter, Tv } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { DatabaseState, PeriodFilter } from '../types';
 import { PeriodSelectorPopover } from './PeriodSelectorPopover';
@@ -11,6 +11,7 @@ interface HeaderProps {
   onOpenDatabaseModal: () => void;
   onOpenRulesModal: () => void;
   onSyncDatabase: () => void;
+  onOpenTvMode?: () => void;
   isSyncing: boolean;
 }
 
@@ -21,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDatabaseModal,
   onOpenRulesModal,
   onSyncDatabase,
+  onOpenTvMode,
   isSyncing
 }) => {
   const [isPeriodPopoverOpen, setIsPeriodPopoverOpen] = useState(false);
@@ -36,7 +38,6 @@ export const Header: React.FC<HeaderProps> = ({
       : sortedYears.length > 3
       ? `${sortedYears[0]}-${sortedYears[sortedYears.length-1]}`
       : sortedYears.join('+');
-
 
     const monthNamesShort = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const monthNamesFull = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -115,7 +116,6 @@ export const Header: React.FC<HeaderProps> = ({
               <ChevronDown className="w-3.5 h-3.5 text-[#004A6D] ml-1 group-hover:translate-y-0.5 transition-transform" />
             </button>
 
-
             {/* Sync Button */}
             <button
               onClick={onSyncDatabase}
@@ -126,7 +126,17 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline">{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
             </button>
 
-
+            {/* TV Mode Button */}
+            {onOpenTvMode && (
+              <button
+                onClick={onOpenTvMode}
+                className="flex items-center gap-1.5 bg-[#002A3A] hover:bg-[#001D29] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs border border-[#00E3E6]/40 cursor-pointer group"
+                title="Abrir o Modo Apresentação TV com Carrossel Automático de Dashboards"
+              >
+                <Tv className="w-3.5 h-3.5 text-[#00E3E6] group-hover:scale-110 transition-transform" />
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse ml-0.5"></span>
+              </button>
+            )}
 
           </div>
 

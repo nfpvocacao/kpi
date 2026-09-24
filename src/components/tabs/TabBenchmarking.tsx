@@ -13,6 +13,7 @@ import {
   Sparkles,
   CheckCircle2,
   Loader2,
+  AlertCircle,
   GraduationCap
 } from 'lucide-react';
 import { 
@@ -41,13 +42,10 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
 }) => {
   const { data: supabaseBenchmarking, entities, isLoading } = useSupabaseBenchmarking(selectedYears, selectedMonths);
 
-  // Simulator State
+  // Simulator State (Exclusivo Doadores Plenos - PF / Doação Automática CPF)
   const [metaDoadoresPlenos, setMetaDoadoresPlenos] = useState<number>(1500);
   const [retornoMedioNota, setRetornoMedioNota] = useState<number>(3.25);
   const [cuponsMesDoador, setCuponsMesDoador] = useState<number>(18);
-  const [novasUrnasEmpresas, setNovasUrnasEmpresas] = useState<number>(25);
-  const [cuponsMesPorUrna, setCuponsMesPorUrna] = useState<number>(420);
-  const [ticketUrna, setTicketUrna] = useState<number>(1.75);
 
   // Ranking Explorer Filters (Interactive section)
   const [metricType, setMetricType] = useState<'CREDITO' | 'VOLUME'>('CREDITO');
@@ -205,14 +203,13 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
     return [vocacaoExplorerEntity, ...topSlice];
   }, [entidadesFiltradas, topNCount, vocacaoExplorerEntity]);
 
-  // Simulator Calculations
-  const faturamentoMensalDoadores = metaDoadoresPlenos * cuponsMesDoador * retornoMedioNota;
-  const faturamentoMensalUrnas = novasUrnasEmpresas * cuponsMesPorUrna * ticketUrna;
-  const faturamentoMensalTotalProjetado = faturamentoMensalDoadores + faturamentoMensalUrnas;
+  // Simulator Calculations (Doadores Plenos PF - Doação Automática via CPF)
+  const faturamentoMensalTotalProjetado = metaDoadoresPlenos * cuponsMesDoador * retornoMedioNota;
   const faturamentoAnualTotalProjetado = faturamentoMensalTotalProjetado * 12;
   const jovensImpactadosAno = Math.round(faturamentoAnualTotalProjetado / (450 * 12));
 
   // Top Macro KPIs based on TOTAL CREDITS in the period (Independent of local explorer filters)
+  const hasData = supabaseBenchmarking ? supabaseBenchmarking.hasData : true;
   const posCapitalMacro = supabaseBenchmarking?.rankingCapitalVocacaoTotal || 1;
   const posGeralMacro = supabaseBenchmarking?.rankingGeralVocacaoTotal || 1;
   const totalCreditoMacro = supabaseBenchmarking?.totalCreditoVocacaoPeriodo || 0;
@@ -237,10 +234,10 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
         <div className="flex items-center gap-2">
           <span className="px-3 py-1.5 rounded-xl bg-[#004A6D] text-white text-xs font-black flex items-center gap-1.5 shadow-2xs">
             <Trophy className="w-4 h-4 text-[#EDCD01]" />
-            <span>#{posCapitalMacro}º Capital SP</span>
+            <span>{hasData ? `#${posCapitalMacro}º Capital SP` : 'Capital: Sem dados'}</span>
           </span>
           <span className="px-3 py-1.5 rounded-xl bg-[#D9FBFF] text-[#004A6D] text-xs font-black border border-[#00E3E6]/50">
-            #{posGeralMacro}º Estado SP
+            {hasData ? `#${posGeralMacro}º Estado SP` : 'Estado: Sem dados'}
           </span>
         </div>
       </div>
@@ -250,8 +247,8 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
         <KPICard
           id="kpi-posicao-capital"
           title="Ranking SEFAZ (Capital SP)"
-          value={`#${posCapitalMacro}º Lugar`}
-          subValue="Consolidado Total do Período"
+          value={hasData ? `#${posCapitalMacro}º Lugar` : 'Sem dados'}
+          subValue={hasData ? "Consolidado Total do Período" : "Sem registros no filtro selecionado"}
           icon={Trophy}
           iconBgColor="bg-[#EDCD01]/30"
           iconColor="text-[#002A3A]"
@@ -261,8 +258,8 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
         <KPICard
           id="kpi-posicao-estado"
           title="Ranking Estadual (SP)"
-          value={`#${posGeralMacro}º Lugar`}
-          subValue={`Entre ${supabaseBenchmarking?.totalEntidadesPeriodo || processedRanking.length} entidades`}
+          value={hasData ? `#${posGeralMacro}º Lugar` : 'Sem dados'}
+          subValue={hasData ? `Entre ${supabaseBenchmarking?.totalEntidadesPeriodo || processedRanking.length} entidades` : "0 entidades no período"}
           icon={Award}
           iconBgColor="bg-[#D9FBFF]"
           iconColor="text-[#004A6D]"
@@ -272,8 +269,8 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
         <KPICard
           id="kpi-crescimento-vocacao"
           title="Crédito Acumulado Vocação"
-          value={formatarMoeda(totalCreditoMacro)}
-          subValue="Total repassado no período"
+          value={hasData ? formatarMoeda(totalCreditoMacro) : 'R$ 0,00'}
+          subValue={hasData ? "Total repassado no período" : "Nenhum repasse no filtro"}
           icon={TrendingUp}
           iconBgColor="bg-[#00E04B]/20"
           iconColor="text-[#006E24]"
@@ -292,7 +289,7 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
         />
       </div>
 
-      {/* SIMULADOR DE CAPTAÇÃO E PROSPECÇÃO INTERATIVO */}
+      {/* SIMULADOR DE CAPTAÇÃO DE DOADORES PLENOS (PF / DOAÇÃO AUTOMÁTICA CPF) */}
       <div className="bg-white border-2 border-[#004A6D] rounded-2xl p-6 shadow-sm space-y-6">
         
         {/* Simulator Header */}
@@ -303,22 +300,19 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
                 <Sliders className="w-4 h-4 text-[#00E3E6]" />
               </span>
               <h2 className="text-xl font-black text-[#002A3A] tracking-tight font-['Raleway',sans-serif]">
-                Simulador de Captação & Prospecção NFP
+                Simulador de Captação — Doadores Plenos (PF / Doação Automática CPF)
               </h2>
             </div>
             <p className="text-xs text-[#004A6D]/80 mt-1">
-              Ajuste as variáveis de expansão (doadores plenos, ticket médio e urnas) para simular o faturamento mensal e anual estimado.
+              Simule a receita mensal e anual projetada com base no volume de doadores plenos cadastrados e retorno médio das notas da SEFAZ.
             </p>
           </div>
 
           <button
             onClick={() => {
               setMetaDoadoresPlenos(1500);
-              setRetornoMedioNota(3.25);
               setCuponsMesDoador(18);
-              setNovasUrnasEmpresas(25);
-              setCuponsMesPorUrna(420);
-              setTicketUrna(1.75);
+              setRetornoMedioNota(3.25);
             }}
             className="text-xs font-bold text-[#004A6D] hover:underline self-start sm:self-auto cursor-pointer"
           >
@@ -326,119 +320,103 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
           </button>
         </div>
 
-        {/* Sliders Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Simulator Input Controls Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Column 1: Doadores Plenos */}
+          {/* Card 1: Meta de Doadores Cadastrados */}
           <div className="bg-[#F4F9FA] p-5 rounded-xl border border-[#BCD3DF] space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-black text-[#002A3A] flex items-center gap-2 font-['Raleway',sans-serif]">
+              <span className="text-xs font-black text-[#002A3A] flex items-center gap-1.5 font-['Raleway',sans-serif]">
                 <Users className="w-4 h-4 text-[#004A6D]" />
-                Doadores Plenos (Pessoas Físicas)
+                Doadores Plenos (CPF)
               </span>
               <span className="bg-[#004A6D] text-[#00E3E6] px-2.5 py-1 rounded-lg text-xs font-black">
-                {formatarNumero(metaDoadoresPlenos)} doadores
+                {formatarNumero(metaDoadoresPlenos)}
               </span>
             </div>
 
             <div>
               <div className="flex justify-between text-[11px] text-[#004A6D] font-bold mb-1">
-                <span>Meta de Doadores Cadastrados</span>
-                <span>{metaDoadoresPlenos}</span>
+                <span>Meta de Doadores Ativos</span>
+                <span>{formatarNumero(metaDoadoresPlenos)} doadores</span>
               </div>
               <input 
                 type="range" 
                 min="100" 
-                max="5000" 
-                step="50"
+                max="10000" 
+                step="100"
                 value={metaDoadoresPlenos}
                 onChange={(e) => setMetaDoadoresPlenos(Number(e.target.value))}
                 className="w-full accent-[#004A6D] cursor-pointer"
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <div>
-                <label className="text-[11px] text-[#004A6D] font-bold block mb-1">Cupons/Mês por Doador</label>
-                <input 
-                  type="number" 
-                  value={cuponsMesDoador}
-                  onChange={(e) => setCuponsMesDoador(Number(e.target.value))}
-                  className="w-full p-2 bg-white border border-[#BCD3DF] rounded-lg text-xs font-bold text-[#002A3A]"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-[#004A6D] font-bold block mb-1">Retorno Médio / Nota (R$)</label>
-                <input 
-                  type="number" 
-                  step="0.1"
-                  value={retornoMedioNota}
-                  onChange={(e) => setRetornoMedioNota(Number(e.target.value))}
-                  className="w-full p-2 bg-white border border-[#BCD3DF] rounded-lg text-xs font-bold text-[#002A3A]"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-[#BCD3DF]/60 flex justify-between items-center text-xs">
-              <span className="text-[#004A6D] font-medium">Subtotal Mensal Doadores:</span>
-              <span className="font-black text-[#002A3A] text-sm">{formatarMoeda(faturamentoMensalDoadores)}</span>
-            </div>
+            <p className="text-[11px] text-[#004A6D]/70 italic">
+              Pessoas físicas que cadastraram o CPF no app Nota Fiscal Paulista para doação automática.
+            </p>
           </div>
 
-          {/* Column 2: Urnas & Parceiros Comerciais */}
+          {/* Card 2: Frequência Mensal de Cupons */}
           <div className="bg-[#F4F9FA] p-5 rounded-xl border border-[#BCD3DF] space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-black text-[#002A3A] flex items-center gap-2 font-['Raleway',sans-serif]">
-                <Building className="w-4 h-4 text-[#004A6D]" />
-                Urnas & Empresas Parceiras
+              <span className="text-xs font-black text-[#002A3A] flex items-center gap-1.5 font-['Raleway',sans-serif]">
+                <TrendingUp className="w-4 h-4 text-[#004A6D]" />
+                Frequência de Compras
               </span>
               <span className="bg-[#004A6D] text-[#00E3E6] px-2.5 py-1 rounded-lg text-xs font-black">
-                {novasUrnasEmpresas} Urnas / Pontos
+                {cuponsMesDoador} cupons/mês
               </span>
             </div>
 
             <div>
               <div className="flex justify-between text-[11px] text-[#004A6D] font-bold mb-1">
-                <span>Novos Pontos de Coleta Ativos</span>
-                <span>{novasUrnasEmpresas} urnas</span>
+                <span>Notas por Doador / Mês</span>
+                <span>{cuponsMesDoador} notas</span>
               </div>
               <input 
                 type="range" 
                 min="5" 
-                max="100" 
-                step="5"
-                value={novasUrnasEmpresas}
-                onChange={(e) => setNovasUrnasEmpresas(Number(e.target.value))}
+                max="50" 
+                step="1"
+                value={cuponsMesDoador}
+                onChange={(e) => setCuponsMesDoador(Number(e.target.value))}
                 className="w-full accent-[#004A6D] cursor-pointer"
               />
             </div>
+            <p className="text-[11px] text-[#004A6D]/70 italic">
+              Média estimada de notas fiscais geradas com CPF por doador a cada mês no comércio.
+            </p>
+          </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <div>
-                <label className="text-[11px] text-[#004A6D] font-bold block mb-1">Cupons/Mês por Urna</label>
-                <input 
-                  type="number" 
-                  value={cuponsMesPorUrna}
-                  onChange={(e) => setCuponsMesPorUrna(Number(e.target.value))}
-                  className="w-full p-2 bg-white border border-[#BCD3DF] rounded-lg text-xs font-bold text-[#002A3A]"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-[#004A6D] font-bold block mb-1">Ticket Médio Urna (R$)</label>
-                <input 
-                  type="number" 
-                  step="0.1"
-                  value={ticketUrna}
-                  onChange={(e) => setTicketUrna(Number(e.target.value))}
-                  className="w-full p-2 bg-[#FFFFFF] border border-[#BCD3DF] rounded-lg text-xs font-bold text-[#002A3A]"
-                />
-              </div>
+          {/* Card 3: Retorno Médio por Nota Fiscal */}
+          <div className="bg-[#F4F9FA] p-5 rounded-xl border border-[#BCD3DF] space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-[#002A3A] flex items-center gap-1.5 font-['Raleway',sans-serif]">
+                <DollarSign className="w-4 h-4 text-[#004A6D]" />
+                Retorno Médio / Nota
+              </span>
+              <span className="bg-[#004A6D] text-[#00E3E6] px-2.5 py-1 rounded-lg text-xs font-black">
+                {formatarMoeda(retornoMedioNota)}
+              </span>
             </div>
 
-            <div className="pt-2 border-t border-[#BCD3DF]/60 flex justify-between items-center text-xs">
-              <span className="text-[#004A6D] font-medium">Subtotal Mensal Urnas:</span>
-              <span className="font-black text-[#002A3A] text-sm">{formatarMoeda(faturamentoMensalUrnas)}</span>
+            <div>
+              <div className="flex justify-between text-[11px] text-[#004A6D] font-bold mb-1">
+                <span>Valor Médio Repassado SEFAZ</span>
+                <span>{formatarMoeda(retornoMedioNota)}/nota</span>
+              </div>
+              <input 
+                type="range" 
+                min="0.5" 
+                max="10.0" 
+                step="0.25"
+                value={retornoMedioNota}
+                onChange={(e) => setRetornoMedioNota(Number(e.target.value))}
+                className="w-full accent-[#004A6D] cursor-pointer"
+              />
             </div>
+            <p className="text-[11px] text-[#004A6D]/70 italic">
+              Valor histórico médio repassado pela SEFAZ por cada cupom fiscal doado.
+            </p>
           </div>
 
         </div>
@@ -454,7 +432,7 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
                 </h3>
               </div>
               <p className="text-xs text-[#BCD3DF] mt-0.5">
-                Impacto orçamentário combinado dos novos doadores plenos + urnas comerciais.
+                Impacto orçamentário projetado da base de doadores plenos (PF / Doação Automática CPF).
               </p>
             </div>
 
@@ -504,6 +482,11 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-[#004A6D]" />
                     Atualizando...
                   </span>
+                ) : !hasData ? (
+                  <span className="flex items-center gap-1.5 text-xs font-extrabold text-[#D9381E] bg-[#FFEBEB] px-2.5 py-1 rounded-full border border-[#FFB8B8] shadow-2xs">
+                    <AlertCircle className="w-3.5 h-3.5 text-[#D9381E]" />
+                    Sem dados para o filtro
+                  </span>
                 ) : (
                   <span className="flex items-center gap-1.5 text-xs font-extrabold text-[#006E24] bg-[#00E04B]/15 px-2.5 py-1 rounded-full border border-[#00E04B]/40 shadow-2xs">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#006E24]" />
@@ -528,6 +511,15 @@ export const TabBenchmarking: React.FC<TabBenchmarkingProps> = ({
               />
             </div>
           </div>
+
+          {!hasData && !isLoading && (
+            <div className="p-4 bg-[#FFF9E6] border border-[#FFE599] rounded-xl flex items-center gap-3 text-xs font-bold text-[#8A6D0B]">
+              <AlertCircle className="w-5 h-5 text-[#D97706] shrink-0" />
+              <span>
+                Não foi possível apurar o ranking para os anos/meses selecionados pois não existem registros da SEFAZ no banco de dados para este filtro. Por favor, selecione outro período no filtro de cabeçalho.
+              </span>
+            </div>
+          )}
 
           {/* Filter Bar 1: Metric Type + Sub-filter for 4 Types */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#F4F9FA] p-3.5 rounded-xl border border-[#BCD3DF]">

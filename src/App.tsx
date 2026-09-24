@@ -13,6 +13,7 @@ import { TabDoadoresAutomaticos } from './components/tabs/TabDoadoresAutomaticos
 import { TabBenchmarking } from './components/tabs/TabBenchmarking';
 import { DatabaseStatusModal } from './components/DatabaseStatusModal';
 import { BusinessRulesModal } from './components/BusinessRulesModal';
+import { TvModeModal } from './components/TvModeModal';
 import { BrandLogo } from './components/BrandLogo';
 import { BrandBadge } from './components/BrandBadge';
 import { 
@@ -39,6 +40,7 @@ export default function App() {
   });
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
+  const [isTvModeOpen, setIsTvModeOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Filter metrics based on selected period filter (supports mixed years & months AND exact date ranges)
@@ -134,6 +136,7 @@ export default function App() {
         onOpenDatabaseModal={() => setIsDatabaseModalOpen(true)}
         onOpenRulesModal={() => setIsRulesModalOpen(true)}
         onSyncDatabase={handleSync}
+        onOpenTvMode={() => setIsTvModeOpen(true)}
         isSyncing={isSyncing}
       />
 
@@ -214,6 +217,17 @@ export default function App() {
 
         </div>
       </footer>
+
+      {/* Fullscreen TV Mode Carousel Overlay */}
+      <TvModeModal
+        isOpen={isTvModeOpen}
+        onClose={() => setIsTvModeOpen(false)}
+        ultimaSincronizacao={databaseState.ultimaSincronizacao}
+        periodFilter={periodFilter}
+        metricasFiltradas={metricasFiltradas}
+        metricasAnterior={metricasAnterior}
+        periodoLabel={periodoLabel}
+      />
 
     </div>
   );

@@ -56,7 +56,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
       label: 'Benchmarking',
       fullTitle: 'Benchmarking de Captação & Prospecção',
       icon: Target,
-      badgeText: '#6',
+      badgeText: null,
       badgeColor: 'bg-[#E03F2A] text-white'
     }
   ];

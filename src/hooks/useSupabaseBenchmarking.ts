@@ -24,6 +24,8 @@ export interface EntidadeBenchmarking {
 }
 
 export interface BenchmarkingMetrics {
+  hasData: boolean;
+  totalLinhasPeriodo: number;
   rankingGeralVocacaoTotal: number;
   rankingCapitalVocacaoTotal: number;
   totalCreditoVocacaoPeriodo: number;
@@ -245,12 +247,15 @@ export function useSupabaseBenchmarking(selectedYears: number[] = [2025], select
         });
 
         const vocacaoObj = entityList.find(e => e.isVocacao);
+        const hasData = allRows.length > 0;
 
         setData({
+          hasData,
+          totalLinhasPeriodo: allRows.length,
           rankingGeralVocacaoTotal: indexVocacaoState >= 0 ? indexVocacaoState + 1 : 1,
           rankingCapitalVocacaoTotal: vocacaoCapitalRank,
           totalCreditoVocacaoPeriodo: vocacaoObj ? vocacaoObj.credTotal : 0,
-          totalEntidadesPeriodo: entityList.length,
+          totalEntidadesPeriodo: hasData ? entityList.length : 0,
           entities: entityList
         });
       } catch (err: any) {
