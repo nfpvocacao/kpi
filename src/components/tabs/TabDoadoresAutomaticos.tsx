@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { 
   Users, 
   UserCheck, 
@@ -23,6 +23,7 @@ import {
 } from 'recharts';
 import { KPICard } from '../KPICard';
 import { BrandBadge } from '../BrandBadge';
+import { CopyChartButton } from '../CopyChartButton';
 import { MetricaMensal } from '../../types';
 import { formatarMoeda, formatarNumero, formatarPorcentagem } from '../../data/mockDatabase';
 import { useSupabaseMapaInterno, MapaInternoRow } from '../../hooks/useSupabaseMapaInterno';
@@ -38,6 +39,8 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
   selectedYears = [],
   selectedMonths = []
 }) => {
+  const chartDoadoresRef = useRef<HTMLDivElement>(null);
+  const chartTicketRef = useRef<HTMLDivElement>(null);
   const { data: mapaInterno, isLoading, error } = useSupabaseMapaInterno();
 
   // Filtrar dados da vocacao_mapa_interno de acordo com selectedYears e selectedMonths do filtro principal
@@ -169,7 +172,7 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
       </div>
 
       {/* Chart 1: Crescimento Histórico da Base de Doadores Automáticos (Plenos vs Restritos) */}
-      <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
+      <div ref={chartDoadoresRef} className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#F0F5F8]">
           <div>
             <h2 className="text-base font-bold text-[#002A3A] flex items-center gap-2">
@@ -181,13 +184,16 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-semibold">
-            <span className="flex items-center gap-1.5 text-[#004A6D]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#004A6D]"></span> Doadores Plenos
-            </span>
-            <span className="flex items-center gap-1.5 text-[#004A6D]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#00E3E6]"></span> Doadores Restritos
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4 text-xs font-semibold">
+              <span className="flex items-center gap-1.5 text-[#004A6D]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#004A6D]"></span> Doadores Plenos
+              </span>
+              <span className="flex items-center gap-1.5 text-[#004A6D]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#00E3E6]"></span> Doadores Restritos
+              </span>
+            </div>
+            <CopyChartButton chartRef={chartDoadoresRef} title="Evolucao_Doadores_Automaticos" />
           </div>
         </div>
 
@@ -254,7 +260,7 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
       </div>
 
       {/* Chart 2: Evolução do Ticket Médio Automatizado */}
-      <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
+      <div ref={chartTicketRef} className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#F0F5F8]">
           <div>
             <h2 className="text-base font-bold text-[#002A3A] flex items-center gap-2">
@@ -266,10 +272,13 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-semibold">
-            <span className="flex items-center gap-1.5 text-[#004A6D]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#004A6D]"></span> Ticket Médio / Cupom (AUT)
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4 text-xs font-semibold">
+              <span className="flex items-center gap-1.5 text-[#004A6D]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#004A6D]"></span> Ticket Médio / Cupom (AUT)
+              </span>
+            </div>
+            <CopyChartButton chartRef={chartTicketRef} title="Evolucao_Ticket_Medio" />
           </div>
         </div>
 

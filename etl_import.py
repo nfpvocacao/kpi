@@ -793,6 +793,14 @@ def main():
         cursor.execute("SELECT COUNT(*) FROM vocacao_doador_estabelecimento_mensal")
         print(f"Total de registros Doador x Estabelecimento: {cursor.fetchone()[0]}")
         
+        # Sincronizar dados do Mapa Interno e Consolidado para o Supabase
+        try:
+            from scripts.push_mapa_to_supabase import sync_vocacao_consolidado, sync_vocacao_mapa
+            sync_vocacao_consolidado()
+            sync_vocacao_mapa()
+        except Exception as e_sp:
+            print(f"Aviso na sincronização do Supabase: {e_sp}")
+
     finally:
         conn.close()
 

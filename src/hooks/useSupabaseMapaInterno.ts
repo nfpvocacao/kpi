@@ -15,6 +15,14 @@ export interface MapaInternoRow {
   ticket_medio_geral?: number;
   total_credito_auto?: number;
   total_cupons_auto?: number;
+  aut_cred?: number;
+  cad_cred?: number;
+  doa_cred?: number;
+  cons_cred?: number;
+  aut_cup?: number;
+  cad_cup?: number;
+  doa_cup?: number;
+  cons_cup?: number;
   raw?: any;
 }
 
@@ -93,6 +101,14 @@ export function useSupabaseMapaInterno() {
               ticket_medio_geral: Number((r.ticket_medio_geral || ticketAuto).toFixed(2)),
               total_credito_auto: Number(totalCreditoAuto.toFixed(2)),
               total_cupons_auto: totalCuponsAuto,
+              aut_cred: Number(r.aut_cred || 0),
+              cad_cred: Number(r.cad_cred || 0),
+              doa_cred: Number(r.doa_cred || 0),
+              cons_cred: Number(r.cons_cred || 0),
+              aut_cup: Number(r.aut_cup || 0),
+              cad_cup: Number(r.cad_cup || 0),
+              doa_cup: Number(r.doa_cup || 0),
+              cons_cup: Number(r.cons_cup || 0),
               raw: r
             };
           });

@@ -14,7 +14,8 @@ import {
   Building2,
   HeartHandshake,
   Users,
-  Target
+  Target,
+  Presentation
 } from 'lucide-react';
 import { TabId } from './NavigationTabs';
 import { TabDesempenho } from './tabs/TabDesempenho';
@@ -22,6 +23,7 @@ import { TabEmpresas } from './tabs/TabEmpresas';
 import { TabDoadores } from './tabs/TabDoadores';
 import { TabDoadoresAutomaticos } from './tabs/TabDoadoresAutomaticos';
 import { TabBenchmarking } from './tabs/TabBenchmarking';
+import { TabApresentacao } from './tabs/TabApresentacao';
 import { PeriodFilter, MetricaMensal } from '../types';
 
 interface TvModeModalProps {
@@ -64,6 +66,12 @@ const TAB_LIST: { id: TabId; label: string; fullTitle: string; icon: React.Eleme
     label: 'Benchmarking SEFAZ',
     fullTitle: 'Benchmarking SEFAZ & Simulador',
     icon: Target
+  },
+  {
+    id: 'apresentacao',
+    label: 'Apresentação',
+    fullTitle: 'Painel de Apresentação Institucional',
+    icon: Presentation
   }
 ];
 
@@ -341,6 +349,14 @@ export const TvModeModal: React.FC<TvModeModalProps> = ({
 
         {currentIndex === 4 && (
           <TabBenchmarking 
+            selectedYears={periodFilter.years}
+            selectedMonths={periodFilter.months}
+          />
+        )}
+
+        {currentIndex === 5 && (
+          <TabApresentacao
+            metricasFiltradas={metricasFiltradas}
             selectedYears={periodFilter.years}
             selectedMonths={periodFilter.months}
           />

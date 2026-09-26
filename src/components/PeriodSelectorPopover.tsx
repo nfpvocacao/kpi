@@ -21,7 +21,7 @@ interface PeriodSelectorPopoverProps {
   onClose: () => void;
 }
 
-const ALL_YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009];
+const ALL_YEARS = [2027, 2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009];
 const MONTH_NAMES_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const MONTH_NAMES_FULL = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
@@ -156,7 +156,7 @@ export const PeriodSelectorPopover: React.FC<PeriodSelectorPopoverProps> = ({
 
   // Label Formatter for Combobox Display
   const getYearsSummaryLabel = () => {
-    if (tempYears.length === ALL_YEARS.length) return 'Todos os Anos (2009 a 2026)';
+    if (tempYears.length === ALL_YEARS.length) return 'Todos os Anos (2009 a 2027)';
     if (tempYears.length === 1) return `Ano ${tempYears[0]}`;
     if (tempYears.length === 0) return 'Selecione pelo menos 1 ano';
     const sorted = [...tempYears].sort((a, b) => b - a);

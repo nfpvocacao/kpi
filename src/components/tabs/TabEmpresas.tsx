@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { 
   Building2, 
   Search, 
@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 import { KPICard } from '../KPICard';
 import { BrandBadge } from '../BrandBadge';
+import { CopyChartButton } from '../CopyChartButton';
 import { EmpresaParceira } from '../../types';
 import { EMPRESAS_PARCEIRAS as FALLBACK_EMPRESAS, formatarMoeda, formatarNumero } from '../../data/mockDatabase';
 import { useSupabaseEmpresas } from '../../hooks/useSupabaseEmpresas';
@@ -55,12 +56,14 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
     downloadFullCSV,
   } = useSupabaseEmpresas({
     selectedYears,
-    selectedMonths: selectedMonth ? [selectedMonth] : [], // Se selectedMonth for nulo, traz todo o mês do banco (7.505 registros)
+    selectedMonths: selectedMonth !== null ? [selectedMonth] : selectedMonths,
     searchTerm,
     limit: 100,
   });
 
   const empresasLista = topEmpresas;
+
+  const chartRef = useRef<HTMLDivElement>(null);
 
   // Filter companies client-side for category pills or sort
   const empresasFiltradas = useMemo(() => {
@@ -244,7 +247,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
       </div>
 
       {/* Top 15 Charts Section */}
-      <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
+      <div ref={chartRef} className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#F0F5F8]">
           <div>
             <h2 className="text-base font-bold text-[#002A3A] flex items-center gap-2">
@@ -264,37 +267,40 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-1 bg-[#F4F9FA] p-1 rounded-xl border border-[#BCD3DF]/60 self-start sm:self-auto">
-            <button
-              onClick={() => setActiveChartMetric('credito')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeChartMetric === 'credito'
-                  ? 'bg-[#004A6D] text-white shadow-2xs'
-                  : 'text-[#004A6D] hover:bg-[#D9FBFF]'
-              }`}
-            >
-              Por Crédito Total (R$)
-            </button>
-            <button
-              onClick={() => setActiveChartMetric('doacoes')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeChartMetric === 'doacoes'
-                  ? 'bg-[#00E3E6] text-[#002A3A] shadow-2xs'
-                  : 'text-[#004A6D] hover:bg-[#D9FBFF]'
-              }`}
-            >
-              Por Doações (R$)
-            </button>
-            <button
-              onClick={() => setActiveChartMetric('cupons')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeChartMetric === 'cupons'
-                  ? 'bg-[#004A6D] text-white shadow-2xs'
-                  : 'text-[#004A6D] hover:bg-[#D9FBFF]'
-              }`}
-            >
-              Por Volume
-            </button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-[#F4F9FA] p-1 rounded-xl border border-[#BCD3DF]/60 self-start sm:self-auto">
+              <button
+                onClick={() => setActiveChartMetric('credito')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeChartMetric === 'credito'
+                    ? 'bg-[#004A6D] text-white shadow-2xs'
+                    : 'text-[#004A6D] hover:bg-[#D9FBFF]'
+                }`}
+              >
+                Por Crédito Total (R$)
+              </button>
+              <button
+                onClick={() => setActiveChartMetric('doacoes')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeChartMetric === 'doacoes'
+                    ? 'bg-[#00E3E6] text-[#002A3A] shadow-2xs'
+                    : 'text-[#004A6D] hover:bg-[#D9FBFF]'
+                }`}
+              >
+                Por Doações (R$)
+              </button>
+              <button
+                onClick={() => setActiveChartMetric('cupons')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeChartMetric === 'cupons'
+                    ? 'bg-[#004A6D] text-white shadow-2xs'
+                    : 'text-[#004A6D] hover:bg-[#D9FBFF]'
+                }`}
+              >
+                Por Volume
+              </button>
+            </div>
+            <CopyChartButton chartRef={chartRef} title="Top15_Empresas_Parceiras" />
           </div>
         </div>
 

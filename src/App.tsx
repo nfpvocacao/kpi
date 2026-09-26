@@ -11,6 +11,7 @@ import { TabEmpresas } from './components/tabs/TabEmpresas';
 import { TabDoadores } from './components/tabs/TabDoadores';
 import { TabDoadoresAutomaticos } from './components/tabs/TabDoadoresAutomaticos';
 import { TabBenchmarking } from './components/tabs/TabBenchmarking';
+import { TabApresentacao } from './components/tabs/TabApresentacao';
 import { DatabaseStatusModal } from './components/DatabaseStatusModal';
 import { BusinessRulesModal } from './components/BusinessRulesModal';
 import { TvModeModal } from './components/TvModeModal';
@@ -71,7 +72,7 @@ export default function App() {
       const [endY, endM] = periodFilter.endMonthYear.split('-');
       label = `Intervalo: ${monthNames[parseInt(startM, 10)-1]}/${startY} a ${monthNames[parseInt(endM, 10)-1]}/${endY}`;
     } else if (periodFilter.preset === 'ALL') {
-      label = 'Histórico Completo (2009 a 2026)';
+      label = 'Histórico Completo (2009 a 2027)';
     } else if (periodFilter.preset === 'LAST_12') {
       label = 'Últimos 12 Meses';
     } else {
@@ -183,6 +184,14 @@ export default function App() {
 
         {activeTab === 'benchmarking' && (
           <TabBenchmarking 
+            selectedYears={periodFilter.years}
+            selectedMonths={periodFilter.months}
+          />
+        )}
+
+        {activeTab === 'apresentacao' && (
+          <TabApresentacao
+            metricasFiltradas={metricasFiltradas}
             selectedYears={periodFilter.years}
             selectedMonths={periodFilter.months}
           />

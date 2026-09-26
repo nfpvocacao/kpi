@@ -10,8 +10,7 @@ venv/
 planilhas/
 *.pdf
 "[VOCAÇÃO] Manual de Marca.pdf"
-
-
-
-
+.vercel
+*.db
+scripts/
 

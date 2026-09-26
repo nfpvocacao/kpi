@@ -70,8 +70,12 @@ export interface MetricaMensal {
   creditoAutomatica: number;
   creditoDireta: number;
   creditoUrnas: number;
+  creditoDoacao?: number;
+  creditoConsumo?: number;
   cuponsProcessados: number;
   cuponsValidos: number;
+  cuponsDoacao?: number;
+  cuponsConsumo?: number;
   ticketMedioGeral: number;
   ticketMedioAutomatica: number;
   ticketMedioUrnas: number;

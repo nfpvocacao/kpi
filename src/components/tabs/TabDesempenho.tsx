@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   DollarSign,
   Receipt,
@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 import { KPICard } from '../KPICard';
 import { BrandBadge } from '../BrandBadge';
+import { CopyChartButton } from '../CopyChartButton';
 import { MetricaMensal } from '../../types';
 import { formatarMoeda, formatarNumero, formatarPorcentagem } from '../../data/mockDatabase';
 
@@ -41,6 +42,10 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
   periodoLabel,
   metricasAnterior
 }) => {
+  const chartEvolucaoRef = useRef<HTMLDivElement>(null);
+  const chartComposicaoRef = useRef<HTMLDivElement>(null);
+  const chartVolumeRef = useRef<HTMLDivElement>(null);
+
   // Aggregate current period
   const totalCreditos = metricasFiltradas.reduce((acc, m) => acc + m.creditoTotal, 0);
   const totalCupons = metricasFiltradas.reduce((acc, m) => acc + m.cuponsValidos, 0);
@@ -188,7 +193,7 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Stacked Area Chart: Evolução Mensal de Créditos por Categoria */}
-        <div className="lg:col-span-2 bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
+        <div ref={chartEvolucaoRef} className="lg:col-span-2 bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-[#F0F5F8]">
             <div>
               <h2 className="text-base font-bold text-[#002A3A] flex items-center gap-2">
@@ -199,16 +204,19 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
                 Segmentação entre Doação Automática, Doação Direta e Urnas/Parceiras (R$)
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs font-semibold">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#004A6D]"></span> Automática
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#EDCD01]"></span> Urnas (Cadastro)
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#00E3E6]"></span> Direta
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-xs font-semibold">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#004A6D]"></span> Automática
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#EDCD01]"></span> Urnas (Cadastro)
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#00E3E6]"></span> Direta
+                </span>
+              </div>
+              <CopyChartButton chartRef={chartEvolucaoRef} title="Evolucao_Mensal_Creditos" />
             </div>
           </div>
 
@@ -290,15 +298,18 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
         </div>
 
         {/* Donut Chart: Composição de Receitas */}
-        <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+        <div ref={chartComposicaoRef} className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
           <div>
-            <div className="mb-2 pb-3 border-b border-[#F0F5F8]">
-              <h2 className="text-base font-bold text-[#002A3A]">
-                Composição de Receitas
-              </h2>
-              <p className="text-xs text-[#004A6D]/70">
-                Divisão proporcional de receita por modalidade
-              </p>
+            <div className="flex items-center justify-between gap-2 mb-2 pb-3 border-b border-[#F0F5F8]">
+              <div>
+                <h2 className="text-base font-bold text-[#002A3A]">
+                  Composição de Receitas
+                </h2>
+                <p className="text-xs text-[#004A6D]/70">
+                  Divisão proporcional de receita por modalidade
+                </p>
+              </div>
+              <CopyChartButton chartRef={chartComposicaoRef} title="Composicao_Receitas" />
             </div>
 
             <div className="h-52 w-full relative">
@@ -365,8 +376,8 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
       </div>
 
       {/* Secondary Row: Volume de Cupons Capturados (Bar) */}
-      <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
-        <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-[#F0F5F8]">
+      <div ref={chartVolumeRef} className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-[#F0F5F8]">
           <div>
             <h2 className="text-base font-bold text-[#002A3A] flex items-center gap-2">
               <Receipt className="w-4 h-4 text-[#00E3E6]" />
@@ -376,9 +387,12 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
               Quantidade de documentos fiscais apurados com sucesso pela SEFAZ
             </p>
           </div>
-          <span className="text-xs font-bold text-[#004A6D] bg-[#D9FBFF] px-2.5 py-1 rounded-full border border-[#00E3E6]/40">
-            Média: {formatarNumero(Math.round(totalCupons / (metricasFiltradas.length || 1)))} / mês
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold text-[#004A6D] bg-[#D9FBFF] px-2.5 py-1 rounded-full border border-[#00E3E6]/40">
+              Média: {formatarNumero(Math.round(totalCupons / (metricasFiltradas.length || 1)))} / mês
+            </span>
+            <CopyChartButton chartRef={chartVolumeRef} title="Volume_Cupons_Validos" />
+          </div>
         </div>
 
         <div className="h-64 w-full">

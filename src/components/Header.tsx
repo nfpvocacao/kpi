@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   // Helper to format button label
   const getPeriodLabel = (filter: PeriodFilter) => {
-    if (filter.preset === 'ALL') return 'Todo o Histórico (2020-2026)';
+    if (filter.preset === 'ALL') return 'Todo o Histórico (2020-2027)';
     if (filter.preset === 'LAST_12') return 'Últimos 12 Meses';
 
     const sortedYears = [...filter.years].sort((a,b) => a-b);

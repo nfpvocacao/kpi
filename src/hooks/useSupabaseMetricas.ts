@@ -39,11 +39,15 @@ export function useSupabaseMetricas() {
             const credTotal = Number(r.tt_creditos || 0);
             const credAuto = Number(r.aut_cred || 0);
             const credUrnas = Number(r.cad_cred || 0);
-            const credDireta = Number(r.doa_cred || 0) + Number(r.cons_cred || 0);
+            const credDoacao = Number(r.doa_cred || 0);
+            const credConsumo = Number(r.cons_cred || 0);
+            const credDireta = credDoacao + credConsumo;
 
             const cuponsTt = Number(r.tt_cupons || 0);
             const cuponsAuto = Number(r.aut_cup || 0);
             const cuponsUrnas = Number(r.cad_cup || 0);
+            const cuponsDoacao = Number(r.doa_cup || 0);
+            const cuponsConsumo = Number(r.cons_cup || 0);
 
             return {
               mes: `${ano}-${mNum}`,
@@ -53,8 +57,12 @@ export function useSupabaseMetricas() {
               creditoAutomatica: credAuto,
               creditoDireta: credDireta,
               creditoUrnas: credUrnas,
+              creditoDoacao: credDoacao,
+              creditoConsumo: credConsumo,
               cuponsProcessados: cuponsTt,
               cuponsValidos: cuponsTt,
+              cuponsDoacao: cuponsDoacao,
+              cuponsConsumo: cuponsConsumo,
               ticketMedioGeral: cuponsTt > 0 ? Number((credTotal / cuponsTt).toFixed(2)) : 0,
               ticketMedioAutomatica: cuponsAuto > 0 ? Number((credAuto / cuponsAuto).toFixed(2)) : 0,
               ticketMedioUrnas: cuponsUrnas > 0 ? Number((credUrnas / cuponsUrnas).toFixed(2)) : 0,
