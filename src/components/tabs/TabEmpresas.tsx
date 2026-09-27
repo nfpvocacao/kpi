@@ -241,42 +241,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Vendedor / Origem filter dropdown */}
-          <div className="flex items-center gap-1.5 bg-white border border-[#BCD3DF] rounded-xl px-3 py-1.5 shadow-2xs">
-            <Store className="w-4 h-4 text-[#004A6D]" />
-            <select
-              value={selectedVendedorFilter}
-              onChange={(e) => setSelectedVendedorFilter(e.target.value)}
-              className="bg-transparent text-xs font-bold text-[#004A6D] focus:outline-none cursor-pointer"
-            >
-              <option value="TODOS">Todas as Origens (Cadastradas + Espontâneas)</option>
-              <option value="COM_VENDEDOR">💼 Apenas Lojas Parceiras (Com Vendedor Alocado)</option>
-              <option value="ESPONTANEAS">🌱 Apenas Doações Espontâneas (Sem Vendedor)</option>
-              {vendedoresDisponiveis.map(vId => (
-                <option key={vId} value={`VENDEDOR_${vId}`}>
-                  👤 Vendedor #{vId}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Mês filter dropdown */}
-          <div className="flex items-center gap-1.5 bg-white border border-[#BCD3DF] rounded-xl px-3 py-1.5 shadow-2xs">
-            <Calendar className="w-4 h-4 text-[#004A6D]" />
-            <select
-              value={selectedMonth ?? ''}
-              onChange={(e) => setSelectedMonth(e.target.value ? Number(e.target.value) : null)}
-              className="bg-transparent text-xs font-bold text-[#004A6D] focus:outline-none cursor-pointer"
-            >
-              {meses.map(m => (
-                <option key={m.value ?? 'all'} value={m.value ?? ''}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
+        <div className="flex items-center gap-2">
           <button
             onClick={downloadFullCSV}
             disabled={isExporting}
@@ -521,39 +486,58 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
         
         {/* Filters Row */}
         <div className="flex flex-col space-y-3 mb-4 pb-4 border-b border-[#F0F5F8]">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 flex-1">
-              {/* Search Input */}
-              <div className="relative flex-1 max-w-md">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              {/* Search Input Ampliado */}
+              <div className="relative flex-1 min-w-[260px]">
                 <Search className="w-4 h-4 text-[#004A6D]/60 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Buscar no banco por Nome da Empresa ou CNPJ..."
+                  placeholder="Buscar por Nome da Empresa ou CNPJ..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 bg-[#F4F9FA] border border-[#BCD3DF] rounded-xl text-xs sm:text-sm font-medium text-[#002A3A] focus:outline-none focus:border-[#004A6D] focus:ring-1 focus:ring-[#004A6D]"
                 />
               </div>
 
-              {/* Category Pill Filter */}
-              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-xl">
-                {categorias.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategoria(cat)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                      selectedCategoria === cat
-                        ? 'bg-[#004A6D] text-white'
-                        : 'bg-[#F4F9FA] text-[#004A6D] hover:bg-[#D9FBFF]'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+              {/* Dropdown de Origens / Vendedor Simplificado */}
+              <div className="flex items-center gap-1.5 bg-[#F4F9FA] border border-[#BCD3DF] rounded-xl px-3 py-2 shadow-2xs">
+                <Store className="w-4 h-4 text-[#004A6D]" />
+                <select
+                  value={selectedVendedorFilter}
+                  onChange={(e) => setSelectedVendedorFilter(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-[#004A6D] focus:outline-none cursor-pointer"
+                >
+                  <option value="TODOS">Todas as Origens</option>
+                  <option value="COM_VENDEDOR">💼 Com Vendedor Alocado</option>
+                  <option value="ESPONTANEAS">🌱 Doações Espontâneas</option>
+                  {vendedoresDisponiveis.map(vId => (
+                    <option key={vId} value={`VENDEDOR_${vId}`}>
+                      👤 Vendedor #{vId}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dropdown de Categorias ao lado das Origens */}
+              <div className="flex items-center gap-1.5 bg-[#F4F9FA] border border-[#BCD3DF] rounded-xl px-3 py-2 shadow-2xs">
+                <Box className="w-4 h-4 text-[#004A6D]" />
+                <select
+                  value={selectedCategoria}
+                  onChange={(e) => setSelectedCategoria(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-[#004A6D] focus:outline-none cursor-pointer"
+                >
+                  <option value="TODAS">Todas as Categorias</option>
+                  {categorias.filter(c => c !== 'TODAS').map(cat => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-[#004A6D] font-semibold whitespace-nowrap">
+            <div className="flex items-center gap-2 text-xs text-[#004A6D] font-semibold whitespace-nowrap self-end lg:self-auto">
               {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#004A6D]" />}
               <span>Exibindo:</span>
               <span className="bg-[#D9FBFF] px-2.5 py-1 rounded-lg font-bold text-[#004A6D] shadow-2xs border border-[#BCD3DF]/50">
@@ -564,9 +548,8 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
             </div>
           </div>
 
-          {/* Filtros de Termômetro de Score nos 5 Níveis */}
+          {/* Filtros de Termômetro de Score nos 5 Níveis (Sem texto prefixo longo) */}
           <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-[#F0F5F8]">
-            <span className="text-xs font-bold text-[#002A3A] mr-1">Termômetro de Eficiência (Score vs Média Geral):</span>
             <button
               onClick={() => setSelectedScoreLevel('TODOS')}
               className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
@@ -617,12 +600,8 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
             </button>
           </div>
 
-          {/* Filtro de Corte Mínimo de Cupons Válidos */}
+          {/* Filtro de Corte Mínimo de Cupons Válidos (Sem texto prefixo longo) */}
           <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-[#F0F5F8]">
-            <span className="text-xs font-bold text-[#002A3A] mr-1 flex items-center gap-1">
-              <Receipt className="w-3.5 h-3.5 text-[#004A6D]" />
-              Filtro de Esforço Mínimo (Volume de Cupons):
-            </span>
             {[
               { label: 'Todos os Volumes (≥ 0)', value: 0 },
               { label: '≥ 5 Cupons', value: 5 },
