@@ -216,7 +216,7 @@ export default function App() {
                 NFP Analytics • Plataforma Estratégica de Gestão
               </p>
               <p className="text-[11px] text-[#004A6D]/60">
-                Ação Comunitária do Brasil • Vocação | CNPJ 61.750.246/0001-75
+                Ação Comunitária do Brasil • Vocação | CNPJ 61.750.246/0001-75 • <span className="font-mono font-bold text-[#004A6D]/80 bg-[#F4F9FA] px-1.5 py-0.5 rounded border border-[#BCD3DF]/60">V.202609270254</span>
               </p>
             </div>
           </div>
