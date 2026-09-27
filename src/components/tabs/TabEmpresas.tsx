@@ -148,6 +148,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
   const creditoApuradoTotal = kpis.totalCredito;
   const creditoUrnasTotal = kpis.totalCreditoUrnas;
   const creditoDoacoesTotal = kpis.totalCreditoDoacoes;
+  const creditoConsumoTotal = kpis.totalCreditoConsumo;
 
   // Top 15 data for charts
   const top15Credito = useMemo(() => {
@@ -292,7 +293,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
           id="kpi-credito-apurado-empresas"
           title="Crédito Apurado Total"
           value={formatarMoeda(creditoApuradoTotal)}
-          subValue={`Urnas: ${formatarMoeda(creditoUrnasTotal)} | Doações: ${formatarMoeda(creditoDoacoesTotal)}`}
+          subValue={`Consumo: ${formatarMoeda(creditoConsumoTotal)} | Cad/doações: ${formatarMoeda(creditoDoacoesTotal)}`}
           icon={Building2}
           iconBgColor="bg-[#00E04B]/20"
           iconColor="text-[#006E24]"

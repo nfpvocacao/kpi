@@ -228,6 +228,75 @@ CREATE TABLE public.nfp_doadores (
         </div>
       </div>
 
+      {/* Bloco 4: Mapeamento de Tabelas do Supabase x Abas da Aplicação */}
+      <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs space-y-4">
+        <div className="flex items-center gap-2 border-b border-[#BCD3DF]/50 pb-3">
+          <Server className="w-5 h-5 text-[#004A6D]" />
+          <h2 className="text-base font-black text-[#002A3A]">
+            4. Arquitetura do Banco de Dados (Mapeamento Supabase x Abas do Site)
+          </h2>
+        </div>
+
+        <div className="overflow-x-auto border border-[#BCD3DF] rounded-xl">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-[#F4F9FA] border-b border-[#BCD3DF] text-[#004A6D] font-bold text-[11px]">
+                <th className="py-2.5 px-3">Tabela no Supabase</th>
+                <th className="py-2.5 px-3">Aba Correspondente no Site</th>
+                <th className="py-2.5 px-3">Descrição / O que Alimenta</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#F0F5F8] text-[11px]">
+              <tr className="hover:bg-[#F8FCFD]">
+                <td className="py-2.5 px-3 font-mono font-bold text-[#002A3A]">vocacao_consolidado_interno</td>
+                <td className="py-2.5 px-3 font-bold text-[#004A6D]">📈 Desempenho (YoY)</td>
+                <td className="py-2.5 px-3 text-[#004A6D]/80">Alimenta KPIs gerais, gráficos de evolução histórica e comparativos de receita.</td>
+              </tr>
+              <tr className="hover:bg-[#F8FCFD]">
+                <td className="py-2.5 px-3 font-mono font-bold text-[#002A3A]">vocacao_resumo_mensal_empresas</td>
+                <td className="py-2.5 px-3 font-bold text-[#004A6D]">🏢 Empresas</td>
+                <td className="py-2.5 px-3 text-[#004A6D]/80">Ranking mensal de lojas, score de eficiência, volume de cupons e créditos apurados.</td>
+              </tr>
+              <tr className="hover:bg-[#F8FCFD]">
+                <td className="py-2.5 px-3 font-mono font-bold text-[#002A3A]">nfp_empresas</td>
+                <td className="py-2.5 px-3 font-bold text-[#004A6D]">🏢 Empresas (Cadastro Mestre)</td>
+                <td className="py-2.5 px-3 text-[#004A6D]/80">Cadastro oficial das redes (contém Razão Social, ID Vendedor, Cidade, Contatos).</td>
+              </tr>
+              <tr className="hover:bg-[#F8FCFD]">
+                <td className="py-2.5 px-3 font-mono font-bold text-[#002A3A]">vocacao_resumo_mensal_doadores</td>
+                <td className="py-2.5 px-3 font-bold text-[#004A6D]">🤝 Doadores Reais</td>
+                <td className="py-2.5 px-3 text-[#004A6D]/80">Resumo consolidado por CPF (Volume de cupons, valor de NF, modalidade e crédito retornado).</td>
+              </tr>
+              <tr className="hover:bg-[#F8FCFD]">
+                <td className="py-2.5 px-3 font-mono font-bold text-[#002A3A]">vocacao_doador_estabelecimento_mensal</td>
+                <td className="py-2.5 px-3 font-bold text-[#004A6D]">🤝 Doadores Reais (Cruzamento)</td>
+                <td className="py-2.5 px-3 text-[#004A6D]/80">Detalhamento doador x lojas (quais estabelecimentos o doador comprou e gerou créditos).</td>
+              </tr>
+              <tr className="hover:bg-[#F8FCFD]">
+                <td className="py-2.5 px-3 font-mono font-bold text-[#002A3A]">nfp_doadores</td>
+                <td className="py-2.5 px-3 font-bold text-[#004A6D]">🤝 Doadores Reais (Cadastro Mestre)</td>
+                <td className="py-2.5 px-3 text-[#004A6D]/80">Cadastro mestre com CPF, Nome, Bitrix, Pessoa Responsável e Dados de Indicação.</td>
+              </tr>
+              <tr className="hover:bg-[#F8FCFD]">
+                <td className="py-2.5 px-3 font-mono font-bold text-[#002A3A]">vocacao_mapa_interno</td>
+                <td className="py-2.5 px-3 font-bold text-[#004A6D]">⚙️ Doadores Auto</td>
+                <td className="py-2.5 px-3 text-[#004A6D]/80">Indicadores de doadores plenos/restritos e taxa de retenção da modalidade automática.</td>
+              </tr>
+              <tr className="hover:bg-[#F8FCFD]">
+                <td className="py-2.5 px-3 font-mono font-bold text-[#002A3A]">historico_distribuicao</td>
+                <td className="py-2.5 px-3 font-bold text-[#004A6D]">📊 Benchmarking (SEFAZ)</td>
+                <td className="py-2.5 px-3 text-[#004A6D]/80">Valores distribuídos a entidades de Assistência Social no Estado de SP.</td>
+              </tr>
+              <tr className="hover:bg-[#F8FCFD]">
+                <td className="py-2.5 px-3 font-mono font-bold text-[#002A3A]">entidades</td>
+                <td className="py-2.5 px-3 font-bold text-[#004A6D]">📊 Benchmarking (SEFAZ)</td>
+                <td className="py-2.5 px-3 text-[#004A6D]/80">Cadastro público de todas as entidades sem fins lucrativos da SEFAZ-SP.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   );
 };

@@ -175,7 +175,10 @@ export default function App() {
         )}
 
         {activeTab === 'doadores' && (
-          <TabDoadores />
+          <TabDoadores 
+            selectedYears={periodFilter.years}
+            selectedMonths={periodFilter.months}
+          />
         )}
 
         {activeTab === 'automaticos' && (

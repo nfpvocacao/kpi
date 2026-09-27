@@ -20,6 +20,7 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
     totalCredito: 0,
     totalCreditoUrnas: 0,
     totalCreditoDoacoes: 0,
+    totalCreditoConsumo: 0,
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isExporting, setIsExporting] = useState<boolean>(false);
@@ -30,6 +31,28 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
       try {
         setIsLoading(true);
         setError(null);
+
+        // 0. Buscar Consumo Próprio e Crédito Total em vocacao_consolidado_interno
+        const { data: dataConsolidado } = await supabase
+          .from('vocacao_consolidado_interno')
+          .select('ano_mes, cons_cred, tt_creditos');
+
+        let sumConsumo = 0;
+        let sumCreditoSefaz = 0;
+        if (dataConsolidado && dataConsolidado.length > 0) {
+          dataConsolidado.forEach((r: any) => {
+            const sAnoMes = String(r.ano_mes);
+            const ano = parseInt(sAnoMes.substring(0, 4), 10);
+            const m = parseInt(sAnoMes.substring(4, 6), 10);
+
+            if (selectedYears.includes(ano)) {
+              if (selectedMonths.length === 0 || selectedMonths.includes(m)) {
+                sumConsumo += Number(r.cons_cred || 0);
+                sumCreditoSefaz += Number(r.tt_creditos || 0);
+              }
+            }
+          });
+        }
 
         // 1. Contagem total e agregados gerais para os KPIs carregando o dataset completo via range
         let queryKpi = supabase
@@ -79,21 +102,24 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
           sumCreditoDoacoes += Number(r.credito_doacao || 0);
         });
 
+        const totalFinalCredito = sumCreditoSefaz > 0 ? sumCreditoSefaz : (sumCredito + sumConsumo);
+
         console.log('SUPABASE FETCH COMPLETO:', {
           totalLinhas: allKpiRows.length,
           sumCupons,
-          sumCredito: Number(sumCredito.toFixed(2)),
-          sumCreditoUrnas: Number(sumCreditoUrnas.toFixed(2)),
-          sumCreditoDoacoes: Number(sumCreditoDoacoes.toFixed(2))
+          sumCreditoSefaz: Number(totalFinalCredito.toFixed(2)),
+          sumCreditoDoacoes: Number(sumCredito.toFixed(2)),
+          sumConsumo: Number(sumConsumo.toFixed(2))
         });
 
         setTotalEmpresasContagem(allKpiRows.length);
         setKpis({
           totalCupons: sumCupons,
           totalValorNF: sumValorNF,
-          totalCredito: Number(sumCredito.toFixed(2)),
+          totalCredito: Number(totalFinalCredito.toFixed(2)),
           totalCreditoUrnas: Number(sumCreditoUrnas.toFixed(2)),
-          totalCreditoDoacoes: Number(sumCreditoDoacoes.toFixed(2)),
+          totalCreditoDoacoes: Number(sumCredito.toFixed(2)),
+          totalCreditoConsumo: Number(sumConsumo.toFixed(2)),
         });
 
         // 2. Query para a lista (Top N ou busca filtrada diretamente no Supabase)
