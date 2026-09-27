@@ -12,7 +12,9 @@ import { TabDoadores } from './components/tabs/TabDoadores';
 import { TabDoadoresAutomaticos } from './components/tabs/TabDoadoresAutomaticos';
 import { TabBenchmarking } from './components/tabs/TabBenchmarking';
 import { TabApresentacao } from './components/tabs/TabApresentacao';
+import { TabDevDocs } from './components/tabs/TabDevDocs';
 import { DatabaseStatusModal } from './components/DatabaseStatusModal';
+
 import { BusinessRulesModal } from './components/BusinessRulesModal';
 import { TvModeModal } from './components/TvModeModal';
 import { BrandLogo } from './components/BrandLogo';
@@ -195,6 +197,10 @@ export default function App() {
             selectedYears={periodFilter.years}
             selectedMonths={periodFilter.months}
           />
+        )}
+
+        {activeTab === 'dev' && (
+          <TabDevDocs />
         )}
       </main>
 

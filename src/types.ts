@@ -22,6 +22,8 @@ export interface CupomFiscal {
   mesReferencia: string; // YYYY-MM
 }
 
+export type NivelScore = 'EXCEPCIONAL' | 'BOM' | 'MODERADO' | 'BAIXO' | 'CRITICO';
+
 export interface EmpresaParceira {
   id: string;
   cnpj: string;
@@ -38,7 +40,21 @@ export interface EmpresaParceira {
   status: 'Ativa' | 'Em expansão' | 'A renovar';
   crescimentoYoY: number;
   cidade: string;
+  // Campos de Identificação da Parceria / Base Cadastrada
+  isCadastrada?: boolean;
+  idVendedor?: number | null;
+  logradouro?: string;
+  bairro?: string;
+  cep?: string;
+  telefone?: string;
+  email?: string;
+  // Campos do Score de Eficiência (5 Níveis)
+  scoreEficiencia?: number; // Percentual vs Benchmark do mês
+  nivelScore?: NivelScore;
+  scoreHistoricoMedio?: number; // Média dos meses históricos da empresa
 }
+
+
 
 export interface DoadorReal {
   id: string;

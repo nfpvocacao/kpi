@@ -1,7 +1,7 @@
 import React from 'react';
-import { TrendingUp, Building2, HeartHandshake, Users, Target, Presentation } from 'lucide-react';
+import { TrendingUp, Building2, HeartHandshake, Users, Target, Presentation, Code2 } from 'lucide-react';
 
-export type TabId = 'desempenho' | 'empresas' | 'doadores' | 'automaticos' | 'benchmarking' | 'apresentacao';
+export type TabId = 'desempenho' | 'empresas' | 'doadores' | 'automaticos' | 'benchmarking' | 'apresentacao' | 'dev';
 
 interface NavigationTabsProps {
   activeTab: TabId;
@@ -66,6 +66,14 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
       icon: Presentation,
       badgeText: 'Novo',
       badgeColor: 'bg-[#00E3E6] text-[#002A3A]'
+    },
+    {
+      id: 'dev' as TabId,
+      label: 'Dev / Processos',
+      fullTitle: 'Área Técnica do Desenvolvedor e ETL',
+      icon: Code2,
+      badgeText: 'Restrito',
+      badgeColor: 'bg-[#FD3168] text-white'
     }
   ];
 
@@ -73,7 +81,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
     <div className="bg-white border-b border-[#BCD3DF]/70 sticky top-[65px] z-20 px-3 lg:px-8 shadow-2xs">
       <div className="max-w-7xl mx-auto">
         <nav 
-          className="grid grid-cols-2 sm:grid-cols-6 gap-1.5 py-2.5"
+          className="grid grid-cols-2 sm:grid-cols-7 gap-1.5 py-2.5"
           aria-label="Abas do Sistema NFP Analytics"
         >
           {tabs.map((tab) => {

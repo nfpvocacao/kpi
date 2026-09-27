@@ -97,6 +97,23 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
         });
 
         // 2. Query para a lista (Top N ou busca filtrada diretamente no Supabase)
+        // 2. Query para a lista de empresas
+        // Se houver termo de busca, buscar CNPJs correspondentes também na tabela nfp_empresas (Fantasia / Razão Social)
+        let matchingCnpjsFromCad: string[] = [];
+
+        if (searchTerm.trim()) {
+          const s = searchTerm.trim();
+          const { data: nfpSearch } = await supabase
+            .from('nfp_empresas')
+            .select('cnpj')
+            .or(`fantasia.ilike.%${s}%,empresa.ilike.%${s}%`)
+            .limit(200);
+
+          if (nfpSearch) {
+            matchingCnpjsFromCad = nfpSearch.map((e: any) => e.cnpj).filter(Boolean);
+          }
+        }
+
         let queryList = supabase
           .from('vocacao_resumo_mensal_empresas')
           .select('*');
@@ -108,34 +125,100 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
           const s = searchTerm.trim();
           const cleanDigits = s.replace(/\D/g, '');
 
+          let orConditions = [`nome_empresa.ilike.%${s}%`, `cnpj.ilike.%${s}%`];
           if (cleanDigits.length >= 8) {
-            // Se o usuário digitou números (com ou sem pontuação)
             let formattedCnpj = cleanDigits;
             if (cleanDigits.length === 14) {
               formattedCnpj = cleanDigits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
             }
-            queryList = queryList.or(`nome_empresa.ilike.%${s}%,cnpj.ilike.%${s}%,cnpj.ilike.%${cleanDigits}%,cnpj.ilike.%${formattedCnpj}%`);
+            orConditions.push(`cnpj.ilike.%${cleanDigits}%`, `cnpj.ilike.%${formattedCnpj}%`);
+          }
+          if (matchingCnpjsFromCad.length > 0) {
+            // Incluir os CNPJs encontrados na busca por Nome Fantasia/Razão Social
+            const cnpjInList = matchingCnpjsFromCad.map(c => `cnpj.eq.${c}`).join(',');
+            orConditions.push(cnpjInList);
+          }
+
+          queryList = queryList.or(orConditions.join(','));
+        }
+
+        // Carregar a lista completa de empresas (sem trava de 100 ou limit 1000) em lote para score e agregacao global
+        let listData: any[] = [];
+        let listFrom = 0;
+        const listStep = 1000;
+        let listHasMore = true;
+
+        while (listHasMore) {
+          const { data: pageListData, error: pageListError } = await queryList.range(listFrom, listFrom + listStep - 1);
+          if (pageListError) {
+            console.error('Erro ao buscar lista paginada de empresas:', pageListError);
+            setError(pageListError.message);
+            setIsLoading(false);
+            return;
+          }
+          if (pageListData && pageListData.length > 0) {
+            listData = listData.concat(pageListData);
+            listFrom += listStep;
+            if (pageListData.length < listStep) {
+              listHasMore = false;
+            }
           } else {
-            queryList = queryList.or(`nome_empresa.ilike.%${s}%,cnpj.ilike.%${s}%`);
+            listHasMore = false;
           }
         }
 
-        queryList = queryList.order('total_credito_apurado', { ascending: false }).limit(limit);
+        if (listData && listData.length > 0) {
+          // Buscar dados cadastrais oficiais da tabela nfp_empresas para cruzar com a lista
+          const cnpjsDaLista = Array.from(new Set(listData.map((r: any) => r.cnpj).filter(Boolean)));
 
-        const { data: listData, error: listError } = await queryList;
+          let cadastroMap = new Map<string, any>();
+          
+          // Buscar todas as empresas cadastradas com vendedores na tabela nfp_empresas paginadamente
+          let nfpEmpresasFrom = 0;
+          const nfpStep = 1000;
+          let nfpHasMore = true;
 
-        if (listError) {
-          console.error('Erro ao buscar lista de empresas:', listError);
-          setError(listError.message);
-        } else if (listData) {
+          while (nfpHasMore) {
+            const { data: nfpPageData, error: nfpPageErr } = await supabase
+              .from('nfp_empresas')
+              .select('cnpj, fantasia, empresa, id_vendedor, cidade, bairro, logradouro, cep, telefone, email')
+              .range(nfpEmpresasFrom, nfpEmpresasFrom + nfpStep - 1);
+
+            if (nfpPageErr) {
+              console.error('Erro ao buscar nfp_empresas:', nfpPageErr);
+              nfpHasMore = false;
+            } else if (nfpPageData && nfpPageData.length > 0) {
+              nfpPageData.forEach((ne: any) => {
+                if (ne.cnpj) {
+                  cadastroMap.set(ne.cnpj, ne);
+                }
+              });
+              nfpEmpresasFrom += nfpStep;
+              if (nfpPageData.length < nfpStep) {
+                nfpHasMore = false;
+              }
+            } else {
+              nfpHasMore = false;
+            }
+          }
+
+
           const map = new Map<string, EmpresaParceira>();
 
           listData.forEach((r: any) => {
             const cnpjKey = r.cnpj || '00.000.000/0000-00';
-            const nome = r.nome_empresa || 'Empresa Parceira';
+            const nomeResumo = r.nome_empresa || 'Empresa Parceira';
+
+            // Verifica se o CNPJ existe na tabela de cadastro oficial
+            const cadOficial = cadastroMap.get(cnpjKey);
+            const isCadastrada = !!cadOficial;
+            const nomeFantasia = cadOficial?.fantasia || cadOficial?.empresa || nomeResumo;
+            const razaoSocial = cadOficial?.empresa || nomeResumo;
+            const idVendedor = cadOficial?.id_vendedor ?? null;
+            const cidade = cadOficial?.cidade || 'São Paulo';
 
             let cat: EmpresaParceira['categoria'] = 'Serviços & Outros';
-            const lowerNome = nome.toLowerCase();
+            const lowerNome = nomeFantasia.toLowerCase();
             if (lowerNome.includes('alimento') || lowerNome.includes('restaurante') || lowerNome.includes('cafe') || lowerNome.includes('pizzaria') || lowerNome.includes('food') || lowerNome.includes('padaria') || lowerNome.includes('bar') || lowerNome.includes('hamburg') || lowerNome.includes('lanchonete')) {
               cat = 'Restaurantes & Alimentos';
             } else if (lowerNome.includes('supermercado') || lowerNome.includes('hortifruti') || lowerNome.includes('mercado') || lowerNome.includes('comercio de aliment') || lowerNome.includes('hipermercado') || lowerNome.includes('sacolao')) {
@@ -158,8 +241,8 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
               map.set(cnpjKey, {
                 id: cnpjKey,
                 cnpj: cnpjKey,
-                razaoSocial: nome,
-                nomeFantasia: nome,
+                razaoSocial: razaoSocial,
+                nomeFantasia: nomeFantasia,
                 categoria: cat,
                 cuponsValidos: 0,
                 valorTotalNotas: 0,
@@ -170,7 +253,14 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
                 urnasInstaladas: 1,
                 status: 'Ativa',
                 crescimentoYoY: 0,
-                cidade: 'São Paulo'
+                cidade: cidade,
+                isCadastrada: isCadastrada,
+                idVendedor: idVendedor,
+                logradouro: cadOficial?.logradouro,
+                bairro: cadOficial?.bairro,
+                cep: cadOficial?.cep,
+                telefone: cadOficial?.telefone,
+                email: cadOficial?.email
               });
             }
 
@@ -182,18 +272,54 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
             item.creditoDoacoes += Number(r.credito_doacao || 0);
           });
 
-          const parsedList = Array.from(map.values()).map(e => ({
-            ...e,
-            creditoTotal: Number(e.creditoTotal.toFixed(2)),
-            creditoUrnas: Number(e.creditoUrnas.toFixed(2)),
-            creditoDoacoes: Number(e.creditoDoacoes.toFixed(2)),
-            valorTotalNotas: Number(e.valorTotalNotas.toFixed(2)),
-            ticketMedioCupom: e.cuponsValidos > 0 ? Number((e.creditoTotal / e.cuponsValidos).toFixed(2)) : 0
-          }));
+
+          setTotalEmpresasContagem(map.size);
+
+          // Calcular Ticket Médio de Crédito Geral do Período (Benchmark)
+          const ticketMedioGeralPeriodo = sumCupons > 0 ? (sumCredito / sumCupons) : 0;
+
+          const parsedList = Array.from(map.values()).map(e => {
+            const ticketMedioLoja = e.cuponsValidos > 0 ? (e.creditoTotal / e.cuponsValidos) : 0;
+            
+            // Score = % do Ticket Médio da Loja vs Ticket Médio Geral do Período
+            let scorePct = ticketMedioGeralPeriodo > 0 ? (ticketMedioLoja / ticketMedioGeralPeriodo) * 100 : 100;
+            scorePct = Number(scorePct.toFixed(1));
+
+            // Classificação nos 5 Níveis conforme regras especificadas:
+            // > 100%: EXCEPCIONAL
+            // 80% a 100%: BOM
+            // 50% a 79%: MODERADO
+            // 25% a 49%: BAIXO
+            // < 25%: CRITICO
+            let nivel: 'EXCEPCIONAL' | 'BOM' | 'MODERADO' | 'BAIXO' | 'CRITICO' = 'BOM';
+            if (scorePct > 100) {
+              nivel = 'EXCEPCIONAL';
+            } else if (scorePct >= 80) {
+              nivel = 'BOM';
+            } else if (scorePct >= 50) {
+              nivel = 'MODERADO';
+            } else if (scorePct >= 25) {
+              nivel = 'BAIXO';
+            } else {
+              nivel = 'CRITICO';
+            }
+
+            return {
+              ...e,
+              creditoTotal: Number(e.creditoTotal.toFixed(2)),
+              creditoUrnas: Number(e.creditoUrnas.toFixed(2)),
+              creditoDoacoes: Number(e.creditoDoacoes.toFixed(2)),
+              valorTotalNotas: Number(e.valorTotalNotas.toFixed(2)),
+              ticketMedioCupom: Number(ticketMedioLoja.toFixed(2)),
+              scoreEficiencia: scorePct,
+              nivelScore: nivel
+            };
+          });
 
           parsedList.sort((a, b) => b.creditoTotal - a.creditoTotal);
           setTopEmpresas(parsedList);
         }
+
       } catch (err: any) {
         console.error('Falha geral no hook useSupabaseEmpresas:', err);
         setError(err?.message || 'Error');
@@ -226,7 +352,6 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
 
       queryFull = queryFull.order('total_credito_apurado', { ascending: false });
 
-      // PostgREST max fetch pagination logic se necessário
       const { data: fullData, error: fullError } = await queryFull;
 
       if (fullError || !fullData) {
@@ -254,6 +379,56 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
     }
   };
 
+  // Função para buscar o histórico completo mês a mês de uma única empresa
+  const fetchEmpresaHistoricoMensal = async (cnpj: string, months?: number[]) => {
+    try {
+      let queryHist = supabase
+        .from('vocacao_resumo_mensal_empresas')
+        .select('*')
+        .eq('cnpj', cnpj);
+
+      if (months && months.length > 0) {
+        queryHist = queryHist.in('mes', months);
+      }
+
+      queryHist = queryHist.order('mes', { ascending: true });
+
+      const { data, error: histError } = await queryHist;
+
+      if (histError) throw histError;
+
+      const nomesMeses: { [key: number]: string } = {
+        1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
+        5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
+        9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+      };
+
+      return (data || []).map((r: any) => {
+        const creditoApurado = Number(r.total_credito_apurado || 0);
+        const creditoCadastro = Number(r.credito_cadastro || 0);
+        const creditoDoacao = Number(r.credito_doacao || 0);
+        // Desmembramento de Outros / Consumo para o cálculo bater 100%
+        const creditoOutros = Math.max(0, Number((creditoApurado - (creditoCadastro + creditoDoacao)).toFixed(2)));
+
+        return {
+          mes: r.mes,
+          mesNome: `${nomesMeses[r.mes] || 'Mês ' + r.mes}/${r.ano || 2026}`,
+          ano: r.ano || 2026,
+          cupons: Number(r.total_cupons || 0),
+          valorNF: Number(r.total_valor_nf || 0),
+          creditoApurado: Number(creditoApurado.toFixed(2)),
+          creditoCadastro: Number(creditoCadastro.toFixed(2)),
+          creditoDoacao: Number(creditoDoacao.toFixed(2)),
+          creditoOutros: creditoOutros
+        };
+      });
+    } catch (err) {
+      console.error('Erro ao buscar histórico mensal da empresa:', err);
+      return [];
+    }
+  };
+
+
   return {
     topEmpresas,
     totalEmpresasContagem,
@@ -262,5 +437,7 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
     isExporting,
     error,
     downloadFullCSV,
+    fetchEmpresaHistoricoMensal,
   };
 }
+

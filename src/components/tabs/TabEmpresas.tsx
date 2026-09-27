@@ -10,12 +10,17 @@ import {
   ChevronDown,
   Box,
   Loader2,
-  Calendar
+  Calendar,
+  LineChart as LineIcon,
+  X,
+  TrendingUp
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
   BarChart, 
   Bar, 
+  LineChart,
+  Line,
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -42,10 +47,21 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState<string>('TODAS');
+  const [selectedScoreLevel, setSelectedScoreLevel] = useState<string>('TODOS');
+  const [selectedVendedorFilter, setSelectedVendedorFilter] = useState<string>('TODOS');
+  const [minCuponsFilter, setMinCuponsFilter] = useState<number>(0);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [sortField, setSortField] = useState<keyof EmpresaParceira>('creditoTotal');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [activeChartMetric, setActiveChartMetric] = useState<'credito' | 'cupons' | 'doacoes'>('credito');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 100;
+
+  // Estado para empresa selecionada para ver evolução temporal
+  const [empresaSelecionada, setEmpresaSelecionada] = useState<EmpresaParceira | null>(null);
+  const [historicoMensal, setHistoricoMensal] = useState<any[]>([]);
+  const [loadingHistorico, setLoadingHistorico] = useState<boolean>(false);
+  const [metricHistorico, setMetricHistorico] = useState<'creditoApurado' | 'cupons' | 'valorNF'>('creditoApurado');
 
   const {
     topEmpresas,
@@ -54,6 +70,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
     isLoading,
     isExporting,
     downloadFullCSV,
+    fetchEmpresaHistoricoMensal
   } = useSupabaseEmpresas({
     selectedYears,
     selectedMonths: selectedMonth !== null ? [selectedMonth] : selectedMonths,
@@ -61,15 +78,43 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
     limit: 100,
   });
 
-  const empresasLista = topEmpresas;
+  const handleSelecionarEmpresa = async (emp: EmpresaParceira) => {
+    setEmpresaSelecionada(emp);
+    setLoadingHistorico(true);
+    const hist = await fetchEmpresaHistoricoMensal(emp.cnpj);
+    setHistoricoMensal(hist);
+    setLoadingHistorico(false);
+  };
 
+  const empresasLista = topEmpresas;
   const chartRef = useRef<HTMLDivElement>(null);
 
-  // Filter companies client-side for category pills or sort
+  // Extrair lista de vendedores únicos presentes na base cadastral
+  const vendedoresDisponiveis = useMemo(() => {
+    const list = empresasLista
+      .map(e => e.idVendedor)
+      .filter((v): v is number => v !== null && v !== undefined);
+    return Array.from(new Set(list)).sort((a, b) => a - b);
+  }, [empresasLista]);
+
+  // Filter companies client-side for category, score level pills, vendedor/origem, min cupons or sort
   const empresasFiltradas = useMemo(() => {
     return empresasLista.filter((emp) => {
       const matchCategoria = selectedCategoria === 'TODAS' || emp.categoria === selectedCategoria;
-      return matchCategoria;
+      const matchScore = selectedScoreLevel === 'TODOS' || emp.nivelScore === selectedScoreLevel;
+      const matchCupons = minCuponsFilter === 0 || emp.cuponsValidos >= minCuponsFilter;
+      
+      let matchVendedor = true;
+      if (selectedVendedorFilter === 'COM_VENDEDOR') {
+        matchVendedor = !!emp.isCadastrada && emp.idVendedor !== null && emp.idVendedor !== undefined;
+      } else if (selectedVendedorFilter === 'ESPONTANEAS') {
+        matchVendedor = !emp.isCadastrada || emp.idVendedor === null || emp.idVendedor === undefined;
+      } else if (selectedVendedorFilter.startsWith('VENDEDOR_')) {
+        const vId = Number(selectedVendedorFilter.replace('VENDEDOR_', ''));
+        matchVendedor = emp.idVendedor === vId;
+      }
+
+      return matchCategoria && matchScore && matchCupons && matchVendedor;
     }).sort((a, b) => {
       const valA = a[sortField];
       const valB = b[sortField];
@@ -80,7 +125,21 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
         ? String(valA).localeCompare(String(valB)) 
         : String(valB).localeCompare(String(valA));
     });
-  }, [empresasLista, selectedCategoria, sortField, sortDirection]);
+  }, [empresasLista, selectedCategoria, selectedScoreLevel, selectedVendedorFilter, minCuponsFilter, sortField, sortDirection]);
+
+  // Resetar para a primeira página sempre que os filtros ou busca mudarem
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategoria, selectedScoreLevel, selectedVendedorFilter, minCuponsFilter, selectedMonth]);
+
+  const totalPages = Math.ceil(empresasFiltradas.length / pageSize) || 1;
+
+  const empresasPaginadas = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return empresasFiltradas.slice(start, start + pageSize);
+  }, [empresasFiltradas, currentPage, pageSize]);
+
+
 
   // Aggregate KPIs vindos do Supabase
   const totalEmpresasAtivas = totalEmpresasContagem;
@@ -150,8 +209,19 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
   ];
 
   const meses = [
-    { value: null, label: 'Todos os Meses' },
-    { value: 5, label: 'Maio / 2026' }
+    { value: null, label: 'Todos os Meses do Período' },
+    { value: 1, label: 'Janeiro / 2026' },
+    { value: 2, label: 'Fevereiro / 2026' },
+    { value: 3, label: 'Março / 2026' },
+    { value: 4, label: 'Abril / 2026' },
+    { value: 5, label: 'Maio / 2026' },
+    { value: 6, label: 'Junho / 2026' },
+    { value: 7, label: 'Julho / 2026' },
+    { value: 8, label: 'Agosto / 2026' },
+    { value: 9, label: 'Setembro / 2026' },
+    { value: 10, label: 'Outubro / 2026' },
+    { value: 11, label: 'Novembro / 2026' },
+    { value: 12, label: 'Dezembro / 2026' }
   ];
 
   return (
@@ -171,7 +241,26 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Vendedor / Origem filter dropdown */}
+          <div className="flex items-center gap-1.5 bg-white border border-[#BCD3DF] rounded-xl px-3 py-1.5 shadow-2xs">
+            <Store className="w-4 h-4 text-[#004A6D]" />
+            <select
+              value={selectedVendedorFilter}
+              onChange={(e) => setSelectedVendedorFilter(e.target.value)}
+              className="bg-transparent text-xs font-bold text-[#004A6D] focus:outline-none cursor-pointer"
+            >
+              <option value="TODOS">Todas as Origens (Cadastradas + Espontâneas)</option>
+              <option value="COM_VENDEDOR">💼 Apenas Lojas Parceiras (Com Vendedor Alocado)</option>
+              <option value="ESPONTANEAS">🌱 Apenas Doações Espontâneas (Sem Vendedor)</option>
+              {vendedoresDisponiveis.map(vId => (
+                <option key={vId} value={`VENDEDOR_${vId}`}>
+                  👤 Vendedor #{vId}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Mês filter dropdown */}
           <div className="flex items-center gap-1.5 bg-white border border-[#BCD3DF] rounded-xl px-3 py-1.5 shadow-2xs">
             <Calendar className="w-4 h-4 text-[#004A6D]" />
@@ -322,8 +411,9 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`} 
                 />
                 <Tooltip 
-                  formatter={(val: any) => [
-                    formatarMoeda(Number(val))
+                  formatter={(val: any, name: any) => [
+                    formatarMoeda(Number(val)),
+                    name
                   ]}
                   contentStyle={{ 
                     backgroundColor: '#FFFFFF', 
@@ -337,9 +427,9 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   }}
                   labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
                 />
-                <Bar dataKey="creditoUrnas" name="Crédito Urnas (CADASTRO)" stackId="a" fill="#004A6D" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="creditoDoacoes" name="Crédito Doações (PF)" stackId="a" fill="#00E3E6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="creditoTotal" name="Crédito Total (R$)" fill="#004A6D" radius={[6, 6, 0, 0]} />
               </BarChart>
+
             ) : activeChartMetric === 'doacoes' ? (
               <BarChart data={top15Doacoes} margin={{ top: 10, right: 10, left: 10, bottom: 50 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
@@ -430,44 +520,130 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
       <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
         
         {/* Filters Row */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-[#F0F5F8]">
-          <div className="flex items-center gap-3 flex-1">
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-[#004A6D]/60 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Buscar no banco por Nome da Empresa ou CNPJ..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-[#F4F9FA] border border-[#BCD3DF] rounded-xl text-xs sm:text-sm font-medium text-[#002A3A] focus:outline-none focus:border-[#004A6D] focus:ring-1 focus:ring-[#004A6D]"
-              />
+        <div className="flex flex-col space-y-3 mb-4 pb-4 border-b border-[#F0F5F8]">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1">
+              {/* Search Input */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 text-[#004A6D]/60 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Buscar no banco por Nome da Empresa ou CNPJ..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-[#F4F9FA] border border-[#BCD3DF] rounded-xl text-xs sm:text-sm font-medium text-[#002A3A] focus:outline-none focus:border-[#004A6D] focus:ring-1 focus:ring-[#004A6D]"
+                />
+              </div>
+
+              {/* Category Pill Filter */}
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-xl">
+                {categorias.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategoria(cat)}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                      selectedCategoria === cat
+                        ? 'bg-[#004A6D] text-white'
+                        : 'bg-[#F4F9FA] text-[#004A6D] hover:bg-[#D9FBFF]'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Category Pill Filter */}
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-xl">
-              {categorias.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategoria(cat)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                    selectedCategoria === cat
-                      ? 'bg-[#004A6D] text-white'
-                      : 'bg-[#F4F9FA] text-[#004A6D] hover:bg-[#D9FBFF]'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 text-xs text-[#004A6D] font-semibold whitespace-nowrap">
+              {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#004A6D]" />}
+              <span>Exibindo:</span>
+              <span className="bg-[#D9FBFF] px-2.5 py-1 rounded-lg font-bold text-[#004A6D] shadow-2xs border border-[#BCD3DF]/50">
+                {empresasFiltradas.length > 0
+                  ? `${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, empresasFiltradas.length)} de ${formatarNumero(empresasFiltradas.length)} lojas`
+                  : '0 lojas'}
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-[#004A6D] font-semibold whitespace-nowrap">
-            {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#004A6D]" />}
-            <span>Exibindo:</span>
-            <span className="bg-[#D9FBFF] px-2 py-0.5 rounded-md font-bold text-[#004A6D]">
-              Top {empresasFiltradas.length} de {formatarNumero(totalEmpresasAtivas)} lojas
+          {/* Filtros de Termômetro de Score nos 5 Níveis */}
+          <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-[#F0F5F8]">
+            <span className="text-xs font-bold text-[#002A3A] mr-1">Termômetro de Eficiência (Score vs Média Geral):</span>
+            <button
+              onClick={() => setSelectedScoreLevel('TODOS')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                selectedScoreLevel === 'TODOS' ? 'bg-[#002A3A] text-white' : 'bg-[#F4F9FA] text-[#004A6D] hover:bg-[#D9FBFF]'
+              }`}
+            >
+              Todos os Níveis
+            </button>
+            <button
+              onClick={() => setSelectedScoreLevel('EXCEPCIONAL')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer ${
+                selectedScoreLevel === 'EXCEPCIONAL' ? 'bg-[#006E24] text-white' : 'bg-[#00E04B]/15 text-[#006E24] hover:bg-[#00E04B]/30'
+              }`}
+            >
+              ⭐ Excepcional (&gt; 100%)
+            </button>
+            <button
+              onClick={() => setSelectedScoreLevel('BOM')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                selectedScoreLevel === 'BOM' ? 'bg-[#004A6D] text-white' : 'bg-[#D9FBFF] text-[#004A6D] hover:bg-[#BCEEFF]'
+              }`}
+            >
+              🟢 Bom (80% a 100%)
+            </button>
+            <button
+              onClick={() => setSelectedScoreLevel('MODERADO')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                selectedScoreLevel === 'MODERADO' ? 'bg-[#EDCD01] text-[#002A3A]' : 'bg-[#EDCD01]/20 text-[#002A3A] hover:bg-[#EDCD01]/40'
+              }`}
+            >
+              🟡 Moderado (50% a 79%)
+            </button>
+            <button
+              onClick={() => setSelectedScoreLevel('BAIXO')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                selectedScoreLevel === 'BAIXO' ? 'bg-[#E03F2A] text-white' : 'bg-[#E03F2A]/15 text-[#E03F2A] hover:bg-[#E03F2A]/30'
+              }`}
+            >
+              🟠 Baixo (25% a 49%)
+            </button>
+            <button
+              onClick={() => setSelectedScoreLevel('CRITICO')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer ${
+                selectedScoreLevel === 'CRITICO' ? 'bg-[#FD3168] text-white' : 'bg-[#FD3168]/15 text-[#FD3168] hover:bg-[#FD3168]/30'
+              }`}
+            >
+              🔴 Crítico / Gargalo (&lt; 25%)
+            </button>
+          </div>
+
+          {/* Filtro de Corte Mínimo de Cupons Válidos */}
+          <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-[#F0F5F8]">
+            <span className="text-xs font-bold text-[#002A3A] mr-1 flex items-center gap-1">
+              <Receipt className="w-3.5 h-3.5 text-[#004A6D]" />
+              Filtro de Esforço Mínimo (Volume de Cupons):
             </span>
+            {[
+              { label: 'Todos os Volumes (≥ 0)', value: 0 },
+              { label: '≥ 5 Cupons', value: 5 },
+              { label: '≥ 10 Cupons', value: 10 },
+              { label: '≥ 20 Cupons', value: 20 },
+              { label: '≥ 50 Cupons', value: 50 },
+              { label: '≥ 100 Cupons', value: 100 },
+              { label: '≥ 500 Cupons', value: 500 }
+            ].map(c => (
+              <button
+                key={c.value}
+                onClick={() => setMinCuponsFilter(c.value)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  minCuponsFilter === c.value
+                    ? 'bg-[#004A6D] text-white shadow-2xs'
+                    : 'bg-[#F4F9FA] text-[#004A6D] hover:bg-[#D9FBFF] border border-[#BCD3DF]/40'
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -484,6 +660,12 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                 </th>
                 <th className="py-3 px-3">CNPJ Formatado</th>
                 <th className="py-3 px-3">Categoria</th>
+                <th className="py-3 px-3 text-center cursor-pointer hover:text-[#002A3A]" onClick={() => handleSort('scoreEficiencia')}>
+                  <div className="flex items-center justify-center gap-1">
+                    <span>Score de Eficiência</span>
+                    {sortField === 'scoreEficiencia' && (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                  </div>
+                </th>
                 <th className="py-3 px-3 text-right cursor-pointer hover:text-[#002A3A]" onClick={() => handleSort('cuponsValidos')}>
                   <div className="flex items-center justify-end gap-1">
                     <span>Cupons Válidos</span>
@@ -514,20 +696,35 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                     {sortField === 'ticketMedioCupom' && (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                   </div>
                 </th>
-                <th className="py-3 px-3 text-center">Status</th>
+                <th className="py-3 px-3 text-center">Status / Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F0F5F8]">
-              {empresasFiltradas.map((emp) => (
-                <tr key={emp.id} className="hover:bg-[#F8FCFD] transition-colors group">
+              {empresasPaginadas.map((emp) => (
+                <tr 
+                  key={emp.id} 
+                  onClick={() => handleSelecionarEmpresa(emp)}
+                  className="hover:bg-[#F8FCFD] cursor-pointer transition-colors group"
+                >
                   <td className="py-3 px-3">
-                    <div className="font-bold text-[#002A3A] group-hover:text-[#004A6D]">
-                      {emp.nomeFantasia}
+                    <div className="font-bold text-[#002A3A] group-hover:text-[#004A6D] flex items-center gap-1.5 flex-wrap">
+                      <span>{emp.nomeFantasia}</span>
+                      {emp.isCadastrada ? (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-[#00E04B]/20 text-[#006E24] border border-[#00E04B]/40">
+                          {emp.idVendedor ? `Parceiro (Vendedor ${emp.idVendedor})` : 'Parceiro Cadastrado'}
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#F4F9FA] text-[#004A6D]/70 border border-[#BCD3DF]/60">
+                          Espontâneo
+                        </span>
+                      )}
+                      <LineIcon className="w-3.5 h-3.5 text-[#004A6D] opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
-                    <div className="text-[11px] text-[#004A6D]/60 truncate max-w-[220px]">
+                    <div className="text-[11px] text-[#004A6D]/60 truncate max-w-[240px]">
                       {emp.razaoSocial}
                     </div>
                   </td>
+
                   <td className="py-3 px-3 font-mono font-medium text-[#004A6D]">
                     {emp.cnpj}
                   </td>
@@ -536,6 +733,20 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                       {emp.categoria}
                     </span>
                   </td>
+
+                  {/* Coluna do Score de Eficiência nos 5 Níveis */}
+                  <td className="py-3 px-3 text-center">
+                    <span className={`px-2 py-0.5 rounded-md text-[11px] font-black tracking-tight ${
+                      emp.nivelScore === 'EXCEPCIONAL' ? 'bg-[#00E04B]/20 text-[#006E24] border border-[#00E04B]/40' :
+                      emp.nivelScore === 'BOM' ? 'bg-[#D9FBFF] text-[#004A6D] border border-[#BCD3DF]' :
+                      emp.nivelScore === 'MODERADO' ? 'bg-[#EDCD01]/25 text-[#002A3A] border border-[#EDCD01]/40' :
+                      emp.nivelScore === 'BAIXO' ? 'bg-[#E03F2A]/15 text-[#E03F2A] border border-[#E03F2A]/30' :
+                      'bg-[#FD3168]/20 text-[#FD3168] border border-[#FD3168]/40'
+                    }`}>
+                      {emp.scoreEficiencia}% ({emp.nivelScore})
+                    </span>
+                  </td>
+
                   <td className="py-3 px-3 text-right font-bold text-[#002A3A]">
                     {formatarNumero(emp.cuponsValidos)}
                   </td>
@@ -554,13 +765,16 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                     {formatarMoeda(emp.ticketMedioCupom)}
                   </td>
                   <td className="py-3 px-3 text-center">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                      emp.status === 'Ativa' ? 'bg-[#00E04B]/20 text-[#006E24]' :
-                      emp.status === 'Em expansão' ? 'bg-[#00E3E6]/25 text-[#004A6D]' :
-                      'bg-[#EDCD01]/30 text-[#002A3A]'
-                    }`}>
-                      {emp.status}
-                    </span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelecionarEmpresa(emp);
+                      }}
+                      className="inline-flex items-center gap-1 bg-[#D9FBFF] hover:bg-[#004A6D] text-[#004A6D] hover:text-white px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                    >
+                      <TrendingUp className="w-3 h-3" />
+                      <span>Ver Evolução</span>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -568,8 +782,224 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
           </table>
         </div>
 
+        {/* Controles de Paginação (100 itens por página) */}
+        {empresasFiltradas.length > pageSize && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#F0F5F8] mt-3 text-xs text-[#004A6D]">
+            <div className="font-medium">
+              Exibindo empresas <span className="font-bold">{(currentPage - 1) * pageSize + 1}</span> a <span className="font-bold">{Math.min(currentPage * pageSize, empresasFiltradas.length)}</span> de <span className="font-bold">{empresasFiltradas.length}</span> encontradas
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                className="px-3 py-1.5 rounded-lg border border-[#BCD3DF] font-bold hover:bg-[#D9FBFF] disabled:opacity-40 disabled:hover:bg-transparent transition-all cursor-pointer"
+              >
+                Anterior
+              </button>
+
+              <span className="font-bold px-2">
+                Página {currentPage} de {totalPages}
+              </span>
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                className="px-3 py-1.5 rounded-lg border border-[#BCD3DF] font-bold hover:bg-[#D9FBFF] disabled:opacity-40 disabled:hover:bg-transparent transition-all cursor-pointer"
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
+
+
+      {/* Modal / Painel de Detalhes e Evolução Mensal da Empresa */}
+      {empresaSelecionada && (
+        <div className="fixed inset-0 bg-[#002A3A]/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-[#BCD3DF] rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-6">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-[#BCD3DF]/60 pb-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xl font-black text-[#002A3A] font-['Raleway',sans-serif]">
+                    {empresaSelecionada.nomeFantasia}
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#D9FBFF] text-[#004A6D]">
+                    {empresaSelecionada.categoria}
+                  </span>
+                  {empresaSelecionada.isCadastrada ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#00E04B]/20 text-[#006E24] border border-[#00E04B]/40">
+                      {empresaSelecionada.idVendedor ? `Parceiro Ativo (Vendedor #${empresaSelecionada.idVendedor})` : 'Base de Cadastro Ativa'}
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#F4F9FA] text-[#004A6D]/70 border border-[#BCD3DF]">
+                      Doação Espontânea (Sem Vendedor)
+                    </span>
+                  )}
+                  {empresaSelecionada.nivelScore && (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#002A3A] text-white">
+                      Score: {empresaSelecionada.scoreEficiencia}% ({empresaSelecionada.nivelScore})
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs font-mono text-[#004A6D]/80 mt-1">
+                  CNPJ: {empresaSelecionada.cnpj} | Razão Social: {empresaSelecionada.razaoSocial}
+                </p>
+                {empresaSelecionada.logradouro && (
+                  <p className="text-xs text-[#004A6D]/70 mt-0.5 font-sans">
+                    📍 {empresaSelecionada.logradouro}, {empresaSelecionada.bairro || ''} - {empresaSelecionada.cidade} / CEP: {empresaSelecionada.cep || 'N/I'}
+                  </p>
+                )}
+              </div>
+
+              <button 
+                onClick={() => setEmpresaSelecionada(null)}
+                className="p-1.5 rounded-lg bg-[#F4F9FA] hover:bg-[#D9FBFF] text-[#004A6D] transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* KPIs Resumo da Empresa Selecionada */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-[#F8FCFD] border border-[#BCD3DF]/50 rounded-xl p-3.5">
+                <div className="text-xs text-[#004A6D]/70 font-semibold">Crédito Total Apurado</div>
+                <div className="text-lg font-black text-[#002A3A] mt-0.5">
+                  {formatarMoeda(empresaSelecionada.creditoTotal)}
+                </div>
+              </div>
+
+              <div className="bg-[#F8FCFD] border border-[#BCD3DF]/50 rounded-xl p-3.5">
+                <div className="text-xs text-[#004A6D]/70 font-semibold">Volume de Cupons</div>
+                <div className="text-lg font-black text-[#004A6D] mt-0.5">
+                  {formatarNumero(empresaSelecionada.cuponsValidos)} cupons
+                </div>
+              </div>
+
+              <div className="bg-[#F8FCFD] border border-[#BCD3DF]/50 rounded-xl p-3.5">
+                <div className="text-xs text-[#004A6D]/70 font-semibold">Valor Total Notas Emitidas</div>
+                <div className="text-lg font-black text-[#006E24] mt-0.5">
+                  {formatarMoeda(empresaSelecionada.valorTotalNotas)}
+                </div>
+              </div>
+            </div>
+
+            {/* Chart Section */}
+            <div className="space-y-3 bg-[#F8FCFD] border border-[#BCD3DF]/60 rounded-xl p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-[#004A6D]" />
+                  <h3 className="text-sm font-bold text-[#002A3A]">
+                    Evolução Mês a Mês do Estabelecimento
+                  </h3>
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-white border border-[#BCD3DF] rounded-lg p-1">
+                  <button
+                    onClick={() => setMetricHistorico('creditoApurado')}
+                    className={`px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer ${
+                      metricHistorico === 'creditoApurado' ? 'bg-[#004A6D] text-white' : 'text-[#004A6D] hover:bg-[#D9FBFF]'
+                    }`}
+                  >
+                    Crédito (R$)
+                  </button>
+                  <button
+                    onClick={() => setMetricHistorico('cupons')}
+                    className={`px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer ${
+                      metricHistorico === 'cupons' ? 'bg-[#004A6D] text-white' : 'text-[#004A6D] hover:bg-[#D9FBFF]'
+                    }`}
+                  >
+                    Cupons
+                  </button>
+                  <button
+                    onClick={() => setMetricHistorico('valorNF')}
+                    className={`px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer ${
+                      metricHistorico === 'valorNF' ? 'bg-[#004A6D] text-white' : 'text-[#004A6D] hover:bg-[#D9FBFF]'
+                    }`}
+                  >
+                    Valor NF (R$)
+                  </button>
+                </div>
+              </div>
+
+              {loadingHistorico ? (
+                <div className="h-64 flex items-center justify-center text-xs text-[#004A6D] font-semibold gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Carregando dados mensais da empresa...</span>
+                </div>
+              ) : historicoMensal.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-xs text-[#004A6D]/60 font-semibold">
+                  Nenhum registro mensal encontrado no banco para este CNPJ.
+                </div>
+              ) : (
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={historicoMensal} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="mesNome" tick={{ fontSize: 11, fill: '#004A6D', fontWeight: 600 }} />
+                      <YAxis tick={{ fontSize: 11, fill: '#004A6D' }} />
+                      <Tooltip 
+                        formatter={(val: number) => 
+                          metricHistorico === 'cupons' ? formatarNumero(val) : formatarMoeda(val)
+                        } 
+                      />
+                      <Bar 
+                        dataKey={metricHistorico} 
+                        fill="#004A6D" 
+                        radius={[6, 6, 0, 0]} 
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* Tabela de Suporte Fixa Mês a Mês com Desmembramento 100% Exato */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-[#002A3A] uppercase tracking-wider">
+                Tabela de Suporte Mês a Mês (Desmembramento Completo do Crédito)
+              </h3>
+              
+              <div className="overflow-x-auto border border-[#BCD3DF] rounded-xl">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-[#F4F9FA] border-b border-[#BCD3DF] text-[#004A6D] font-bold text-[11px]">
+                      <th className="py-2.5 px-3">Mês / Ano</th>
+                      <th className="py-2.5 px-3 text-right">Cupons Válidos</th>
+                      <th className="py-2.5 px-3 text-right">Crédito Cadastro (R$)</th>
+                      <th className="py-2.5 px-3 text-right">Crédito Doação (R$)</th>
+                      <th className="py-2.5 px-3 text-right">Crédito Outros / Consumo (R$)</th>
+                      <th className="py-2.5 px-3 text-right">Crédito Apurado Total (R$)</th>
+                      <th className="py-2.5 px-3 text-right">Valor Total Notas (R$)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F0F5F8]">
+                    {[...historicoMensal].reverse().map((h, idx) => (
+                      <tr key={idx} className="hover:bg-[#F8FCFD]">
+                        <td className="py-2 px-3 font-bold text-[#002A3A]">{h.mesNome}</td>
+                        <td className="py-2 px-3 text-right font-medium">{formatarNumero(h.cupons)}</td>
+                        <td className="py-2 px-3 text-right font-medium text-[#004A6D]">{formatarMoeda(h.creditoCadastro)}</td>
+                        <td className="py-2 px-3 text-right font-medium text-[#00E04B]">{formatarMoeda(h.creditoDoacao)}</td>
+                        <td className="py-2 px-3 text-right font-medium text-[#004A6D]/80">{formatarMoeda(h.creditoOutros || 0)}</td>
+                        <td className="py-2 px-3 text-right font-black text-[#002A3A] bg-[#D9FBFF]/30">{formatarMoeda(h.creditoApurado)}</td>
+                        <td className="py-2 px-3 text-right font-medium text-[#004A6D]/80">{formatarMoeda(h.valorNF)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
 
     </div>
   );
 };
+
