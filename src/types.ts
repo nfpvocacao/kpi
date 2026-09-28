@@ -24,6 +24,20 @@ export interface CupomFiscal {
 
 export type NivelScore = 'EXCEPCIONAL' | 'BOM' | 'MODERADO' | 'BAIXO' | 'CRITICO';
 
+export const VENDEDORES_MAP: Record<number, string> = {
+  1: 'Jacqueline Kuhl',
+  2: 'Natalia Kaiser',
+  3: 'Marcia Kisar',
+  4: 'Renata Nuñez',
+  5: 'Vocação',
+  6: 'Maria do Carmo',
+  7: 'Novo',
+  8: 'Soucial',
+  9: 'Priscila Vasques',
+  10: 'Diego Correa',
+  11: 'Doação Avulsa',
+};
+
 export interface EmpresaParceira {
   id: string;
   cnpj: string;
@@ -43,6 +57,7 @@ export interface EmpresaParceira {
   // Campos de Identificação da Parceria / Base Cadastrada
   isCadastrada?: boolean;
   idVendedor?: number | null;
+  nomeVendedor?: string;
   logradouro?: string;
   bairro?: string;
   cep?: string;

@@ -30,7 +30,7 @@ import {
 import { KPICard } from '../KPICard';
 import { BrandBadge } from '../BrandBadge';
 import { CopyChartButton } from '../CopyChartButton';
-import { EmpresaParceira } from '../../types';
+import { EmpresaParceira, VENDEDORES_MAP } from '../../types';
 import { EMPRESAS_PARCEIRAS as FALLBACK_EMPRESAS, formatarMoeda, formatarNumero } from '../../data/mockDatabase';
 import { useSupabaseEmpresas } from '../../hooks/useSupabaseEmpresas';
 
@@ -514,7 +514,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   <option value="ESPONTANEAS">🌱 Doações Espontâneas</option>
                   {vendedoresDisponiveis.map(vId => (
                     <option key={vId} value={`VENDEDOR_${vId}`}>
-                      👤 Vendedor #{vId}
+                      👤 {VENDEDORES_MAP[vId] ? `${VENDEDORES_MAP[vId]} (#${vId})` : `Captador #${vId}`}
                     </option>
                   ))}
                 </select>
@@ -691,7 +691,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                       <span>{emp.nomeFantasia}</span>
                       {emp.isCadastrada ? (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-[#00E04B]/20 text-[#006E24] border border-[#00E04B]/40">
-                          {emp.idVendedor ? `Parceiro (Vendedor ${emp.idVendedor})` : 'Parceiro Cadastrado'}
+                          {emp.nomeVendedor ? `Parceiro (${emp.nomeVendedor})` : (emp.idVendedor ? `Parceiro (Captador #${emp.idVendedor})` : 'Parceiro Cadastrado')}
                         </span>
                       ) : (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#F4F9FA] text-[#004A6D]/70 border border-[#BCD3DF]/60">
@@ -813,7 +813,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   </span>
                   {empresaSelecionada.isCadastrada ? (
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#00E04B]/20 text-[#006E24] border border-[#00E04B]/40">
-                      {empresaSelecionada.idVendedor ? `Parceiro Ativo (Vendedor #${empresaSelecionada.idVendedor})` : 'Base de Cadastro Ativa'}
+                      {empresaSelecionada.nomeVendedor ? `Captador: ${empresaSelecionada.nomeVendedor}` : (empresaSelecionada.idVendedor ? `Captador #${empresaSelecionada.idVendedor}` : 'Base de Cadastro Ativa')}
                     </span>
                   ) : (
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#F4F9FA] text-[#004A6D]/70 border border-[#BCD3DF]">

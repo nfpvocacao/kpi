@@ -201,25 +201,11 @@ export const TabApresentacao: React.FC<TabApresentacaoProps> = ({
       return { stackedData: [], stackKeys: [], colorMap: {} };
     }
 
-    let stackKeys: string[] = [];
-    let colorMap: Record<string, string> = {};
-
-    if (selectedMetric === 'doadores') {
-      stackKeys = ['Doadores Plenos', 'Doadores Restritos', 'Novos Doadores'];
-      colorMap = {
-        'Doadores Plenos': '#004A6D',
-        'Doadores Restritos': '#00E3E6',
-        'Novos Doadores': '#EDCD01'
-      };
-    } else {
-      stackKeys = ['Automatizados', 'Cadastro', 'Doação', 'Consumo'];
-      colorMap = {
-        'Automatizados': '#004A6D',
-        'Cadastro': '#00E3E6',
-        'Doação': '#EDCD01',
-        'Consumo': '#FD3168'
-      };
-    }
+    const stackKeys = ['Automatizados', 'Cadastro / Doação / Consumo'];
+    const colorMap: Record<string, string> = {
+      'Automatizados': '#004A6D',
+      'Cadastro / Doação / Consumo': '#00E3E6'
+    };
 
     const stackedData = availableYears.map(ano => {
       const rowData: Record<string, any> = {
@@ -256,28 +242,15 @@ export const TabApresentacao: React.FC<TabApresentacaoProps> = ({
         }
       });
 
-      const totalAno = aut + cad + doa + cons;
+      const outros = cad + doa + cons;
+      const totalAno = aut + outros;
       rowData.totalAno = totalAno;
 
-      if (selectedMetric === 'doadores') {
-        rowData['raw_Doadores Plenos'] = aut;
-        rowData['raw_Doadores Restritos'] = cad;
-        rowData['raw_Novos Doadores'] = doa;
+      rowData['raw_Automatizados'] = aut;
+      rowData['raw_Cadastro / Doação / Consumo'] = outros;
 
-        rowData['Doadores Plenos'] = totalAno > 0 ? Number(((aut / totalAno) * 100).toFixed(1)) : 0;
-        rowData['Doadores Restritos'] = totalAno > 0 ? Number(((cad / totalAno) * 100).toFixed(1)) : 0;
-        rowData['Novos Doadores'] = totalAno > 0 ? Number(((doa / totalAno) * 100).toFixed(1)) : 0;
-      } else {
-        rowData['raw_Automatizados'] = aut;
-        rowData['raw_Cadastro'] = cad;
-        rowData['raw_Doação'] = doa;
-        rowData['raw_Consumo'] = cons;
-
-        rowData['Automatizados'] = totalAno > 0 ? Number(((aut / totalAno) * 100).toFixed(1)) : 0;
-        rowData['Cadastro'] = totalAno > 0 ? Number(((cad / totalAno) * 100).toFixed(1)) : 0;
-        rowData['Doação'] = totalAno > 0 ? Number(((doa / totalAno) * 100).toFixed(1)) : 0;
-        rowData['Consumo'] = totalAno > 0 ? Number(((cons / totalAno) * 100).toFixed(1)) : 0;
-      }
+      rowData['Automatizados'] = totalAno > 0 ? Number(((aut / totalAno) * 100).toFixed(1)) : 0;
+      rowData['Cadastro / Doação / Consumo'] = totalAno > 0 ? Number(((outros / totalAno) * 100).toFixed(1)) : 0;
 
       return rowData;
     });
@@ -961,55 +934,83 @@ export const TabApresentacao: React.FC<TabApresentacaoProps> = ({
                 <th className="py-3 px-4 rounded-l-xl font-extrabold uppercase tracking-wider text-[11px] w-32">
                   Ano / Período
                 </th>
-                {stackKeys.map((keyName) => {
-                  const color = colorMap[keyName] || '#004A6D';
-                  return (
-                    <th key={keyName} className="py-3 px-3.5 font-extrabold text-center uppercase text-[11px]">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full inline-block shadow-2xs" style={{ backgroundColor: color }} />
-                        <span>{keyName}</span>
-                      </div>
-                    </th>
-                  );
-                })}
-                <th className="py-3 px-4 rounded-r-xl font-extrabold text-right uppercase tracking-wider text-[11px] bg-[#004A6D]">
+                <th className="py-3 px-3.5 font-extrabold text-center uppercase text-[11px]">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full inline-block shadow-2xs bg-[#004A6D]" />
+                    <span>Automatizados</span>
+                  </div>
+                </th>
+                <th className="py-3 px-3.5 font-extrabold text-center uppercase text-[11px]">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full inline-block shadow-2xs bg-[#00E3E6]" />
+                    <span>Cadastro / Doação / Consumo</span>
+                  </div>
+                </th>
+                <th className="py-3 px-4 font-extrabold text-right uppercase tracking-wider text-[11px] bg-[#004A6D]">
                   Total Acumulado
                 </th>
-                <th className="py-3 px-3.5 font-extrabold text-center uppercase text-[11px] bg-[#00384E] text-[#00E3E6]">
-                  % Aut. Share
+                <th className="py-3 px-3.5 rounded-r-xl font-extrabold text-center uppercase text-[11px] bg-[#00384E] text-[#00E3E6]">
+                  Crescimento YoY (%)
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#BCD3DF]/40">
-              {stackedData.map((row) => {
+              {stackedData.map((row, idx) => {
                 const totalAno = row.totalAno || 0;
-                const autPct = Number(row[stackKeys[0]] || 0);
+                const rawAut = Number(row['raw_Automatizados'] ?? row['raw_Doadores Plenos'] ?? 0);
+                const rawOutros = Math.max(0, totalAno - rawAut);
+
+                const pctAut = totalAno > 0 ? (rawAut / totalAno) * 100 : 0;
+                const pctOutros = totalAno > 0 ? (rawOutros / totalAno) * 100 : 0;
+
+                // YoY growth vs previous year row
+                let yoyPct: number | null = null;
+                let diffVal = 0;
+                if (idx > 0) {
+                  const prevTotal = stackedData[idx - 1].totalAno || 0;
+                  diffVal = totalAno - prevTotal;
+                  if (prevTotal > 0) {
+                    yoyPct = (diffVal / prevTotal) * 100;
+                  }
+                }
+
+                const yoyFormatted = yoyPct !== null 
+                  ? `${yoyPct >= 0 ? '+' : ''}${yoyPct.toFixed(1).replace('.', ',')}% - ${formatYValue(diffVal)}`
+                  : '-';
 
                 return (
                   <tr key={row.ano} className="hover:bg-[#F7FAFC] transition-colors font-medium text-[#002A3A]">
                     <td className="py-3.5 px-4 font-extrabold text-xs text-[#002A3A]">
                       Ano {row.ano}
                     </td>
-                    {stackKeys.map((keyName) => {
-                      const rawVal = Number(row[`raw_${keyName}`] || 0);
-                      const pct = Number(row[keyName] || 0);
-
-                      return (
-                        <td key={keyName} className="py-3.5 px-3.5 text-center font-bold">
-                          <div className="flex flex-col items-center">
-                            <span className="text-[#002A3A] font-black">{formatYValue(rawVal)}</span>
-                            <span className="text-[10px] text-[#004A6D]/80 font-bold bg-[#F0F5F8] px-1.5 py-0.2 rounded mt-0.5 border border-[#BCD3DF]/40">
-                              {pct.toFixed(1)}%
-                            </span>
-                          </div>
-                        </td>
-                      );
-                    })}
+                    {/* Automatizados */}
+                    <td className="py-3.5 px-3.5 text-center font-bold">
+                      <div className="flex flex-col items-center">
+                        <span className="text-[#002A3A] font-black">{formatYValue(rawAut)}</span>
+                        <span className="text-[10px] text-[#004A6D]/80 font-bold bg-[#F0F5F8] px-1.5 py-0.2 rounded mt-0.5 border border-[#BCD3DF]/40">
+                          {pctAut.toFixed(1).replace('.', ',')}%
+                        </span>
+                      </div>
+                    </td>
+                    {/* Cadastro / Doação / Consumo */}
+                    <td className="py-3.5 px-3.5 text-center font-bold">
+                      <div className="flex flex-col items-center">
+                        <span className="text-[#002A3A] font-black">{formatYValue(rawOutros)}</span>
+                        <span className="text-[10px] text-[#004A6D]/80 font-bold bg-[#F0F5F8] px-1.5 py-0.2 rounded mt-0.5 border border-[#BCD3DF]/40">
+                          {pctOutros.toFixed(1).replace('.', ',')}%
+                        </span>
+                      </div>
+                    </td>
+                    {/* Total Acumulado */}
                     <td className="py-3.5 px-4 text-right font-black text-[#004A6D] bg-[#F0F5F8]/70 text-xs">
                       {formatYValue(totalAno)}
                     </td>
-                    <td className="py-3.5 px-3.5 text-center font-black text-[#006E24] bg-[#00E04B]/10 text-xs">
-                      {autPct.toFixed(1)}%
+                    {/* Crescimento YoY (%) */}
+                    <td className={`py-3.5 px-3.5 text-center font-black text-xs ${
+                      yoyPct === null ? 'text-[#004A6D]/50 bg-[#F0F5F8]' :
+                      yoyPct >= 0 ? 'text-[#006E24] bg-[#00E04B]/10' : 'text-[#FD3168] bg-[#FD3168]/10'
+                    }`}>
+                      {yoyFormatted}
                     </td>
                   </tr>
                 );

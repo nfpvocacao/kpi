@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { EmpresaParceira } from '../types';
+import { EmpresaParceira, VENDEDORES_MAP } from '../types';
 
 export interface UseEmpresasParams {
   selectedYears?: number[];
@@ -233,6 +233,7 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
               cidade: cidade,
               isCadastrada: isCadastrada,
               idVendedor: idVendedor,
+              nomeVendedor: idVendedor ? (VENDEDORES_MAP[idVendedor] || `Captador #${idVendedor}`) : undefined,
               logradouro: cadOficial?.logradouro,
               bairro: cadOficial?.bairro,
               cep: cadOficial?.cep,
