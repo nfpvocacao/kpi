@@ -8,6 +8,7 @@ import {
   Store, 
   ChevronUp,
   ChevronDown,
+  ArrowUp,
   Box,
   Loader2,
   Calendar,
@@ -38,12 +39,14 @@ interface TabEmpresasProps {
   selectedYears?: number[];
   selectedMonths?: number[];
   onSelectEmpresaParaFiltro?: (empresa: EmpresaParceira) => void;
+  onNavigateToDoador?: (cpf: string) => void;
 }
 
 export const TabEmpresas: React.FC<TabEmpresasProps> = ({
   selectedYears = [2026],
   selectedMonths = [],
-  onSelectEmpresaParaFiltro
+  onSelectEmpresaParaFiltro,
+  onNavigateToDoador
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState<string>('TODAS');
@@ -57,10 +60,32 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 100;
 
-  // Estado para empresa selecionada para ver evolução temporal
+  // Estado do botão flutuante "Ir ao Topo"
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Listener de Scroll para exibir o botão flutuante "Ir ao Topo"
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Estado para empresa selecionada para ver evolução temporal e doadores
   const [empresaSelecionada, setEmpresaSelecionada] = useState<EmpresaParceira | null>(null);
   const [historicoMensal, setHistoricoMensal] = useState<any[]>([]);
+  const [doadoresEmpresa, setDoadoresEmpresa] = useState<any[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState<boolean>(false);
+  const [loadingDoadoresEmpresa, setLoadingDoadoresEmpresa] = useState<boolean>(false);
   const [metricHistorico, setMetricHistorico] = useState<'creditoApurado' | 'cupons' | 'valorNF'>('creditoApurado');
 
   const {
@@ -70,7 +95,8 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
     isLoading,
     isExporting,
     downloadFullCSV,
-    fetchEmpresaHistoricoMensal
+    fetchEmpresaHistoricoMensal,
+    fetchEmpresaDoadores
   } = useSupabaseEmpresas({
     selectedYears,
     selectedMonths: selectedMonth !== null ? [selectedMonth] : selectedMonths,
@@ -81,10 +107,16 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
   const handleSelecionarEmpresa = async (emp: EmpresaParceira) => {
     setEmpresaSelecionada(emp);
     setLoadingHistorico(true);
+    setLoadingDoadoresEmpresa(true);
     const hist = await fetchEmpresaHistoricoMensal(emp.cnpj);
     setHistoricoMensal(hist);
     setLoadingHistorico(false);
+
+    const doads = await fetchEmpresaDoadores(emp.cnpj);
+    setDoadoresEmpresa(doads);
+    setLoadingDoadoresEmpresa(false);
   };
+
 
   const empresasLista = topEmpresas;
   const chartRef = useRef<HTMLDivElement>(null);
@@ -974,12 +1006,97 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
               </div>
             </div>
 
+            {/* Rastreio de Doadores que Compraram Nesta Loja */}
+            <div className="space-y-2 pt-2 border-t border-[#BCD3DF]/60">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-[#002A3A] uppercase tracking-wider flex items-center gap-1.5">
+                  <Receipt className="w-4 h-4 text-[#004A6D]" />
+                  Doadores que Compraram Nesta Loja ({doadoresEmpresa.length})
+                </h3>
+                {loadingDoadoresEmpresa && (
+                  <div className="flex items-center gap-1.5 text-xs text-[#004A6D]">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Buscando doadores...</span>
+                  </div>
+                )}
+              </div>
+
+              {loadingDoadoresEmpresa ? (
+                <div className="p-6 text-center text-xs text-[#004A6D]/70 font-semibold bg-[#F8FCFD] rounded-xl border border-[#BCD3DF]/60">
+                  Carregando lista de doadores desta loja...
+                </div>
+              ) : doadoresEmpresa.length === 0 ? (
+                <div className="p-4 text-center text-xs text-[#004A6D]/60 bg-[#F4F9FA] rounded-xl border border-[#BCD3DF]/50">
+                  {empresaSelecionada.isCadastrada 
+                    ? 'Empresa cadastrada comercialmente com urnas/pontos de coleta físicos.' 
+                    : 'Nenhum registro individual de doador vinculado a este CNPJ no período selecionado.'}
+                </div>
+              ) : (
+                <div className="overflow-x-auto border border-[#BCD3DF] rounded-xl max-h-60 overflow-y-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="sticky top-0 bg-[#F4F9FA] border-b border-[#BCD3DF] text-[#004A6D] font-bold text-[11px] z-10">
+                      <tr>
+                        <th className="py-2.5 px-3">Doador / Nome</th>
+                        <th className="py-2.5 px-3">CPF</th>
+                        <th className="py-2.5 px-3 text-right">Cupons Doados</th>
+                        <th className="py-2.5 px-3 text-right">Valor em Notas (R$)</th>
+                        <th className="py-2.5 px-3 text-right">Crédito Gerado (R$)</th>
+                        <th className="py-2.5 px-3 text-center">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#F0F5F8]">
+                      {doadoresEmpresa.map((d, idx) => (
+                        <tr key={idx} className="hover:bg-[#F8FCFD]">
+                          <td className="py-2 px-3 font-bold text-[#002A3A]">{d.nome}</td>
+                          <td className="py-2 px-3 font-mono text-[#004A6D]">{d.cpf}</td>
+                          <td className="py-2 px-3 text-right font-medium">{formatarNumero(d.cupons)}</td>
+                          <td className="py-2 px-3 text-right font-medium text-[#004A6D]/80">{formatarMoeda(d.valorNF)}</td>
+                          <td className="py-2 px-3 text-right font-black text-[#006E24]">{formatarMoeda(d.credito)}</td>
+                          <td className="py-2 px-3 text-center">
+                            {onNavigateToDoador && d.cpf !== 'S/N' ? (
+                              <button
+                                onClick={() => {
+                                  setEmpresaSelecionada(null);
+                                  onNavigateToDoador(d.cpf);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-[#D9FBFF] hover:bg-[#004A6D] text-[#004A6D] hover:text-white font-bold text-[11px] transition-all cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <span>Ver Doador</span>
+                                <span>→</span>
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-[#004A6D]/40">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       )}
+
+      {/* Botão Flutuante "Ir ao Topo" */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          title="Ir ao topo da página"
+          aria-label="Ir ao topo"
+          className="fixed bottom-6 right-6 z-40 bg-[#004A6D] hover:bg-[#00344D] text-white px-5 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-2.5 border border-[#00E3E6]/30 cursor-pointer"
+        >
+          <ArrowUp className="w-4 h-4 text-[#00E3E6] stroke-[2.5]" />
+          <span className="font-extrabold text-xs tracking-wide">Ir ao Topo</span>
+        </button>
+      )}
+
 
 
     </div>
   );
 };
+
 

@@ -420,6 +420,50 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
     }
   };
 
+  // Função para buscar os doadores que geraram cupons nesta empresa (CNPJ)
+  const fetchEmpresaDoadores = async (cnpj: string, months?: number[]) => {
+    try {
+      let q = supabase
+        .from('vocacao_doador_estabelecimento_mensal')
+        .select('*')
+        .eq('cnpj_empresa', cnpj);
+
+      if (months && months.length > 0) {
+        q = q.in('mes', months);
+      }
+
+      const { data, error: errDoa } = await q;
+      if (errDoa || !data) return [];
+
+      const doadorMap: Record<string, { cpf: string; nome: string; cupons: number; valorNF: number; credito: number }> = {};
+
+      data.forEach((r: any) => {
+        if (r.tipo_ligacao === 'CADASTRO') return; // ignora linhas sintetizadas de cadastro sem CPF
+        const cpf = r.cpf_doador || 'S/N';
+        const nome = r.nome_doador || 'Doador Espontâneo';
+
+        if (!doadorMap[cpf]) {
+          doadorMap[cpf] = {
+            cpf,
+            nome,
+            cupons: 0,
+            valorNF: 0,
+            credito: 0
+          };
+        }
+
+        doadorMap[cpf].cupons += Number(r.total_cupons || 0);
+        doadorMap[cpf].valorNF += Number(r.total_valor_nf || 0);
+        doadorMap[cpf].credito += Number(r.total_credito_apurado || 0);
+      });
+
+      return Object.values(doadorMap).sort((a, b) => b.credito - a.credito);
+    } catch (err) {
+      console.error('Erro ao buscar doadores da empresa:', err);
+      return [];
+    }
+  };
+
   return {
     topEmpresas,
     totalEmpresasContagem,
@@ -429,5 +473,7 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
     error,
     downloadFullCSV,
     fetchEmpresaHistoricoMensal,
+    fetchEmpresaDoadores,
   };
 }
+

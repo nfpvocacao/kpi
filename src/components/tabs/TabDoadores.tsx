@@ -44,6 +44,7 @@ import { useSupabaseDoadores, DoadorEstoqueLoja, DoadorRealSupabase } from '../.
 interface TabDoadoresProps {
   selectedYears?: number[];
   selectedMonths?: number[];
+  initialSelectedDoadorCpf?: string;
 }
 
 type SortField = 'nome' | 'cpf' | 'nivelScore' | 'cuponsAutomatica' | 'cuponsDireta' | 'totalCupons' | 'creditoAutomatica' | 'creditoDireta' | 'totalCredito';
@@ -51,11 +52,16 @@ type SortOrder = 'asc' | 'desc';
 
 type LojaSortField = 'nomeEmpresa' | 'cuponsAuto' | 'cuponsDireta' | 'cupons' | 'valNF' | 'creditoAuto' | 'creditoDireta' | 'credito' | 'participacao';
 
-export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026], selectedMonths = [] }) => {
+export const TabDoadores: React.FC<TabDoadoresProps> = ({ 
+  selectedYears = [2026], 
+  selectedMonths = [],
+  initialSelectedDoadorCpf
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalidadeFiltro, setModalidadeFiltro] = useState<'TODOS' | 'DOACAO_AUTOMATICA' | 'DOACAO'>('TODOS');
   const [selectedScoreLevel, setSelectedScoreLevel] = useState<string>('TODOS');
-  const [selectedDoadorId, setSelectedDoadorId] = useState<string>('');
+  const [selectedDoadorId, setSelectedDoadorId] = useState<string>(initialSelectedDoadorCpf || '');
+
   const [lojasDoador, setLojasDoador] = useState<DoadorEstoqueLoja[]>([]);
   const [loadingLojas, setLoadingLojas] = useState<boolean>(false);
 
@@ -101,12 +107,16 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026]
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Select first donor when list loads if none selected
+  // Select initial donor or first donor when list loads if none selected
   useEffect(() => {
-    if (doadores.length > 0 && (!selectedDoadorId || !doadores.find(d => d.id === selectedDoadorId))) {
+    if (initialSelectedDoadorCpf) {
+      setSelectedDoadorId(initialSelectedDoadorCpf);
+      setIsInteractiveModuleOpen(true);
+    } else if (doadores.length > 0 && (!selectedDoadorId || !doadores.find(d => d.id === selectedDoadorId))) {
       setSelectedDoadorId(doadores[0].id);
     }
-  }, [doadores, selectedDoadorId]);
+  }, [doadores, initialSelectedDoadorCpf]);
+
 
   // Fetch store breakdown whenever selected donor changes
   useEffect(() => {
@@ -184,6 +194,28 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026]
     return sorted;
   }, [doadores, searchTerm, selectedScoreLevel, sortField, sortOrder]);
 
+  // Calculate CPF counts per score tier for the filter pills
+  const scoreCounts = useMemo(() => {
+    const counts = {
+      todos: doadores.length,
+      elite: 0,
+      ouro: 0,
+      prata: 0,
+      bronze: 0,
+      iniciante: 0
+    };
+
+    doadores.forEach(d => {
+      if (d.nivelScore === 'Elite (Diamante)') counts.elite++;
+      else if (d.nivelScore === 'Alta Performance') counts.ouro++;
+      else if (d.nivelScore === 'Na Média') counts.prata++;
+      else if (d.nivelScore === 'Em Desenvolvimento') counts.bronze++;
+      else if (d.nivelScore === 'Iniciante') counts.iniciante++;
+    });
+
+    return counts;
+  }, [doadores]);
+
   // Selected donor detail
   const doadorSelecionado = useMemo(() => {
     return doadores.find(d => d.id === selectedDoadorId) || doadores[0];
@@ -212,11 +244,18 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026]
     setLoadingHistorico(false);
   };
 
-  // Select donor and expand interactive module
+  // Module section ref for auto-scrolling
+  const moduleRef = useRef<HTMLDivElement>(null);
+
+  // Select donor, expand interactive module, and scroll into view smoothly
   const handleSelectDoadorEInspecionar = (id: string) => {
     setSelectedDoadorId(id);
     setIsInteractiveModuleOpen(true);
+    setTimeout(() => {
+      moduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
+
 
   // Clear Combobox Filter
   const handleClearCombobox = () => {
@@ -439,6 +478,12 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026]
           title="Crédito Gerado por Doadores"
           value={formatarMoeda(kpis.totalCredito)}
           subValue="Repasse efetivo da SEFAZ"
+          breakdown={{
+            autoLabel: 'Automatização:',
+            autoValue: formatarMoeda(kpis.creditoAutomatica),
+            diretaLabel: 'Doação Direta:',
+            diretaValue: formatarMoeda(kpis.creditoDireta)
+          }}
           icon={DollarSign}
           iconBgColor="bg-[#00E04B]/20"
           iconColor="text-[#006E24]"
@@ -561,7 +606,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026]
             )}
           </div>
 
-          {/* 5-Level Score Filter Pills */}
+          {/* 5-Level Score Filter Pills com Contagem de CPFs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
             <span className="text-xs font-bold text-[#004A6D] flex items-center gap-1 shrink-0">
               <SlidersHorizontal className="w-3.5 h-3.5" /> Score:
@@ -572,7 +617,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026]
                 selectedScoreLevel === 'TODOS' ? 'bg-[#004A6D] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
               }`}
             >
-              Todos
+              Todos ({formatarNumero(scoreCounts.todos)})
             </button>
             <button
               onClick={() => setSelectedScoreLevel('Elite (Diamante)')}
@@ -580,7 +625,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026]
                 selectedScoreLevel === 'Elite (Diamante)' ? 'bg-[#004A6D] text-[#00E3E6]' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
               }`}
             >
-              💎 Elite
+              💎 Elite ({formatarNumero(scoreCounts.elite)})
             </button>
             <button
               onClick={() => setSelectedScoreLevel('Alta Performance')}
@@ -588,7 +633,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026]
                 selectedScoreLevel === 'Alta Performance' ? 'bg-[#EDCD01] text-[#002A3A]' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
               }`}
             >
-              🥇 Ouro
+              🥇 Ouro ({formatarNumero(scoreCounts.ouro)})
             </button>
             <button
               onClick={() => setSelectedScoreLevel('Na Média')}
@@ -596,7 +641,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026]
                 selectedScoreLevel === 'Na Média' ? 'bg-[#004A6D] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
               }`}
             >
-              🥈 Prata
+              🥈 Prata ({formatarNumero(scoreCounts.prata)})
             </button>
             <button
               onClick={() => setSelectedScoreLevel('Em Desenvolvimento')}
@@ -604,7 +649,15 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026]
                 selectedScoreLevel === 'Em Desenvolvimento' ? 'bg-[#FF9F43] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
               }`}
             >
-              🥉 Bronze
+              🥉 Bronze ({formatarNumero(scoreCounts.bronze)})
+            </button>
+            <button
+              onClick={() => setSelectedScoreLevel('Iniciante')}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${
+                selectedScoreLevel === 'Iniciante' ? 'bg-[#6C757D] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
+              }`}
+            >
+              🌱 Iniciante ({formatarNumero(scoreCounts.iniciante)})
             </button>
           </div>
         </div>
@@ -784,7 +837,8 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({ selectedYears = [2026]
       </div>
 
       {/* MÓDULO INTERATIVO ENCAPSULADO & COLAPSÁVEL: DOADOR X LOJAS */}
-      <div className="bg-gradient-to-br from-[#F8FCFD] to-[#EBF6F9] border-2 border-[#00E3E6]/60 rounded-2xl shadow-xs overflow-hidden transition-all">
+      <div ref={moduleRef} className="bg-gradient-to-br from-[#F8FCFD] to-[#EBF6F9] border-2 border-[#00E3E6]/60 rounded-2xl shadow-xs overflow-hidden transition-all scroll-mt-6">
+
         
         {/* Module Header Bar (Collapsible Toggle) */}
         <div 

@@ -51,6 +51,8 @@ export function useSupabaseDoadores(params: UseDoadoresParams = {}) {
     totalCupons: 0,
     totalValorNF: 0,
     totalCredito: 0,
+    creditoAutomatica: 0,
+    creditoDireta: 0,
     ticketMedio: 0,
     mediaGeralMes: 0
   });
@@ -182,11 +184,15 @@ export function useSupabaseDoadores(params: UseDoadoresParams = {}) {
         let sumCupons = 0;
         let sumValorNF = 0;
         let sumCredito = 0;
+        let sumCreditoAutomatica = 0;
+        let sumCreditoDireta = 0;
 
         listAllModalidade.forEach(d => {
           sumCupons += d.totalCupons;
           sumValorNF += d.totalValorNF;
           sumCredito += d.totalCredito;
+          sumCreditoAutomatica += d.creditoAutomatica;
+          sumCreditoDireta += d.creditoDireta;
         });
 
         const ticketMedio = sumDoadores > 0 ? sumCredito / sumDoadores : 0;
@@ -226,10 +232,13 @@ export function useSupabaseDoadores(params: UseDoadoresParams = {}) {
           totalCupons: sumCupons,
           totalValorNF: Number(sumValorNF.toFixed(2)),
           totalCredito: Number(sumCredito.toFixed(2)),
+          creditoAutomatica: Number(sumCreditoAutomatica.toFixed(2)),
+          creditoDireta: Number(sumCreditoDireta.toFixed(2)),
           ticketMedio: Number(ticketMedio.toFixed(2)),
           mediaGeralMes: Number(ticketMedio.toFixed(2))
         });
         setIsLoading(false);
+
 
       } catch (err: any) {
         console.error('Erro no hook useSupabaseDoadores:', err);
@@ -323,8 +332,8 @@ export function useSupabaseDoadores(params: UseDoadoresParams = {}) {
         .from('vocacao_resumo_mensal_doadores')
         .select('*')
         .eq('cpf_doador', cpf)
-        .order('ano', { ascending: true })
-        .order('mes', { ascending: true });
+        .order('ano', { ascending: false })
+        .order('mes', { ascending: false });
 
       if (error || !data) return [];
       return data.map((r: any) => ({

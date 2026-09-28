@@ -130,6 +130,13 @@ export default function App() {
     });
   };
 
+  const [targetDoadorCpf, setTargetDoadorCpf] = useState<string>('');
+
+  const handleNavigateToDoador = (cpf: string) => {
+    setTargetDoadorCpf(cpf);
+    setActiveTab('doadores');
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F6FAFD] text-[#002A3A] font-['Raleway',sans-serif]">
       
@@ -171,6 +178,7 @@ export default function App() {
           <TabEmpresas 
             selectedYears={periodFilter.years} 
             selectedMonths={periodFilter.months}
+            onNavigateToDoador={handleNavigateToDoador}
           />
         )}
 
@@ -178,8 +186,10 @@ export default function App() {
           <TabDoadores 
             selectedYears={periodFilter.years}
             selectedMonths={periodFilter.months}
+            initialSelectedDoadorCpf={targetDoadorCpf}
           />
         )}
+
 
         {activeTab === 'automaticos' && (
           <TabDoadoresAutomaticos

@@ -6,6 +6,12 @@ interface KPICardProps {
   title: string;
   value: string;
   subValue?: string;
+  breakdown?: {
+    autoLabel?: string;
+    autoValue: string;
+    diretaLabel?: string;
+    diretaValue: string;
+  };
   trend?: {
     value: string;
     isPositive: boolean;
@@ -26,6 +32,7 @@ export const KPICard: React.FC<KPICardProps> = ({
   title,
   value,
   subValue,
+  breakdown,
   trend,
   icon: Icon,
   iconBgColor = 'bg-[#D9FBFF]',
@@ -54,14 +61,33 @@ export const KPICard: React.FC<KPICardProps> = ({
         </div>
       </div>
 
-      <div className="mt-1">
+      <div className="mt-1 space-y-1">
         <div className="text-2xl lg:text-3xl font-black text-[#002A3A] tracking-tight font-['Raleway',sans-serif]">
           {value}
         </div>
         {subValue && (
-          <p className="text-xs font-semibold text-[#004A6D]/80 mt-0.5">
+          <p className="text-xs font-semibold text-[#004A6D]/80">
             {subValue}
           </p>
+        )}
+
+        {breakdown && (
+          <div className="pt-2 border-t border-[#F0F5F8] mt-2 space-y-1 text-xs">
+            <div className="flex items-center justify-between text-[#004A6D]">
+              <span className="font-bold flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[#004A6D]"></span>
+                {breakdown.autoLabel || 'Automatização:'}
+              </span>
+              <span className="font-extrabold text-[#002A3A]">{breakdown.autoValue}</span>
+            </div>
+            <div className="flex items-center justify-between text-[#006E24]">
+              <span className="font-bold flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[#00E04B]"></span>
+                {breakdown.diretaLabel || 'Doação Direta:'}
+              </span>
+              <span className="font-extrabold text-[#006E24]">{breakdown.diretaValue}</span>
+            </div>
+          </div>
         )}
       </div>
 
