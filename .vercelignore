@@ -1,0 +1,8 @@
+nfp_database.db
+planilhas/
+*.db
+*.xlsx
+*.csv
+*.pdf
+scripts/
+venv/
