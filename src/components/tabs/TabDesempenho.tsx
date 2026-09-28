@@ -251,19 +251,41 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
                   tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
-                  formatter={(value: any) => [formatarMoeda(Number(value))]}
-                  labelFormatter={(label) => `Mês: ${label}`}
-                  contentStyle={{ 
-                    backgroundColor: '#FFFFFF', 
-                    color: '#002A3A', 
-                    borderRadius: '12px', 
-                    border: '1px solid #BCD3DF', 
-                    boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    padding: '10px 14px'
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const row = payload[0]?.payload;
+                      const totalMes = row?.creditoTotal || payload.reduce((acc: number, entry: any) => acc + Number(entry.value || 0), 0);
+
+                      return (
+                        <div className="bg-white border border-[#BCD3DF] p-3.5 rounded-xl shadow-lg space-y-2 text-xs min-w-[220px]">
+                          <p className="text-[#002A3A] font-extrabold pb-1.5 border-b border-[#BCD3DF]/60 flex items-center justify-between">
+                            <span>Mês: <span className="text-[#004A6D]">{label}</span></span>
+                          </p>
+                          <div className="space-y-1.5">
+                            {payload.map((entry: any, index: number) => {
+                              const color = entry.color || entry.stroke || '#004A6D';
+                              return (
+                                <div key={`item-${index}`} className="flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-1.5 font-bold" style={{ color }}>
+                                    <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0 shadow-2xs" style={{ backgroundColor: color }} />
+                                    <span>{entry.name}:</span>
+                                  </div>
+                                  <span className="font-black text-[#002A3A]">
+                                    {formatarMoeda(Number(entry.value || 0))}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="pt-2 border-t border-[#BCD3DF]/60 flex items-center justify-between font-black text-xs">
+                            <span className="text-[#002A3A] uppercase tracking-wider text-[11px]">Total Mês:</span>
+                            <span className="text-[#004A6D] font-black text-sm">{formatarMoeda(totalMes)}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
-                  labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
                 />
                 <Area
                   type="monotone"
@@ -365,11 +387,23 @@ export const TabDesempenho: React.FC<TabDesempenhoProps> = ({
                   </div>
                   <div className="text-right">
                     <span className="font-bold text-[#004A6D]">{formatarMoeda(item.valor)}</span>
-                    <span className="text-[#004A6D]/60 ml-1 text-[11px]">({perc.toFixed(1)}%)</span>
+                    <span className="text-[#004A6D]/60 ml-1 text-[11px]">({perc.toFixed(1).replace('.', ',')}%)</span>
                   </div>
                 </div>
               );
             })}
+
+            {/* Totalizador Geral */}
+            <div className="flex items-center justify-between text-xs pt-2.5 mt-1 border-t-2 border-[#BCD3DF]/60 font-black bg-[#F8FCFD] px-2.5 py-1.5 rounded-lg">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-sm shrink-0 bg-[#002A3A]"></span>
+                <span className="text-[#002A3A] font-black uppercase text-[11px] tracking-wider">Total Geral</span>
+              </div>
+              <div className="text-right">
+                <span className="font-black text-[#002A3A] text-xs">{formatarMoeda(totalCreditos)}</span>
+                <span className="text-[#006E24] ml-1 text-[11px] font-extrabold">(100,0%)</span>
+              </div>
+            </div>
           </div>
         </div>
 

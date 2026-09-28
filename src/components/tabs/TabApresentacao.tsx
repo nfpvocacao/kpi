@@ -457,11 +457,11 @@ export const TabApresentacao: React.FC<TabApresentacaoProps> = ({
           <div className="flex items-center gap-2 text-[11px] font-extrabold">
             <span className="inline-flex items-center gap-1 bg-[#00E04B]/15 text-[#006E24] px-2.5 py-1 rounded-md border border-[#00E04B]/30">
               <span className="w-2 h-2 rounded-full bg-[#006E24]" />
-              Dados Reais (até Mai/2026)
+              Dados Reais (até Jun/2026)
             </span>
             <span className="inline-flex items-center gap-1 bg-[#EDCD01]/25 text-[#7A5A00] px-2.5 py-1 rounded-md border border-[#EDCD01]/50">
               <span className="w-2 h-2 rounded-full bg-[#EDCD01]" />
-              Projetados (Jun/2026+)
+              Projetados (Jul/2026+)
             </span>
           </div>
         </div>
@@ -505,7 +505,7 @@ export const TabApresentacao: React.FC<TabApresentacaoProps> = ({
                             {payload.map((entry: any, index: number) => {
                               const yearNum = parseInt(String(entry.name || '').replace('Ano_', ''), 10);
                               const color = entry.color || entry.stroke || '#004A6D';
-                              const isProj = yearNum > 2026 || (yearNum === 2026 && labelMonthIdx >= 5);
+                              const isProj = yearNum > 2026 || (yearNum === 2026 && labelMonthIdx >= 6);
 
                               return (
                                 <div key={`item-${index}`} className="flex items-center justify-between gap-3">
@@ -612,10 +612,10 @@ export const TabApresentacao: React.FC<TabApresentacaoProps> = ({
 
           <div className="flex items-center gap-2 text-[11px] font-bold">
             <span className="bg-[#00E04B]/15 text-[#006E24] px-2.5 py-1 rounded-full border border-[#00E04B]/30">
-              Até Mai/26 = Base Real
+              Até Jun/26 = Base Real
             </span>
             <span className="bg-[#EDCD01]/25 text-[#7A5A00] px-2.5 py-1 rounded-full border border-[#EDCD01]/50">
-              Jun/26 em diante = Projetado
+              Jul/26 em diante = Projetado
             </span>
           </div>
         </div>
@@ -629,8 +629,8 @@ export const TabApresentacao: React.FC<TabApresentacaoProps> = ({
                   Ano / Período
                 </th>
                 {MONTH_NAMES.map((m, mIdx) => (
-                  <th key={m} className={`py-3 px-2.5 font-extrabold text-center uppercase text-[11px] ${mIdx >= 5 ? 'bg-[#00384E] text-[#EDCD01]' : ''}`}>
-                    {m} {mIdx >= 5 ? '*' : ''}
+                  <th key={m} className={`py-3 px-2.5 font-extrabold text-center uppercase text-[11px] ${mIdx >= 6 ? 'bg-[#00384E] text-[#EDCD01]' : ''}`}>
+                    {m} {mIdx >= 6 ? '*' : ''}
                   </th>
                 ))}
                 <th className="py-3 px-3.5 rounded-r-xl font-extrabold text-right uppercase tracking-wider text-[11px] bg-[#004A6D]">
@@ -672,7 +672,7 @@ export const TabApresentacao: React.FC<TabApresentacaoProps> = ({
                       <span className="text-[#002A3A] font-extrabold text-xs">Ano {ano}</span>
                     </td>
                     {monthlyValues.map((val, mIdx) => {
-                      const isProjectedCell = ano > 2026 || (ano === 2026 && mIdx >= 5);
+                      const isProjectedCell = ano > 2026 || (ano === 2026 && mIdx >= 6);
 
                       return (
                         <td 
