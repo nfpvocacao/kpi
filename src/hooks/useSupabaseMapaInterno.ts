@@ -81,8 +81,10 @@ export function useSupabaseMapaInterno() {
             const qtdeCuponsRaw = Number(r.qtde_cupons || 0);
             const totalCuponsAuto = autCupRaw > 0 ? autCupRaw : qtdeCuponsRaw;
 
-            // aut_cred é o total de créditos somente dos automatizados
-            const totalCreditoAuto = Number(r.aut_cred || r.credito_total || r.total_credito || 0);
+            // aut_cred é o total de créditos somente dos automatizados (AUTCred)
+            const totalCreditoAuto = Number(r.aut_cred || 0);
+
+
 
             // Ticket médio entre crédito total automatizado (aut_cred) e quantidade de cupons automatizados
             const ticketAuto = totalCuponsAuto > 0 ? (totalCreditoAuto / totalCuponsAuto) : Number(r.ticket_medio || 0);

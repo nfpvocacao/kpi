@@ -34,9 +34,10 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('desempenho');
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({
     years: [2026],
-    months: [1, 2, 3, 4, 5, 6, 7, 8],
+    months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     preset: '2026'
   });
+
   const { metricas: metricasBase, isLoading: isSupabaseLoading } = useSupabaseMetricas();
   const [databaseState, setDatabaseState] = useState<DatabaseState>({
     ...INITIAL_DATABASE_STATE,
@@ -165,7 +166,8 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6">
+      <main className="flex-1 max-w-[1800px] w-full mx-auto px-4 lg:px-8 py-6">
+
         {activeTab === 'desempenho' && (
           <TabDesempenho
             metricasFiltradas={metricasFiltradas}

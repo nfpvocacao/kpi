@@ -79,7 +79,8 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
 
   return (
     <div className="bg-white border-b border-[#BCD3DF]/70 sticky top-[65px] z-20 px-3 lg:px-8 shadow-2xs">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1800px] mx-auto">
+
         <nav 
           className="grid grid-cols-2 sm:grid-cols-7 gap-1.5 py-2.5"
           aria-label="Abas do Sistema NFP Analytics"

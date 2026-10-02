@@ -552,10 +552,19 @@ def import_valores_distribuidos(conn, nfp_dir):
 
 def import_internal_map(conn, nfp_dir):
     print("\n--- IMPORTANDO PLANILHA DE MAPA INTERNO DA VOCAÇÃO ---")
-    mapa_path = os.path.join(nfp_dir, "2025-01-01 Mapa Automatizacoes.xlsx")
-    if not os.path.exists(mapa_path):
-        print("Arquivo Mapa de Automatizacoes não encontrado.")
+    drive_path = r"G:\Drives compartilhados\NFP\Fazenda\Automatizações\2025-01-01 Mapa Automatizacoes.xlsx"
+    local_path = os.path.join(nfp_dir, "2025-01-01 Mapa Automatizacoes.xlsx")
+    
+    if os.path.exists(drive_path):
+        mapa_path = drive_path
+        print(f"Lendo planilha oficial do Drive: {mapa_path}")
+    elif os.path.exists(local_path):
+        mapa_path = local_path
+        print(f"Lendo planilha da pasta local: {mapa_path}")
+    else:
+        print("Arquivo Mapa de Automatizacoes não encontrado no Drive nem localmente.")
         return
+
         
     try:
         # 1. Importar a aba 'Consolidado'
@@ -673,6 +682,11 @@ def import_internal_map(conn, nfp_dir):
         df_mapa = pd.read_excel(mapa_path, sheet_name="Mapa")
         df_mapa = df_mapa.dropna(subset=['Mês'])
         
+        # Preenchimento automático de fórmulas encadeadas de doadores (ex: dez/2026 = =B106)
+        # Se doadores_plenos for NaN mas for um mês de transição como dez/2026, herda o valor de nov/2026
+        last_plenos = 0
+        last_restritos = 0
+        
         mapa_data = []
         for _, row in df_mapa.iterrows():
             try:
@@ -680,24 +694,42 @@ def import_internal_map(conn, nfp_dir):
                 dt_str = dt.strftime("%Y-%m-%d")
                 
                 # Conversores seguros para evitar erros
-                def safe_int(x):
+                def safe_int(x, fallback=0):
                     try:
-                        return int(float(x)) if not pd.isna(x) else 0
+                        if pd.isna(x) or str(x).strip() == '' or x is None:
+                            return fallback
+                        return int(float(x))
                     except:
-                        return 0
+                        return fallback
                         
-                def safe_float(x):
+                def safe_float(x, fallback=0.0):
                     try:
-                        return float(x) if not pd.isna(x) else 0.0
+                        if pd.isna(x) or str(x).strip() == '' or x is None:
+                            return fallback
+                        return float(x)
                     except:
-                        return 0.0
+                        return fallback
 
-                plenos = safe_int(row.get('Doadores Plenos', 0))
-                restritos = safe_int(row.get('Doadores Restritos', 0))
-                total_doad = safe_int(row.get('Total Doadores', 0))
+                raw_plenos = row.get('Doadores Plenos')
+                if not pd.isna(raw_plenos) and raw_plenos is not None:
+                    plenos = safe_int(raw_plenos)
+                    last_plenos = plenos
+                else:
+                    # Se for NaN em mês de transição, herda o último valor de plenos válido
+                    plenos = last_plenos
+
+                raw_restritos = row.get('Doadores Restritos')
+                if not pd.isna(raw_restritos) and raw_restritos is not None:
+                    restritos = safe_int(raw_restritos)
+                    last_restritos = restritos
+                else:
+                    restritos = last_restritos
+
+                total_doad = safe_int(row.get('Total Doadores'), fallback=(plenos + restritos))
                 qtde_cup = safe_int(row.get('Qtde Cupons', 0))
                 val_nf = safe_float(row.get('Val NF', 0.0))
                 ticket_med = safe_float(row.get('Ticket médio', 0.0))
+
                 
                 aut_empr = safe_int(row.get('AUTEmpr', 0))
                 aut_cup = safe_int(row.get('AUTCup', 0))

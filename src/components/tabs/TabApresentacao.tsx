@@ -171,27 +171,32 @@ export const TabApresentacao: React.FC<TabApresentacaoProps> = ({
       };
 
       yearsToInclude.forEach(ano => {
-        const row = mapaInterno.find(r => r.ano === ano && r.mes === mesNum);
-        if (row) {
-          if (selectedMetric === 'credito') {
-            dataRow[`Ano_${ano}`] = row.total_credito_auto || 0;
-          } else if (selectedMetric === 'doadores') {
-            dataRow[`Ano_${ano}`] = row.doadores_plenos || 0;
-          } else if (selectedMetric === 'cupons') {
-            dataRow[`Ano_${ano}`] = row.total_cupons_auto || 0;
-          } else if (selectedMetric === 'ticket') {
-            dataRow[`Ano_${ano}`] = row.ticket_medio_auto || 0;
-          }
+        if (selectedMetric === 'credito') {
+          const metricaRow = allMetricas.find(m => m.ano === ano && (m.mes === `${ano}-${String(mesNum).padStart(2, '0')}` || (m as any).mesNum === mesNum));
+          dataRow[`Ano_${ano}`] = metricaRow ? (metricaRow.creditoAutomatica || 0) : null;
         } else {
-          dataRow[`Ano_${ano}`] = null;
+          const row = mapaInterno.find(r => r.ano === ano && r.mes === mesNum);
+          if (row) {
+            if (selectedMetric === 'doadores') {
+              dataRow[`Ano_${ano}`] = row.doadores_plenos || 0;
+            } else if (selectedMetric === 'cupons') {
+              dataRow[`Ano_${ano}`] = row.total_cupons_auto || 0;
+            } else if (selectedMetric === 'ticket') {
+              dataRow[`Ano_${ano}`] = row.ticket_medio_auto || 0;
+            }
+          } else {
+            dataRow[`Ano_${ano}`] = null;
+          }
         }
       });
+
 
       return dataRow;
     });
 
     return { chartData, availableYears: yearsToInclude };
-  }, [mapaInterno, selectedYears, selectedMetric]);
+  }, [mapaInterno, allMetricas, selectedYears, selectedMetric]);
+
 
   const { chartData, availableYears } = yoyChartResult;
 
@@ -645,14 +650,18 @@ export const TabApresentacao: React.FC<TabApresentacaoProps> = ({
                 // Extrair array de valores do mês 1 ao 12 para o ano atual
                 const monthlyValues = MONTH_NAMES.map((_, mIdx) => {
                   const monthNum = mIdx + 1;
+                  if (selectedMetric === 'credito') {
+                    const metricaRow = allMetricas.find(m => m.ano === ano && (m.mes === `${ano}-${String(monthNum).padStart(2, '0')}` || (m as any).mesNum === monthNum));
+                    return metricaRow ? (metricaRow.creditoAutomatica || 0) : null;
+                  }
                   const row = mapaInterno?.find(r => r.ano === ano && r.mes === monthNum);
                   if (!row) return null;
-                  if (selectedMetric === 'credito') return row.total_credito_auto || 0;
                   if (selectedMetric === 'doadores') return row.doadores_plenos || 0;
                   if (selectedMetric === 'cupons') return row.total_cupons_auto || 0;
                   if (selectedMetric === 'ticket') return row.ticket_medio_auto || 0;
                   return null;
                 });
+
 
                 // Calcular Total do Ano
                 const validValues = monthlyValues.filter(v => v !== null) as number[];

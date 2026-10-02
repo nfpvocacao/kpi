@@ -42,15 +42,10 @@ export const Header: React.FC<HeaderProps> = ({
     const monthNamesShort = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const monthNamesFull = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     
-    if (filter.months.length === 0) {
+    if (filter.months.length === 0 || filter.months.length === 12) {
       return `Ano ${yearsStr} (Todos os Meses)`;
     }
-    if (filter.months.length === 1) {
-      return `${monthNamesFull[filter.months[0] - 1]} / ${yearsStr}`;
-    }
-    if (filter.months.length === 8 && filter.months.join(',') === '1,2,3,4,5,6,7,8' && filter.years.join(',') === '2026') {
-      return 'Ano 2026 (Atual - Jan a Ago)';
-    }
+
     
     const sortedMonths = [...filter.months].sort((a,b) => a-b);
     const isContiguous = sortedMonths.length > 1 && sortedMonths.every((val, i, arr) => i === 0 || val === arr[i-1] + 1);
@@ -65,7 +60,8 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#D9FBFF] shadow-xs px-4 lg:px-8 py-3.5">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="max-w-[1800px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+
           
           {/* Left: Brand + Application Title */}
           <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
