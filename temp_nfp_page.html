@@ -1,0 +1,503 @@
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-br" xml:lang="pt-br"><head><title>
+	Consulta de Consumidores Doadores
+</title><meta name="robots" content="noindex,nofollow,noarchive"><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="author" content="DTI"><meta name="description" content="Secretaria da Fazenda do Estado de São Paulo"><meta name="copyright" content="Copyright © 2007 Secretaria da Fazenda do Estado de São Paulo - Todos os direitos reservados"><meta http-equiv="X-UA-Compatible" name="CompatibilidadeIE" content="IE=10">
+    <link href="/styles/reset.css" rel="stylesheet" type="text/css">
+    <link href="/styles/estiloAcessivel.css" rel="stylesheet" type="text/css">
+    <link href="/styles/SlideShow.css" rel="stylesheet" type="text/css">
+    <link href="/controles/zipConteudo.ashx?file=/styles/blitzer/jquery-ui-1.8.16.custom.css&amp;type=css" rel="stylesheet" type="text/css">
+    
+    <link rel="stylesheet" type="text/css" href="/controles/zipConteudo.ashx?file=/styles/blitzer/jquery-ui-1.8.16.custom.css&amp;type=css">
+    <link rel="stylesheet" type="text/css" href="../styles/Fw.LayoutPadrao/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="../styles/Fw.LayoutPadrao/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="../styles/Fw.LayoutPadrao/stylesheets/master.css">
+    <link rel="stylesheet" type="text/css" href="../styles/doacoes-futuras.css">
+    <link rel="stylesheet" type="text/css" href="../styles/ionicons.min.css">
+    <!--
+    -->
+    <script src="~/Scripts/jquery-3.2.1.min.js" type="text/javascript"></script>
+    <script src="~/Scripts/bootstrap.min.js" type="text/javascript"></script>
+
+    <script src="/controles/zipConteudo.ashx?file=/script/fazenda.js&amp;type=js" language="javascript" type="text/javascript"></script>
+    <script src="/script/internet.js" language="javascript" type="text/javascript"></script>
+    <script src="/controles/zipConteudo.ashx?file=/script/jquery-1.7.1.min.js&amp;type=js" language="javascript" type="text/javascript"></script>
+    <script src="/controles/zipConteudo.ashx?file=/script/jquery-ui-1.8.16.custom.min.js&amp;type=js" language="javascript" type="text/javascript"></script>
+    <script src="/script/jquery.ui.datepicker-pt-BR.js" language="javascript" type="text/javascript"></script>
+    <script src="/script/accessKey.js" language="javascript" type="text/javascript"></script>
+    <script src="/script/help_ca.js" language="javascript" type="text/javascript"></script>
+    <script src="/script/fazenda.js" type="text/javascript" language="javascript"></script>
+    <!-- 
+		Codigo para ativacao do application insights
+	-->
+    
+
+    <script language="javascript" type="text/javascript">
+
+        $(function () {
+            //Ajustar borda do container no IE
+            if ($.browser.msie && $.browser.version < '9.0') {
+                $('.containerConteudo').css('behavior', 'url(\'/styles/border-radius.htc\')');
+            }
+
+            $(".email").click(function () {
+                window.location.href = '/CaixaPostal/CaixaPostalEntrada.aspx';
+            });
+
+            $.datepicker.setDefaults($.datepicker.regional["pt-BR"]);
+
+            $("input[type='text']").each(function () {
+                if ($(this).val() == $(this).data('value')) {
+                    $(this).removeClass('text');
+                    $(this).addClass('corClara');
+                }
+                $(this).focus(function () {
+                    if ($(this).val() == $(this).data('value')) {
+                        $(this).val('');
+                        $(this).removeClass('corClara');
+                        $(this).addClass('text');
+                    }
+                });
+            });
+
+            $("input[type='password']").each(function () {
+                if ($(this).val() != '') {
+                    $(this).removeClass('text');
+                    $(this).addClass('corBranca');
+                }
+                $(this).focus(function () {
+                    $(this).removeClass('corBranca');
+                    $(this).addClass('text');
+
+                    if ($(this).val() == $(this).data('value'))
+                        $(this).val('');
+                });
+            });
+
+            $('#UserNameAcessivel').keypress(function (event) {
+                if (event.keyCode == 13) {
+                    $('#btnAcessar').click();
+                    event.preventDefault();
+                }
+            });
+            $('#PasswordAcessivel').keypress(function (event) {
+                if (event.keyCode == 13) {
+                    $('#btnAcessar').click();
+                    event.preventDefault();
+                }
+            });
+            $('#ImagemRandAcessivel').keypress(function (event) {
+                if (event.keyCode == 13) {
+                    $('#btnAcessar').click();
+                    event.preventDefault();
+                }
+            });
+
+            $('#divMensagemMaster').dialog({
+                autoOpen: false,
+                resizable: false,
+                width: 300,
+                modal: true,
+                buttons: { "Ok": function () { $(this).dialog("close"); } }
+            });
+
+            $('#divMensagemMaster').dialog({
+                open: function (event, ui) {
+                    //$(this).parents(".ui-dialog:first").find(".ui-icon").removeClass("ui-icon").addClass("ui-icon2");
+                    $(this).parents(".ui-dialog:first").find(".ui-widget-header").removeClass("ui-widget-header").addClass("ui-widget-header-info");
+                }
+            });
+
+            $('#divErroMaster').dialog({
+                autoOpen: false,
+                width: 300,
+                modal: true,
+                buttons: { "Ok": function () { $(this).dialog("close"); } }
+            });
+
+            $('#divErroMaster').dialog({
+                open: function (event, ui) {
+                    //$(this).parents(".ui-dialog:first").find(".ui-icon").removeClass("ui-icon").addClass("ui-icon2");
+                    $(this).parents(".ui-dialog:first").find(".ui-widget-header").removeClass("ui-widget-header").addClass("ui-widget-header-error");
+                }
+            });
+
+            $('#divPerguntaMaster').dialog({
+                autoOpen: false,
+                width: 300,
+                modal: true,
+                //buttons: { "Ok": function () { $(this).dialog("close"); } }
+            });
+
+            $('#divPerguntaMaster').dialog({
+                open: function (event, ui) {
+                    //$(this).parents(".ui-dialog:first").find(".ui-icon").removeClass("ui-icon").addClass("ui-icon2");
+                    $(this).parents(".ui-dialog:first").find(".ui-widget-header").removeClass("ui-widget-header").addClass("ui-widget-header-quest");
+                    $(this).parents(".ui-dialog:first").find(".ui-icon").removeClass("ui-icon").addClass("ui-icon_Mensagem");
+                }
+            });
+
+            changeLabel();
+        });
+
+        function tratarRespostaDoacaoAutomatica(resposta) {
+            if ($('#chkPerguntar').length > 0) {
+                var ocultar = $('#chkPerguntar')[0].checked;
+                var id = document.getElementById('hddIDDoacao').value;
+
+                if (ocultar == true) {
+                    $.ajax('/Principal.aspx/OcultarPergunta', {
+                        type: 'POST',
+                        data: '{id:' + id + '}',
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                    });
+                }
+            }
+
+            if (resposta == true) {
+                __doPostBack('', 'RENOVAR_DOACAO');
+            }
+
+            $('#divPerguntaMaster').dialog('close');
+        }
+
+        function acessarBarraAcessibilidade() {
+
+            var tipo = $('#ddlTipoUsuario').val();
+            $(tipo).click();
+
+            $('#UserName').val($('#UserNameAcessivel').val());
+            $('#Password').val($('#PasswordAcessivel').val());
+
+            if ($("#ImagemRand").length > 0) {
+                $('#ImagemRand').val($('#ImagemRandAcessivel').val());
+            }
+
+            $('#Login').click();
+        }
+
+        function esqueciBarraAcessibilidade() {
+
+            $('#ddlTipoUsuario').val('#rdBtnNaoContribuinte');
+            var tipo = $('#ddlTipoUsuario').val();
+            $(tipo).click();
+
+
+            $('#UserName').val($('#UserNameAcessivel').val());
+
+
+
+            $('#lkbEsqueci').click();
+        }
+
+        function goToMenu() {
+            $('#MenuSuperior li').each(function () {
+                Sys.WebForms.Menu._domHelper.removeEvent(this, 'mouseover', Sys.WebForms.MenuItem._onmouseover);
+                Sys.WebForms.Menu._domHelper.removeEvent(this, 'mouseout', Sys.WebForms.MenuItem._onmouseout);
+                //Sys.WebForms.Menu._domHelper.removeEvent(this, 'focus', Sys.WebForms._MenuContainer.prototype._onfocus, true);
+                //Sys.WebForms.Menu._domHelper.removeEvent(this, 'keydown', Sys.WebForms._MenuContainer.prototype._onkeydown);
+            });
+
+            $('#MenuSuperior ul').show();
+            location.hash = '#menuAnchor';
+        }
+
+        function goToConteudo() {
+            location.hash = '#contedoPrincipalAnchor';
+        }
+
+        function changeLabel() {
+
+            $('#linkEsqueciMinhaSenha').hide();
+            $('#linkAcessibilidadeCadastroPF').hide();
+
+            if ($('#ddlTipoUsuario').val() == '#rdBtnNaoContribuinte') {
+                $('#lblCpfCNPJ').text('CPF:');
+                $('#linkEsqueciMinhaSenha').show();
+                $('#linkAcessibilidadeCadastroPF').show();
+            }
+            else if ($('#ddlTipoUsuario').val() == '#rdBtnConsumidorPJ') {
+                $('#lblCpfCNPJ').text('CNPJ:');
+                $('#linkEsqueciMinhaSenha').show();
+                $('#linkAcessibilidadeCadastroPF').show();
+            }
+            else if ($('#ddlTipoUsuario').val() == '#rdBtnProcon') {
+                $('#lblCpfCNPJ').text('CPF:');
+            }
+            else {
+                $('#lblCpfCNPJ').text('Usuário:');
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="tooltip"></div>
+
+
+
+    <form name="aspnetForm" method="post" action="./ConsultarDoacoesFuturas.aspx" id="aspnetForm">
+<div>
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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">
+</div>
+
+
+<script src="/WebResource.axd?d=fqV81KWLWhVg-lLAb4IT67Zldu_iEBiuZu7ih3LTrj_t3ud9ewWKPh7nTAReKjZlQ1ZKSyirhgNj8Uo2xpyKbKWdxqnQa9sSFvVq5XQICZs1&amp;t=638901428248157332" type="text/javascript"></script>
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="BBE7C75D">
+	<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="">
+	<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="">
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="PSY4LaE7gXPDHClSXVSL+2dqTRQon+4vuDHAlLcoUotUcxcN1FUnu7F3C/Xv8gRBEONmIR+iv/VA1+F4B84d41CAU+b5uwAXOgA4qw412CXj1K2zNlbjQ/qHcedOu0TQb8nyJRJQ6aww9cOEtwJfcyGtu9MXOionbC8Y7zm8ijlxFyduO8kidSTyZQxylE8GU+IijI2kHbLFXAh6ZRolw5pMH/sFqeYMvhpCIgeHadv7xK25H4U4WolyyTynGIHnu95v2h9omy0QvMvhhFHIU3BpzxNczSsgdvsvElHEy3mg6PxEYgnb++lMnaBCtkW2EXPCKbNLuyHyZ+Bfpl+r7xxdYunlKg/dVlftWULPxG9Wr3Wwc6KYUl7lZMeRyXYt+QSRV8rOWfzjnIqCs5VWwsJizngHnb9XOFC+n6hFtjEUg84BKI1aOhMwZQYf2BGkqhVWhjUskZHfXmrwpTavUmgPM0DCehTR+x93JBZVrNAi+RD5Yupq0ntnq1Lg6jLkSaRbobKrzJUYWQfI47H1HlDzfHf8VpKML8X/5bONt8fUO7O1FV8V0hLYLQ5W0wphLPevpKqzZ7mPcHEzFva7c83FNYrTxlvN3agAcAp39h2cBOWneR44S3Vz8EC/Ict9jaCilgx7yd08P1a2HvODknRQDEZmzeiyK7shnceMCgdr7QWHHnVXex6nkvdTcu8FbjHSVFK5ijgmxczHPqn67g==">
+</div>
+
+        <div>
+            <input name="ctl00$hddIDDoacao" type="hidden" id="hddIDDoacao">
+        </div>
+
+        <div id="site">
+
+            <!-- style:none  : estado inicial do div, quando 'virar' dialog ele será exibido  -->
+            
+
+            
+
+            
+
+            
+
+            <div id="cabecalho">
+                <h1 id="logo">
+                    <a title="Secretaria da Fazenda do Estado de São Paulo" href="http://www.fazenda.sp.gov.br"></a>
+                    
+                </h1>
+            </div>
+
+            
+
+            <div id="tituloPagina">
+                <div id="ctl00_div1" class="faleConosco">
+                    <div class="fundofaleConosco">
+                        <a href="https://fala.sp.gov.br" target="_blank" rel="noopener noreferrer">
+                            <img id="ctl00_Image1" src="../images/icFaleConoscoSM.png" alt="Clique aqui para acessar fale conosco" style="border-width:0px;">
+                        </a>
+                    </div>
+                </div>
+                <div id="ctl00_divCaixaPostal" class="email">
+                    <div class="fundoEmail">
+                        <img id="ctl00_imgEmail" src="../images/icCxPostalSM.png" alt="Clique aqui para acessar sua Caixa Postal" style="border-width:0px;">
+                        
+                    </div>
+                    
+                </div>
+
+                <h2>
+                    
+    Consulta de Consumidores Doadores
+
+                </h2>
+                <h3>
+                    <span id="ctl00_lblNomeSistema">Nota Fiscal Paulista</span>
+                </h3>
+            </div>
+
+            <div id="MenuSuperior">
+                <a id="menuAnchor" name="menuAnchor" tabindex="-1" href="#" style="font-size: 0em">Menu Principal</a>
+                
+    
+		<div id="menuSuperior" style="float: left;">
+	<ul class="level1 static" tabindex="0" role="menubar" style="position: relative; width: auto; float: left;">
+		<li role="menuitem" class="static" style="position: relative; float: left;"><a class="level1 static" href="/principal.aspx" tabindex="-1">Início</a></li><li class="has-popup static" aria-haspopup="menuSuperior:submenu:3" role="menuitem" style="position: relative; float: left;"><a class="level1 static" tabindex="-1">Digitar Documento</a><ul class="level2 dynamic" id="menuSuperior:submenu:3" style="display: none; position: absolute; top: 100%; left: 0px;">
+			<li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Digitar Documento\\/EmissaoNF/nota.aspx?mod=56')" tabindex="-1">Emitir NF Online</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Digitar Documento\\/EmissaoNF/nota.aspx?mod=02')" tabindex="-1">Registrar NF Modelo 2</a></li>
+		</ul></li><li class="has-popup static" aria-haspopup="menuSuperior:submenu:7" role="menuitem" style="position: relative; float: left;"><a class="level1 static" tabindex="-1">Enviar Arquivo</a><ul class="level2 dynamic" id="menuSuperior:submenu:7" style="display: none; position: absolute; top: 100%; left: 0px;">
+			<li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Enviar Arquivo\\/ArquivoNFCF/enviarlote.aspx?tparq=NF')" tabindex="-1">NF Modelo 2</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Enviar Arquivo\\/ArquivoNFCF/enviarlote.aspx?tparq=CF')" tabindex="-1">Cupom Fiscal</a></li>
+		</ul></li><li class="has-popup static" aria-haspopup="menuSuperior:submenu:11" role="menuitem" style="position: relative; float: left;"><a class="level1 static" tabindex="-1">Ambiente Teste</a><ul class="level2 dynamic" id="menuSuperior:submenu:11" style="display: none; position: absolute; top: 100%; left: 0px;">
+			<li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Ambiente Teste\\/ArquivoNFCF/enviarlote.aspx?tparq=NF')" tabindex="-1">Testar NF Modelo 2</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Ambiente Teste\\/ArquivoNFCF/enviarlote.aspx?tparq=CF')" tabindex="-1">Testar Cupom Fiscal</a></li>
+		</ul></li><li class="has-popup static" aria-haspopup="menuSuperior:submenu:15" role="menuitem" style="position: relative; float: left;"><a class="level1 static" tabindex="-1">Consultar</a><ul class="level2 dynamic" id="menuSuperior:submenu:15" style="display: none; position: absolute; top: 100%; left: 0px;">
+			<li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Consultar\\/ConsultaNF/ConsultaNF.aspx?FazAdminAsConsumidor=false')" tabindex="-1">Documentos Fiscais</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Consultar\\/ArquivoNFCF/consultarlotemod1.aspx?FazAdminAsConsumidor=false')" tabindex="-1">Arquivo NF Modelo 1</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Consultar\\/ArquivoNFCF/consultarlote.aspx?FazAdminAsConsumidor=false')" tabindex="-1">Arquivo NF Modelo 2</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Consultar\\/ArquivoNFCF/consultarecf.aspx?FazAdminAsConsumidor=false')" tabindex="-1">Arquivo Cupom Fiscal</a></li><li class="has-popup dynamic" aria-haspopup="menuSuperior:submenu:20" role="menuitem" style="position: relative;"><a class="popout-dynamic level2 dynamic" tabindex="-1">Entidades</a><ul class="level3 dynamic" id="menuSuperior:submenu:20" style="display: none; position: absolute; top: 0px; left: 100%;">
+				<li role="menuitem" class="dynamic" style="position: relative;"><a class="level3 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Consultar\\Entidades\\/EntidadesFilantropicas/ConsultarDoacoesFuturas.aspx')" tabindex="-1">Consulta de Consumidores Doadores</a></li>
+			</ul></li>
+		</ul></li><li class="has-popup static" aria-haspopup="menuSuperior:submenu:24" role="menuitem" style="position: relative; float: left;"><a class="level1 static" tabindex="-1">Sorteios</a><ul class="level2 dynamic" id="menuSuperior:submenu:24" style="display: none; position: absolute; top: 100%; left: 0px;">
+			<li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Sorteios\\/SorteioConsumidor/VisualizarSorteios.aspx')" tabindex="-1">Visualizar Sorteios</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Sorteios\\/SorteioConsumidor/HistoricoAceiteUsuario.aspx')" tabindex="-1">Histórico de Aceite</a></li>
+		</ul></li><li class="has-popup static" aria-haspopup="menuSuperior:submenu:28" role="menuitem" style="position: relative; float: left;"><a class="level1 static" tabindex="-1">Entidades</a><ul class="level2 dynamic" id="menuSuperior:submenu:28" style="display: none; position: absolute; top: 100%; left: 0px;">
+			<li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Entidades\\/EntidadesFilantropicas/CadastroUsuarios.aspx')" tabindex="-1">Cadastrar Usuários</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Entidades\\/EntidadesFilantropicas/AceiteRegulamentoSorteio.aspx')" tabindex="-1">Adesão ao Sorteio</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Entidades\\/EntidadesFilantropicas/ListagemNotaEntidadeGeral.aspx')" tabindex="-1">Cupons Fiscais - Doação Manual</a></li>
+		</ul></li><li class="has-popup static" aria-haspopup="menuSuperior:submenu:33" role="menuitem" style="position: relative; float: left;"><a class="level1 static" tabindex="-1">Reclamação</a><ul class="level2 dynamic" id="menuSuperior:submenu:33" style="display: none; position: absolute; top: 100%; left: 0px;">
+			<li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Reclamação\\/Reclamacao/UC004_ConsultaReclamacao_versao3.aspx')" tabindex="-1">Consultar</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Reclamação\\/Reclamacao/ConsultarEmail.aspx')" tabindex="-1">Consultar Envio de Email</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Reclamação\\/Reclamacao/UC001_RegistrarReclamacao_versao3.aspx')" tabindex="-1">Registrar</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Reclamação\\/Reclamacao/Autuacao_Listagem_Contribuinte.aspx')" tabindex="-1">Autos de Infração</a></li>
+		</ul></li><li class="has-popup static" aria-haspopup="menuSuperior:submenu:39" role="menuitem" style="position: relative; float: left;"><a class="level1 static" tabindex="-1">Conta Corrente</a><ul class="level2 dynamic" id="menuSuperior:submenu:39" style="display: none; position: absolute; top: 100%; left: 0px;">
+			<li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Conta Corrente\\/contacorrente/extratoContaCorrente.aspx')" tabindex="-1">Consultar</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Conta Corrente\\/contacorrente/UtilizaCredito.aspx')" tabindex="-1">Utilizar Créditos</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Conta Corrente\\/ContaCorrente/DemonstrativoIR.aspx')" tabindex="-1">Demonstrativo IR</a></li>
+		</ul></li><li class="has-popup static" aria-haspopup="menuSuperior:submenu:44" role="menuitem" style="position: relative; float: left;"><a class="level1 static" tabindex="-1">Configurar</a><ul class="level2 dynamic" id="menuSuperior:submenu:44" style="display: none; position: absolute; top: 100%; left: 0px;">
+			<li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Configurar\\/CadastroCAT/EdicaoCadastroCPF.aspx')" tabindex="-1">Perfil do Consumidor</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Configurar\\/AdminPFE/manterContribuinte.aspx?menu=true')" tabindex="-1">Perfil do Contribuinte</a></li><li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Configurar\\/AdminPFE/PFEUsuariosFilhos.aspx')" tabindex="-1">Delegar Acesso</a></li>
+		</ul></li><li class="has-popup static" aria-haspopup="menuSuperior:submenu:49" role="menuitem" style="position: relative; float: left;"><a class="level1 static" tabindex="-1">Caixa Postal</a><ul class="level2 dynamic" id="menuSuperior:submenu:49" style="display: none; position: absolute; top: 100%; left: 0px;">
+			<li role="menuitem" class="dynamic" style="position: relative;"><a class="level2 dynamic" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','Caixa Postal\\/CaixaPostal/CaixaPostalEntrada.aspx')" tabindex="-1">Mensagens</a></li>
+		</ul></li><li role="menuitem" class="static" style="position: relative; float: left;"><a class="level1 static" href="#" onclick="__doPostBack('ctl00$Menu$controleMenu$LoginView1$menuSuperior','LOGOUT')" tabindex="-1">Encerrar</a></li>
+	</ul>
+</div><div style="clear: left;"></div>
+    
+
+
+            </div>
+
+            <div id="contedoPrincipalAnchorDiv">
+                <a id="contedoPrincipalAnchor" href="#" name="contedoPrincipalAnchor" style="font-size: 0em">Conteúdo Principal</a>
+            </div>
+
+
+            <div id="ConteudoPrincipal" class="alinharCentro">
+                
+                
+    
+<div id="dadosDoUsuario" class="dadosUsuario">
+    
+                    <div style="padding-left: 5px;">
+                        <p>
+                            <strong>CNPJ:</strong>&nbsp;61.750.246/0001-75
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <strong>Razão Social:</strong>&nbsp;ACAO COMUNITARIA DO BRASIL VOCACAO
+                        </p>
+                        <p><strong>Usuário:</strong>&nbsp;61.750.246/0001-75</p>
+                        <p><strong>Último acesso:</strong>&nbsp;04/10/2026 às 15:03:00</p>
+                    </div>
+                
+</div>
+
+
+    <div class="container">
+        <div class="content containerConteudo">
+            
+
+            <div id="lancamentosAtuais" class="row" style="width: 100%; margin-top: 12px;">
+                <div class="col-sm-offset-1 col-md-offset-1 col-lg-offset-1 col-sm-10 col-md-10 col-lg-10" style="text-align: left;">
+                    <span class="lancamentos-atuais">Situação Atual:</span>
+                    <div>
+	<table cellspacing="0" rules="all" border="1" id="grdLancamentosAtuais" style="border-collapse:collapse;">
+		<tbody><tr class="gridViewTituloColuna">
+			<th scope="col" style="width:20%;">Informações</th><th scope="col" style="width:20%;">jul/2026</th><th scope="col" style="width:20%;">ago/2026</th><th scope="col" style="width:20%;">set/2026</th><th scope="col">out/2026</th>
+		</tr><tr>
+			<td style="width:20%;">Qtde Doadores Plenos</td><td style="width:20%;">1731</td><td style="width:20%;">1984</td><td style="width:20%;">3944</td><td>4397</td>
+		</tr><tr class="linhaAlternada" align="justify" style="background-color:White;">
+			<td style="width:20%;">Qtde Doadores Restritos</td><td style="width:20%;">819</td><td style="width:20%;">822</td><td style="width:20%;">827</td><td>826</td>
+		</tr><tr>
+			<td style="width:20%;">Total Doadores</td><td style="width:20%;">2550</td><td style="width:20%;">2806</td><td style="width:20%;">4771</td><td>5223</td>
+		</tr><tr class="linhaAlternada" align="justify" style="background-color:White;">
+			<td style="width:20%;">Qtde Cupons</td><td style="width:20%;">18278</td><td style="width:20%;">21735</td><td style="width:20%;">35266</td><td>2592</td>
+		</tr><tr>
+			<td style="width:20%;">Valor Total Cupons</td><td style="width:20%;">R$ 3.324.281,15</td><td style="width:20%;">R$ 4.365.819,03</td><td style="width:20%;">R$ 5.058.477,73</td><td>R$ 411.629,62</td>
+		</tr>
+	</tbody></table>
+</div>
+                </div>
+            </div>
+
+            <div id="lancamentosFuturos" class="row" style="width: 100%; margin-top: 18px;">
+                <div class="col-sm-offset-2 col-md-offset-2 col-lg-offset-2 col-sm-8 col-md-8 col-lg-8" style="text-align: left;">
+                    <span class="lancamentos-futuros">Quantidade de doadores para os próximos 12 meses:</span>
+                    <div>
+	<table cellspacing="0" rules="all" border="1" id="grdLancamentosFuturos" style="border-collapse:collapse;">
+		<tbody><tr class="gridViewTituloColuna">
+			<th scope="col" style="width:15%;">Mês</th><th scope="col" style="width:28%;">Doador Pleno</th><th scope="col" style="width:28%;">Doador Restrito</th><th scope="col">Total doadores</th>
+		</tr><tr>
+			<td style="width:15%;">nov/2026</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr><tr class="linhaAlternada" align="justify" style="background-color:White;">
+			<td style="width:15%;">dez/2026</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr><tr>
+			<td style="width:15%;">jan/2027</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr><tr class="linhaAlternada" align="justify" style="background-color:White;">
+			<td style="width:15%;">fev/2027</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr><tr>
+			<td style="width:15%;">mar/2027</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr><tr class="linhaAlternada" align="justify" style="background-color:White;">
+			<td style="width:15%;">abr/2027</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr><tr>
+			<td style="width:15%;">mai/2027</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr><tr class="linhaAlternada" align="justify" style="background-color:White;">
+			<td style="width:15%;">jun/2027</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr><tr>
+			<td style="width:15%;">jul/2027</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr><tr class="linhaAlternada" align="justify" style="background-color:White;">
+			<td style="width:15%;">ago/2027</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr><tr>
+			<td style="width:15%;">set/2027</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr><tr class="linhaAlternada" align="justify" style="background-color:White;">
+			<td style="width:15%;">out/2027</td><td style="width:28%;">4403</td><td style="width:28%;">826</td><td style="width:200px;">5229</td>
+		</tr>
+	</tbody></table>
+</div>
+                </div>
+            </div>
+
+            <div id="observacoes" class="row" style="width: 100%; margin-top: 18px">
+                <div class="col-sm-offset-2 col-md-offset-2 col-lg-offset-2 col-sm-8 col-md-8 col-lg-8" style="text-align: left;">
+                    <p>
+                        <strong>Observações Gerais:</strong>
+                    </p>
+                    <p>
+                        1- Os dados acima foram atualizados até o momento desta consulta e estarão sujeitos a 
+                        alterações até a realização do cálculo dos créditos.
+                    </p>
+
+                    <p>
+                        2- Para fazer jus aos créditos gerados pelos documentos doados, a entidade deverá estar "ATIVA"
+                        no sistema da Nota Fiscal Paulista no último dia do mês de emissão dos cupons fiscais.
+                        Caso contrário, os créditos serão atribuídos ao próprio consumidor.
+                    </p>
+
+                    <p>
+                        3- "Doador restrito" é aquele que nunca solicitou a transferência de créditos. Sua doação
+                        somente será considerada se sua primeira solicitação de crédito for efetivada no sistema 
+                        da Nota Fiscal Paulista até o dia 25 do segundo mês subsequente à emissão dos cupons fiscais.
+                    </p>
+
+                    <p>
+                        <label>05/10/2026 10:25:02</label>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+            </div>
+
+            
+<div id="footer" style="z-index: 99;">
+	<p class="ptexto">Secretaria da Fazenda e Planejamento do Estado de São Paulo - Av. Rangel Pestana, 300 - São Paulo - SP - CEP.01017-911 - PABX (11) 3243-3400</p>
+	
+	<p class="footerClass">
+		<a href="https://portal.fazenda.sp.gov.br/Paginas/PoliticaPrivacidade.aspx" target="_blank">Política de Privacidade</a>
+		&nbsp;|&nbsp;
+		<a href="https://portal.fazenda.sp.gov.br/Paginas/TermoUso.aspx" target="_blank">Termo de Uso</a>
+		&nbsp;|&nbsp;
+		<a href="https://fala.sp.gov.br" target="_blank">Ouvidoria</a>
+	</p>
+</div>
+        </div>
+    
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['aspnetForm'];
+if (!theForm) {
+    theForm = document.aspnetForm;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script type="text/javascript">new Sys.WebForms.Menu({ element: 'menuSuperior', disappearAfter: 500, orientation: 'horizontal', tabIndex: 0, disabled: false });</script></form>
+
+
+<div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-draggable" tabindex="-1" role="dialog" aria-labelledby="ui-dialog-title-divMensagemMaster" style="display: none; z-index: 1000; outline: 0px;"><div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span class="ui-dialog-title" id="ui-dialog-title-divMensagemMaster">Aviso</span><a href="#" class="ui-dialog-titlebar-close ui-corner-all" role="button"><span class="ui-icon ui-icon-closethick">close</span></a></div><div id="divMensagemMaster" class="tornaInvisivel ui-dialog-content ui-widget-content" style="display: block;">
+                <img src="/images/IconMsgInfo.png" class="IconMsgLeft" alt="Aviso">
+                <span id="lblMensagemMaster" class="corPreta" style="font-weight:normal;"></span>
+            </div><div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix"><div class="ui-dialog-buttonset"><button type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Ok</span></button></div></div></div><div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-draggable ui-resizable" tabindex="-1" role="dialog" aria-labelledby="ui-dialog-title-divErroMaster" style="display: none; z-index: 1000; outline: 0px; position: absolute;"><div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span class="ui-dialog-title" id="ui-dialog-title-divErroMaster">Erro</span><a href="#" class="ui-dialog-titlebar-close ui-corner-all" role="button"><span class="ui-icon ui-icon-closethick">close</span></a></div><div id="divErroMaster" class="tornaInvisivel ui-dialog-content ui-widget-content" style="display: block;">
+                <img src="/images/IconMsgErr.png" class="IconMsgLeft" alt="Erro">
+                <strong>
+                    <span id="lblErroMaster" class="corAviso"></span></strong>
+            </div><div class="ui-resizable-handle ui-resizable-n"></div><div class="ui-resizable-handle ui-resizable-e"></div><div class="ui-resizable-handle ui-resizable-s"></div><div class="ui-resizable-handle ui-resizable-w"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se ui-icon-grip-diagonal-se" style="z-index: 1001;"></div><div class="ui-resizable-handle ui-resizable-sw" style="z-index: 1002;"></div><div class="ui-resizable-handle ui-resizable-ne" style="z-index: 1003;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 1004;"></div><div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix"><div class="ui-dialog-buttonset"><button type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Ok</span></button></div></div></div><div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-draggable ui-resizable" tabindex="-1" role="dialog" aria-labelledby="ui-dialog-title-divPerguntaMaster" style="display: none; z-index: 1000; outline: 0px; position: absolute;"><div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span class="ui-dialog-title" id="ui-dialog-title-divPerguntaMaster">Mensagem</span><a href="#" class="ui-dialog-titlebar-close ui-corner-all" role="button"><span class="ui-icon ui-icon-closethick">close</span></a></div><div id="divPerguntaMaster" class="tornaInvisivel ui-dialog-content ui-widget-content" style="display: block;">
+                <img src="/images/IconMsgQuest.png" class="IconMsgLeft" alt="Mensagem">
+                <span id="lblPerguntaMaster" class="corPreta" style="font-weight:normal;"></span>
+            </div><div class="ui-resizable-handle ui-resizable-n"></div><div class="ui-resizable-handle ui-resizable-e"></div><div class="ui-resizable-handle ui-resizable-s"></div><div class="ui-resizable-handle ui-resizable-w"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se ui-icon-grip-diagonal-se" style="z-index: 1001;"></div><div class="ui-resizable-handle ui-resizable-sw" style="z-index: 1002;"></div><div class="ui-resizable-handle ui-resizable-ne" style="z-index: 1003;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 1004;"></div></div></body></html>

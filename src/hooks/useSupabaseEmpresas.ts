@@ -327,33 +327,106 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
   const downloadFullCSV = async () => {
     try {
       setIsExporting(true);
-      let queryFull = supabase
-        .from('vocacao_resumo_mensal_empresas')
-        .select('*');
 
-      if (selectedYears && selectedYears.length > 0) {
-        queryFull = queryFull.in('ano', selectedYears);
+      // Buscar cadastro oficial para obter Vendedor/Origem e Razão Social
+      const { data: nfpEmpresasData } = await supabase.from('nfp_empresas_parceiras').select('*');
+      const cadastroMap = new Map<string, any>();
+      (nfpEmpresasData || []).forEach((ne: any) => {
+        if (ne.cnpj) cadastroMap.set(ne.cnpj, ne);
+      });
+
+      const buildQuery = () => {
+        let queryFull = supabase
+          .from('vocacao_resumo_mensal_empresas')
+          .select('*', { count: 'exact' });
+
+        if (selectedYears && selectedYears.length > 0) {
+          queryFull = queryFull.in('ano', selectedYears);
+        }
+        if (selectedMonths && selectedMonths.length > 0 && selectedMonths.length < 12) {
+          queryFull = queryFull.in('mes', selectedMonths);
+        }
+        if (searchTerm.trim()) {
+          const s = searchTerm.trim();
+          queryFull = queryFull.or(`nome_empresa.ilike.%${s}%,cnpj.ilike.%${s}%`);
+        }
+
+        return queryFull.order('total_credito_apurado', { ascending: false });
+      };
+
+      const fullData = await fetchAllParallel(buildQuery, 1000);
+
+      if (!fullData || fullData.length === 0) {
+        throw new Error('Nenhum registro encontrado para exportar.');
       }
-      if (selectedMonths && selectedMonths.length > 0 && selectedMonths.length < 12) {
-        queryFull = queryFull.in('mes', selectedMonths);
-      }
-      if (searchTerm.trim()) {
-        const s = searchTerm.trim();
-        queryFull = queryFull.or(`nome_empresa.ilike.%${s}%,cnpj.ilike.%${s}%`);
-      }
 
-      queryFull = queryFull.order('total_credito_apurado', { ascending: false });
+      // Calcular o Benchmark Global Ticket Médio do período para cálculo do Score de Eficiência
+      let sumCuponsPeriodo = 0;
+      let sumCreditoPeriodo = 0;
+      fullData.forEach((r: any) => {
+        sumCuponsPeriodo += Number(r.total_cupons || 0);
+        sumCreditoPeriodo += Number(r.total_credito_apurado || 0);
+      });
+      const benchmarkTicketMedio = sumCuponsPeriodo > 0 ? (sumCreditoPeriodo / sumCuponsPeriodo) : 0;
 
-      const { data: fullData, error: fullError } = await queryFull;
+      const headers = ['Empresa/Razao Social,CNPJ,Origem,Categoria,Score,Cupons,Credito Urnas (R$),Doacoes (R$),Total Credito (R$),Ticket Medio (R$),Mes,Ano'];
+      const rows = fullData.map(r => {
+        const cnpjKey = r.cnpj || '';
+        const cadOficial = cadastroMap.get(cnpjKey);
+        const razaoSocial = cadOficial?.empresa || r.nome_empresa || 'Empresa Parceira';
+        const nomeFantasia = cadOficial?.fantasia || razaoSocial;
+        const idVendedor = cadOficial?.id_vendedor;
+        const origem = idVendedor ? (VENDEDORES_MAP[idVendedor] || `Captador #${idVendedor}`) : 'Doação Espontânea';
 
-      if (fullError || !fullData) {
-        throw new Error(fullError?.message || 'Falha ao obter base completa');
-      }
+        // Determinar Categoria
+        let cat = 'Serviços & Outros';
+        const lower = nomeFantasia.toLowerCase();
+        if (lower.includes('alimento') || lower.includes('restaurante') || lower.includes('cafe') || lower.includes('pizzaria') || lower.includes('food') || lower.includes('padaria') || lower.includes('bar') || lower.includes('hamburg') || lower.includes('lanchonete')) {
+          cat = 'Restaurantes & Alimentos';
+        } else if (lower.includes('supermercado') || lower.includes('hortifruti') || lower.includes('mercado') || lower.includes('comercio de aliment') || lower.includes('hipermercado') || lower.includes('sacolao')) {
+          cat = 'Supermercados';
+        } else if (lower.includes('atacad') || lower.includes('distribuidora') || lower.includes('comercial') || lower.includes('atacarejo')) {
+          cat = 'Atacado & Distribuição';
+        } else if (lower.includes('droga') || lower.includes('farma') || lower.includes('medicament') || lower.includes('manipulac')) {
+          cat = 'Farmácias';
+        } else if (lower.includes('posto') || lower.includes('combustiv') || lower.includes('convenienc') || lower.includes('auto posto')) {
+          cat = 'Postos & Conveniência';
+        } else if (lower.includes('pet') || lower.includes('veterin') || lower.includes('animal')) {
+          cat = 'Pet & Serviços';
+        } else if (lower.includes('construc') || lower.includes('tintas') || lower.includes('casa') || lower.includes('madeira') || lower.includes('eletro') || lower.includes('material')) {
+          cat = 'Construção & Casa';
+        } else if (lower.includes('moda') || lower.includes('vestuar') || lower.includes('calcado') || lower.includes('roupa') || lower.includes('loja') || lower.includes('magazine') || lower.includes('shopping')) {
+          cat = 'Varejo & Moda';
+        }
 
-      const headers = ['CNPJ,Nome Empresa,Ano,Mes,Total Cupons,Valor Total NF (R$),Credito Apurado (R$),Credito Urnas (R$),Credito Doacoes (R$)'];
-      const rows = fullData.map(r => 
-        `"${r.cnpj || ''}","${(r.nome_empresa || '').replace(/"/g, '""')}",${r.ano},${r.mes},${r.total_cupons || 0},${r.total_valor_nf || 0},${r.total_credito_apurado || 0},${r.credito_cadastro || 0},${r.credito_doacao || 0}`
-      );
+        // Métricas
+        const cupons = Number(r.total_cupons || 0);
+        const creditoTotal = Number(r.total_credito_apurado || 0);
+        const creditoUrnas = Number(r.credito_cadastro || 0);
+        const creditoDoacoes = Number(r.credito_doacao || 0);
+        const tktMedio = cupons > 0 ? (creditoTotal / cupons) : 0;
+
+        // Score de Eficiência
+        let scorePct = 0;
+        if (tktMedio === 0 || creditoTotal === 0) {
+          scorePct = 0;
+        } else if (benchmarkTicketMedio > 0) {
+          scorePct = (tktMedio / benchmarkTicketMedio) * 100;
+        } else {
+          scorePct = 100;
+        }
+        scorePct = Number(scorePct.toFixed(1));
+
+        let nivel = 'CRITICO';
+        if (scorePct > 100) nivel = 'EXCEPCIONAL';
+        else if (scorePct >= 80) nivel = 'BOM';
+        else if (scorePct >= 50) nivel = 'MODERADO';
+        else if (scorePct >= 25) nivel = 'BAIXO';
+
+        const scoreStr = `${scorePct}% (${nivel})`;
+
+        return `"${razaoSocial.replace(/"/g, '""')}","${cnpjKey}","${origem}","${cat}","${scoreStr}",${cupons},${creditoUrnas.toFixed(2)},${creditoDoacoes.toFixed(2)},${creditoTotal.toFixed(2)},${tktMedio.toFixed(2)},${r.mes},${r.ano}`;
+      });
 
       const blob = new Blob([headers.concat(rows).join('\n')], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
