@@ -174,7 +174,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
 
 
   // Aggregate KPIs vindos do Supabase
-  const totalEmpresasAtivas = totalEmpresasContagem;
+  const totalEmpresasAtivas = empresasFiltradas.length;
   const totalCuponsCapturados = kpis.totalCupons;
   const valorTotalEmitidoNF = kpis.totalValorNF;
   const creditoApuradoTotal = kpis.totalCredito;
@@ -182,42 +182,60 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
   const creditoDoacoesTotal = kpis.totalCreditoDoacoes;
   const creditoConsumoTotal = kpis.totalCreditoConsumo;
 
-  // Top 15 data for charts
-  const top15Credito = useMemo(() => {
-    return [...empresasLista]
-      .sort((a, b) => b.creditoTotal - a.creditoTotal)
-      .slice(0, 15)
-      .map(e => ({
+  // Rótulo dinâmico da ordenação ativa na tabela
+  const labelOrdenacaoAtual = useMemo(() => {
+    switch (sortField) {
+      case 'ticketMedioCupom': return 'Ticket Médio (R$)';
+      case 'cuponsValidos': return 'Volume de Cupons Válidos';
+      case 'creditoDoacoes': return 'Doações Pessoais (R$)';
+      case 'creditoUrnas': return 'Crédito de Urnas (R$)';
+      case 'scoreEficiencia': return 'Score de Eficiência (%)';
+      case 'nomeFantasia': return 'Nome da Empresa (A-Z)';
+      default: return 'Crédito Apurado Total (R$)';
+    }
+  }, [sortField]);
+
+  // Gráfico TOP 15: Espelho exato dos 15 primeiros registros exibidos na Tabela
+  const top15EspelhoTabela = useMemo(() => {
+    return empresasFiltradas.slice(0, 15).map((e, index) => {
+      let valorMetrica = e.creditoTotal;
+      let labelMetrica = 'Crédito Total (R$)';
+      let tipo: 'moeda' | 'numero' | 'percentual' = 'moeda';
+
+      if (sortField === 'ticketMedioCupom') {
+        valorMetrica = e.ticketMedioCupom;
+        labelMetrica = 'Ticket Médio (R$)';
+      } else if (sortField === 'cuponsValidos') {
+        valorMetrica = e.cuponsValidos;
+        labelMetrica = 'Cupons Válidos';
+        tipo = 'numero';
+      } else if (sortField === 'creditoDoacoes') {
+        valorMetrica = e.creditoDoacoes;
+        labelMetrica = 'Doações Pessoais (R$)';
+      } else if (sortField === 'creditoUrnas') {
+        valorMetrica = e.creditoUrnas;
+        labelMetrica = 'Crédito Urnas (R$)';
+      } else if (sortField === 'scoreEficiencia') {
+        valorMetrica = e.scoreEficiencia || 0;
+        labelMetrica = 'Score Eficiência (%)';
+        tipo = 'percentual';
+      }
+
+      return {
+        pos: index + 1,
         name: e.nomeFantasia.split('&')[0].split(' - ')[0].trim().slice(0, 18),
+        fullName: e.nomeFantasia,
+        razaoSocial: e.razaoSocial,
+        valorMetrica,
+        labelMetrica,
+        tipo,
         creditoTotal: e.creditoTotal,
         creditoUrnas: e.creditoUrnas,
         creditoDoacoes: e.creditoDoacoes,
         cupons: e.cuponsValidos
-      }));
-  }, [empresasLista]);
-
-  const top15Cupons = useMemo(() => {
-    return [...empresasLista]
-      .sort((a, b) => b.cuponsValidos - a.cuponsValidos)
-      .slice(0, 15)
-      .map(e => ({
-        name: e.nomeFantasia.split('&')[0].split(' - ')[0].trim().slice(0, 18),
-        cupons: e.cuponsValidos,
-        creditoTotal: e.creditoTotal
-      }));
-  }, [empresasLista]);
-
-  const top15Doacoes = useMemo(() => {
-    return [...empresasLista]
-      .sort((a, b) => b.creditoDoacoes - a.creditoDoacoes)
-      .slice(0, 15)
-      .map(e => ({
-        name: e.nomeFantasia.split('&')[0].split(' - ')[0].trim().slice(0, 18),
-        creditoDoacoes: e.creditoDoacoes,
-        creditoTotal: e.creditoTotal,
-        cupons: e.cuponsValidos
-      }));
-  }, [empresasLista]);
+      };
+    });
+  }, [empresasFiltradas, sortField]);
 
   const handleSort = (field: keyof EmpresaParceira) => {
     if (sortField === field) {
@@ -333,185 +351,72 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
         />
       </div>
 
-      {/* Top 15 Charts Section */}
+      {/* Top 15 Charts Section - Espelho da Tabela */}
       <div ref={chartRef} className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#F0F5F8]">
           <div>
             <h2 className="text-base font-bold text-[#002A3A] flex items-center gap-2">
               <Building2 className="w-4 h-4 text-[#004A6D]" />
-              {activeChartMetric === 'credito' 
-                ? 'Top 15 Empresas Parceiras por Crédito Apurado Total (R$)' 
-                : activeChartMetric === 'doacoes'
-                ? 'Top 15 Empresas Parceiras por Crédito de Doações Pessoais (AUT / Direta)'
-                : 'Top 15 Empresas Parceiras por Volume de Cupons Capturados'}
+              Top 15 Empresas — Ordenado por {labelOrdenacaoAtual}
             </h2>
             <p className="text-xs text-[#004A6D]/70">
-              {activeChartMetric === 'credito'
-                ? 'Ranking das 15 maiores empresas no período com detalhamento de Urnas vs Doações Pessoais'
-                : activeChartMetric === 'doacoes'
-                ? 'Ranking das 15 maiores empresas em repasse via Doações Automáticas e Diretas com CPF'
-                : 'Ranking das 15 maiores empresas por volume total de notas no período'}
+              Reflexo visual dos 15 primeiros registros exibidos na tabela (ordenados por {labelOrdenacaoAtual})
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-[#F4F9FA] p-1 rounded-xl border border-[#BCD3DF]/60 self-start sm:self-auto">
-              <button
-                onClick={() => setActiveChartMetric('credito')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeChartMetric === 'credito'
-                    ? 'bg-[#004A6D] text-white shadow-2xs'
-                    : 'text-[#004A6D] hover:bg-[#D9FBFF]'
-                }`}
-              >
-                Por Crédito Total (R$)
-              </button>
-              <button
-                onClick={() => setActiveChartMetric('doacoes')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeChartMetric === 'doacoes'
-                    ? 'bg-[#00E3E6] text-[#002A3A] shadow-2xs'
-                    : 'text-[#004A6D] hover:bg-[#D9FBFF]'
-                }`}
-              >
-                Por Doações (R$)
-              </button>
-              <button
-                onClick={() => setActiveChartMetric('cupons')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeChartMetric === 'cupons'
-                    ? 'bg-[#004A6D] text-white shadow-2xs'
-                    : 'text-[#004A6D] hover:bg-[#D9FBFF]'
-                }`}
-              >
-                Por Volume
-              </button>
-            </div>
-            <CopyChartButton chartRef={chartRef} title="Top15_Empresas_Parceiras" />
+            <CopyChartButton chartRef={chartRef} title={`Top15_Empresas_${sortField}`} />
           </div>
         </div>
 
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            {activeChartMetric === 'credito' ? (
-              <BarChart data={top15Credito} margin={{ top: 10, right: 10, left: 10, bottom: 50 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 10, fill: '#004A6D' }} 
-                  interval={0} 
-                  angle={-35} 
-                  textAnchor="end"
-                  height={50}
-                />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: '#004A6D' }} 
-                  tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`} 
-                />
-                <Tooltip 
-                  formatter={(val: any, name: any) => [
-                    formatarMoeda(Number(val)),
-                    name
-                  ]}
-                  contentStyle={{ 
-                    backgroundColor: '#FFFFFF', 
-                    color: '#002A3A', 
-                    borderRadius: '12px', 
-                    border: '1px solid #BCD3DF', 
-                    boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    padding: '10px 14px'
-                  }}
-                  labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
-                />
-                <Bar dataKey="creditoTotal" name="Crédito Total (R$)" fill="#004A6D" radius={[6, 6, 0, 0]} />
-              </BarChart>
-
-            ) : activeChartMetric === 'doacoes' ? (
-              <BarChart data={top15Doacoes} margin={{ top: 10, right: 10, left: 10, bottom: 50 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 10, fill: '#004A6D' }} 
-                  interval={0} 
-                  angle={-35} 
-                  textAnchor="end" 
-                  height={50}
-                />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: '#004A6D' }} 
-                  tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`} 
-                />
-                <Tooltip 
-                  formatter={(val: any) => [formatarMoeda(Number(val))]}
-                  contentStyle={{ 
-                    backgroundColor: '#FFFFFF', 
-                    color: '#002A3A', 
-                    borderRadius: '12px', 
-                    border: '1px solid #BCD3DF', 
-                    boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    padding: '10px 14px'
-                  }}
-                  labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
-                />
-                <Bar dataKey="creditoDoacoes" name="Crédito Doações Pessoais" fill="#00E3E6" radius={[4, 4, 0, 0]}>
-                  {top15Doacoes.map((_, index) => (
-                    <Cell key={`cell-doacao-${index}`} fill={index < 3 ? '#004A6D' : '#00E3E6'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            ) : (
-              <BarChart data={top15Cupons} margin={{ top: 10, right: 10, left: 10, bottom: 50 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 10, fill: '#004A6D' }} 
-                  interval={0} 
-                  angle={-35} 
-                  textAnchor="end" 
-                  height={50}
-                />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: '#004A6D' }} 
-                  tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`} 
-                />
-                <Tooltip 
-                  formatter={(val: any) => [`${formatarNumero(Number(val))} cupons`]}
-                  contentStyle={{ 
-                    backgroundColor: '#FFFFFF', 
-                    color: '#002A3A', 
-                    borderRadius: '12px', 
-                    border: '1px solid #BCD3DF', 
-                    boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    padding: '10px 14px'
-                  }}
-                  labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
-                />
-                <Bar dataKey="cupons" name="Volume de Cupons" fill="#EDCD01" radius={[4, 4, 0, 0]}>
-                  {top15Cupons.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={index < 3 ? '#004A6D' : '#00E3E6'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            )}
+            <BarChart data={top15EspelhoTabela} margin={{ top: 10, right: 10, left: 10, bottom: 50 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fontSize: 10, fill: '#004A6D' }} 
+                interval={0} 
+                angle={-35} 
+                textAnchor="end"
+                height={50}
+              />
+              <YAxis 
+                tick={{ fontSize: 11, fill: '#004A6D' }} 
+                tickFormatter={(val) => {
+                  if (sortField === 'cuponsValidos') return `${(val / 1000).toFixed(0)}k`;
+                  if (sortField === 'scoreEficiencia') return `${val}%`;
+                  return `R$ ${(val / 1000).toFixed(0)}k`;
+                }} 
+              />
+              <Tooltip 
+                formatter={(val: any, _name: any, props: any) => {
+                  const item = props?.payload;
+                  const numVal = Number(val);
+                  if (item?.tipo === 'percentual') return [`${numVal.toFixed(1)}%`, item.labelMetrica];
+                  if (item?.tipo === 'numero') return [formatarNumero(numVal), item.labelMetrica];
+                  return [formatarMoeda(numVal), item.labelMetrica];
+                }}
+                contentStyle={{ 
+                  backgroundColor: '#FFFFFF', 
+                  color: '#002A3A', 
+                  borderRadius: '12px', 
+                  border: '1px solid #BCD3DF', 
+                  boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  padding: '10px 14px'
+                }}
+                labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
+              />
+              <Bar dataKey="valorMetrica" name={labelOrdenacaoAtual} fill="#004A6D" radius={[6, 6, 0, 0]}>
+                {top15EspelhoTabela.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={index < 3 ? '#004A6D' : '#00E3E6'} />
+                ))}
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </div>
-
-        {activeChartMetric === 'credito' && (
-          <div className="flex items-center justify-center gap-6 text-xs font-semibold mt-2 pt-2 border-t border-[#F0F5F8]">
-            <span className="flex items-center gap-1.5 text-[#004A6D]">
-              <span className="w-3 h-3 rounded-xs bg-[#004A6D]"></span> Crédito de Urnas (Tipo CADASTRO)
-            </span>
-            <span className="flex items-center gap-1.5 text-[#004A6D]">
-              <span className="w-3 h-3 rounded-xs bg-[#00E3E6]"></span> Crédito de Doações Pessoais (AUT / Direta)
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Filter and Detailed Table */}
