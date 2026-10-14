@@ -239,6 +239,8 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
     return cols;
   }, [selectedYears, selectedMonths]);
 
+  const totalPages = Math.ceil(empresasFiltradas.length / pageSize) || 1;
+
   const empresasPaginadas = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return empresasFiltradas.slice(start, start + pageSize);
