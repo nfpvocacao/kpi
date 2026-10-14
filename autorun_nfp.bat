@@ -13,6 +13,11 @@ py "C:\apps\kpi_nfp\etl_import.py"
 if errorlevel 1 goto ERRO
 
 echo.
+echo Executando sync_bitrix_to_supabase.py (Bitrix24 -> Supabase)...
+py "C:\apps\kpi_nfp\sync_bitrix_to_supabase.py"
+if errorlevel 1 goto ERRO
+
+echo.
 echo Processo concluido com sucesso!
 goto FIM
 

@@ -60,6 +60,13 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 100;
 
+  // Estados da Nova Matriz Mês a Mês (Solicitação Gerência: Rentabilidade, Churn & Carteira)
+  const [viewMode, setViewMode] = useState<'LISTA' | 'MATRIZ_MENSAL'>('LISTA');
+  const [metricMatriz, setMetricMatriz] = useState<'credito' | 'cupons' | 'doacoes' | 'valorNF'>('credito');
+  const [statusCarteiraFilter, setStatusCarteiraFilter] = useState<'TODOS' | 'NOVA' | 'ATIVA' | 'ZERO_CREDITO' | 'PERDIDA'>('TODOS');
+  const [selectedTipoFilter, setSelectedTipoFilter] = useState<string>('TODOS');
+  const [sortMonth, setSortMonth] = useState<number | null>(null);
+
   // Estado do botão flutuante "Ir ao Topo"
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -129,13 +136,24 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
     return Array.from(new Set(list)).sort((a, b) => a - b);
   }, [empresasLista]);
 
-  // Filter companies client-side for category, score level pills, vendedor/origem, min cupons or sort
+  // Filter companies client-side for category, score level pills, vendedor/origem, min cupons, statusCarteira, tipo or sort
   const empresasFiltradas = useMemo(() => {
     return empresasLista.filter((emp) => {
       const matchCategoria = selectedCategoria === 'TODAS' || emp.categoria === selectedCategoria;
       const matchScore = selectedScoreLevel === 'TODOS' || emp.nivelScore === selectedScoreLevel;
       const matchCupons = minCuponsFilter === 0 || emp.cuponsValidos >= minCuponsFilter;
+      const matchStatusCarteira = statusCarteiraFilter === 'TODOS' || emp.statusCarteira === statusCarteiraFilter;
       
+      let matchTipo = true;
+      if (selectedTipoFilter !== 'TODOS') {
+        const empTipo = (emp.tipo || '').toUpperCase().trim();
+        if (selectedTipoFilter === 'SEM_TIPO') {
+          matchTipo = !empTipo;
+        } else {
+          matchTipo = empTipo === selectedTipoFilter.toUpperCase();
+        }
+      }
+
       let matchVendedor = true;
       if (selectedVendedorFilter === 'COM_VENDEDOR') {
         matchVendedor = !!emp.isCadastrada && emp.idVendedor !== null && emp.idVendedor !== undefined;
@@ -146,8 +164,25 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
         matchVendedor = emp.idVendedor === vId;
       }
 
-      return matchCategoria && matchScore && matchCupons && matchVendedor;
+      return matchCategoria && matchScore && matchCupons && matchVendedor && matchStatusCarteira && matchTipo;
     }).sort((a, b) => {
+      // Se a ordenação ativa for por uma coluna de mês específico
+      if (sortMonth !== null) {
+        const getValorMes = (emp: EmpresaParceira) => {
+          const dadosM = emp.dadosMensais?.[sortMonth];
+          if (!dadosM) return 0;
+          if (metricMatriz === 'credito') return dadosM.credito;
+          if (metricMatriz === 'cupons') return dadosM.cupons;
+          if (metricMatriz === 'valorNF') return dadosM.valorNF;
+          if (metricMatriz === 'doacoes') return dadosM.doacoes;
+          return 0;
+        };
+
+        const vA = getValorMes(a);
+        const vB = getValorMes(b);
+        return sortDirection === 'asc' ? vA - vB : vB - vA;
+      }
+
       const valA = a[sortField];
       const valB = b[sortField];
       if (typeof valA === 'number' && typeof valB === 'number') {
@@ -157,12 +192,12 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
         ? String(valA).localeCompare(String(valB)) 
         : String(valB).localeCompare(String(valA));
     });
-  }, [empresasLista, selectedCategoria, selectedScoreLevel, selectedVendedorFilter, minCuponsFilter, sortField, sortDirection]);
+  }, [empresasLista, selectedCategoria, selectedScoreLevel, selectedVendedorFilter, minCuponsFilter, statusCarteiraFilter, selectedTipoFilter, sortMonth, metricMatriz, sortField, sortDirection]);
 
   // Resetar para a primeira página sempre que os filtros ou busca mudarem
   useMemo(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedCategoria, selectedScoreLevel, selectedVendedorFilter, minCuponsFilter, selectedMonth]);
+  }, [searchTerm, selectedCategoria, selectedScoreLevel, selectedVendedorFilter, minCuponsFilter, statusCarteiraFilter, selectedTipoFilter, selectedMonth]);
 
   const totalPages = Math.ceil(empresasFiltradas.length / pageSize) || 1;
 
@@ -419,8 +454,149 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
         </div>
       </div>
 
-      {/* Filter and Detailed Table */}
+      {/* Toggle View Mode & Detailed Table */}
       <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs">
+        
+        {/* Header da Seção com Botão de Alternância de Visão */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-[#F0F5F8]">
+          <div>
+            <h3 className="font-extrabold text-sm sm:text-base text-[#002A3A] flex items-center gap-2">
+              <Store className="w-4 h-4 text-[#004A6D]" />
+              <span>{viewMode === 'LISTA' ? 'Tabela Convencional de Lojas Parceiras' : 'Matriz Mensal de Empresas — Rentabilidade, Churn & Carteira'}</span>
+            </h3>
+            <p className="text-xs text-[#004A6D]/70 mt-0.5">
+              {viewMode === 'LISTA' 
+                ? 'Visão consolidada com score de eficiência, ticket médio e categorias.' 
+                : 'Acompanhamento mês a mês por empresa: identifique novas parcerias, perda de arrecadação e alerta de 0 crédito.'}
+            </p>
+          </div>
+
+          {/* Botão de Alternância de Visão */}
+          <div className="flex items-center gap-1 bg-[#F4F9FA] p-1 rounded-xl border border-[#BCD3DF] shrink-0 self-start sm:self-auto">
+            <button
+              onClick={() => setViewMode('LISTA')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'LISTA'
+                  ? 'bg-[#004A6D] text-white shadow-xs'
+                  : 'text-[#004A6D] hover:bg-[#D9FBFF]/60'
+              }`}
+            >
+              <Store className="w-3.5 h-3.5" />
+              <span>Tabela Padrão</span>
+            </button>
+            <button
+              onClick={() => setViewMode('MATRIZ_MENSAL')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'MATRIZ_MENSAL'
+                  ? 'bg-[#004A6D] text-white shadow-xs'
+                  : 'text-[#004A6D] hover:bg-[#D9FBFF]/60'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Matriz Mês a Mês</span>
+              <span className="bg-[#00E3E6] text-[#002A3A] text-[10px] font-black px-1.5 py-0.2 rounded-full ml-0.5">Novo</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Bloco de Diagnóstico da Carteira (Exibido na Visão Matriz Mensal) */}
+        {viewMode === 'MATRIZ_MENSAL' && (
+          <div className="mb-5 space-y-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setStatusCarteiraFilter('TODOS')}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  statusCarteiraFilter === 'TODOS'
+                    ? 'bg-[#004A6D] text-white border-[#004A6D] shadow-xs'
+                    : 'bg-[#F4F9FA] border-[#BCD3DF] hover:bg-[#D9FBFF]/40 text-[#002A3A]'
+                }`}
+              >
+                <span className="text-[10px] uppercase font-bold tracking-wider block opacity-80">Todas as Lojas</span>
+                <span className="text-lg font-black block mt-0.5">{formatarNumero(empresasLista.length)}</span>
+                <span className="text-[10px] opacity-75">Base no período</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatusCarteiraFilter(statusCarteiraFilter === 'NOVA' ? 'TODOS' : 'NOVA')}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  statusCarteiraFilter === 'NOVA'
+                    ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
+                    : 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100 text-emerald-900'
+                }`}
+              >
+                <span className="text-[10px] uppercase font-bold tracking-wider block text-emerald-700">🟢 Novas Parcerias</span>
+                <span className="text-lg font-black block mt-0.5 text-emerald-950">
+                  {formatarNumero(empresasLista.filter(e => e.statusCarteira === 'NOVA').length)}
+                </span>
+                <span className="text-[10px] text-emerald-700">Iniciaram recentemente</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatusCarteiraFilter(statusCarteiraFilter === 'ZERO_CREDITO' ? 'TODOS' : 'ZERO_CREDITO')}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  statusCarteiraFilter === 'ZERO_CREDITO'
+                    ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                    : 'bg-amber-50 border-amber-200 hover:bg-amber-100 text-amber-900'
+                }`}
+                title="Lojas que recolheram cupons mas a SEFAZ retornou R$ 0,00 de crédito"
+              >
+                <span className="text-[10px] uppercase font-bold tracking-wider block text-amber-700">🟡 Alerta 0 Crédito</span>
+                <span className="text-lg font-black block mt-0.5 text-amber-950">
+                  {formatarNumero(empresasLista.filter(e => e.statusCarteira === 'ZERO_CREDITO').length)}
+                </span>
+                <span className="text-[10px] text-amber-700">Gargalo fiscal (notas zeradas)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatusCarteiraFilter(statusCarteiraFilter === 'PERDIDA' ? 'TODOS' : 'PERDIDA')}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  statusCarteiraFilter === 'PERDIDA'
+                    ? 'bg-rose-700 text-white border-rose-700 shadow-xs'
+                    : 'bg-rose-50 border-rose-200 hover:bg-rose-100 text-rose-900'
+                }`}
+                title="Lojas que pararam de doar cupons nos últimos meses"
+              >
+                <span className="text-[10px] uppercase font-bold tracking-wider block text-rose-700">🔴 Perdeu / Inativa</span>
+                <span className="text-lg font-black block mt-0.5 text-rose-950">
+                  {formatarNumero(empresasLista.filter(e => e.statusCarteira === 'PERDIDA').length)}
+                </span>
+                <span className="text-[10px] text-rose-700">Ação de relacionamento</span>
+              </button>
+            </div>
+
+            {/* Alternância de Métrica das Células Mês a Mês */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-[#F4F9FA] rounded-xl border border-[#BCD3DF]/70">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#004A6D]">Métrica das Células Mensais:</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {[
+                  { id: 'credito', label: '💰 Crédito (R$)', desc: 'Valor líquido SEFAZ' },
+                  { id: 'cupons', label: '🧾 Cupons', desc: 'Qtd de notas' },
+                  { id: 'valorNF', label: '💳 Faturamento NF (R$)', desc: 'Volume de vendas' },
+                  { id: 'doacoes', label: '👤 Doações Pessoais (R$)', desc: 'Crédito doação direta' }
+                ].map(m => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setMetricMatriz(m.id as any)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      metricMatriz === m.id
+                        ? 'bg-[#004A6D] text-white shadow-2xs'
+                        : 'bg-white text-[#004A6D] hover:bg-[#D9FBFF] border border-[#BCD3DF]/50'
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Filters Row */}
         <div className="flex flex-col space-y-3 mb-4 pb-4 border-b border-[#F0F5F8]">
@@ -473,6 +649,101 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   ))}
                 </select>
               </div>
+
+              {/* Dropdown de Tipo Cadastral (CADASTRO, NOVO, DOAÇÃO, FORA, ETC) */}
+              <div className="flex items-center gap-1.5 bg-[#F4F9FA] border border-[#BCD3DF] rounded-xl px-3 py-2 shadow-2xs">
+                <span className="text-xs font-bold text-[#004A6D]">🏷️ Tipo:</span>
+                <select
+                  value={selectedTipoFilter}
+                  onChange={(e) => setSelectedTipoFilter(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-[#004A6D] focus:outline-none cursor-pointer"
+                >
+                  <option value="TODOS">Todos os Tipos</option>
+                  <option value="CADASTRO">✅ CADASTRO (Ativas Oficiais)</option>
+                  <option value="NOVO">🟢 NOVO (Novas Entrantes)</option>
+                  <option value="DOAÇÃO">🎁 DOAÇÃO (Parcerias Doação)</option>
+                  <option value="DESCONTINUAR">⚠️ DESCONTINUAR</option>
+                  <option value="DESCARTAR">🗑️ DESCARTAR</option>
+                  <option value="FECHOU">🔒 FECHOU</option>
+                  <option value="FORA">⛔ FORA</option>
+                  <option value="ANALISAR">🔍 ANALISAR</option>
+                  <option value="SEM_TIPO">⚪ Sem Tipo Informado</option>
+                </select>
+              </div>
+
+              {/* Botão de Exportação Completa sem Limite de Linhas (CSV / Excel) */}
+              <button
+                type="button"
+                onClick={() => {
+                  const mesesVisiveis = ((selectedMonths && selectedMonths.length > 0) ? selectedMonths : [1, 2, 3, 4, 5, 6]);
+                  const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                  
+                  // Cabeçalho CSV
+                  const headers = [
+                    'CNPJ',
+                    'Empresa Fantasia',
+                    'Razao Social',
+                    'Tipo',
+                    'Categoria',
+                    'Vendedor/Captador',
+                    'Status Carteira',
+                    ...mesesVisiveis.map(m => `${nomesMeses[m-1]} (${metricMatriz.toUpperCase()})`),
+                    'Total Periodo',
+                    'Media Mes'
+                  ];
+
+                  const csvRows = [headers.join(';')];
+
+                  empresasFiltradas.forEach(emp => {
+                    let totalMetrica = 0;
+                    if (metricMatriz === 'credito') totalMetrica = emp.creditoTotal;
+                    else if (metricMatriz === 'cupons') totalMetrica = emp.cuponsValidos;
+                    else if (metricMatriz === 'valorNF') totalMetrica = emp.valorTotalNotas;
+                    else if (metricMatriz === 'doacoes') totalMetrica = emp.creditoDoacoes;
+
+                    const mediaMes = mesesVisiveis.length > 0 ? (totalMetrica / mesesVisiveis.length) : 0;
+
+                    const colunasMeses = mesesVisiveis.map(m => {
+                      const dadosM = emp.dadosMensais?.[m];
+                      if (!dadosM) return '0';
+                      if (metricMatriz === 'credito') return dadosM.credito.toFixed(2);
+                      if (metricMatriz === 'cupons') return String(dadosM.cupons);
+                      if (metricMatriz === 'valorNF') return dadosM.valorNF.toFixed(2);
+                      if (metricMatriz === 'doacoes') return dadosM.doacoes.toFixed(2);
+                      return '0';
+                    });
+
+                    const row = [
+                      `"${emp.cnpj}"`,
+                      `"${(emp.nomeFantasia || '').replace(/"/g, '""')}"`,
+                      `"${(emp.razaoSocial || '').replace(/"/g, '""')}"`,
+                      `"${emp.tipo || 'N/A'}"`,
+                      `"${emp.categoria}"`,
+                      `"${emp.nomeVendedor || 'Espontâneo'}"`,
+                      `"${emp.statusCarteira || 'ATIVA'}"`,
+                      ...colunasMeses,
+                      metricMatriz === 'cupons' ? String(totalMetrica) : totalMetrica.toFixed(2),
+                      metricMatriz === 'cupons' ? String(Math.round(mediaMes)) : mediaMes.toFixed(2)
+                    ];
+
+                    csvRows.push(row.join(';'));
+                  });
+
+                  const blob = new Blob(['\uFEFF' + csvRows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.setAttribute('download', `Relatorio_Empresas_${metricMatriz}_${new Date().toISOString().slice(0, 10)}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Exportar todas as empresas filtradas (sem limite de linhas) para CSV/Excel"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Exportar ({formatarNumero(empresasFiltradas.length)})</span>
+              </button>
             </div>
 
             <div className="flex items-center gap-2 text-xs text-[#004A6D] font-semibold whitespace-nowrap self-end lg:self-auto">
@@ -564,8 +835,9 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
           </div>
         </div>
 
-        {/* Detailed Table */}
-        <div className="overflow-x-auto">
+        {/* Detailed Table (Modo Convencional) */}
+        {viewMode === 'LISTA' ? (
+          <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-[#F4F9FA] border-b border-[#BCD3DF] text-[#004A6D] font-bold uppercase tracking-wider text-[11px]">
@@ -698,6 +970,180 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
             </tbody>
           </table>
         </div>
+        ) : (
+          /* Matriz Mês a Mês (Solicitação da Gerência: Rentabilidade, Churn & 0 Crédito) */
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-[#002A3A] text-white font-bold uppercase tracking-wider text-[11px] border-b-2 border-[#00E3E6]">
+                  <th className="py-3 px-3 min-w-[200px] sticky left-0 z-10 bg-[#002A3A]">
+                    Empresa / Parceiro
+                  </th>
+                  <th className="py-3 px-2 min-w-[125px]">CNPJ</th>
+                  <th className="py-3 px-2 text-center min-w-[110px]">Diagnóstico</th>
+                  {/* Colunas dos Meses Selecionados com Ordenação */}
+                  {((selectedMonths && selectedMonths.length > 0) ? selectedMonths : [1, 2, 3, 4, 5, 6]).map((mNum) => {
+                    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                    const isSortedThisMonth = sortMonth === mNum;
+
+                    return (
+                      <th 
+                        key={mNum} 
+                        onClick={() => {
+                          if (sortMonth === mNum) {
+                            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortMonth(mNum);
+                            setSortDirection('desc');
+                          }
+                        }}
+                        className="py-3 px-3 text-right min-w-[95px] cursor-pointer hover:bg-[#004A6D]/80 transition-colors select-none group"
+                        title={`Clique para ordenar as empresas pelo valor de ${nomesMeses[mNum - 1]}`}
+                      >
+                        <div className="flex items-center justify-end gap-1">
+                          <span>{nomesMeses[mNum - 1]}</span>
+                          {isSortedThisMonth ? (
+                            <span className="text-[#00E3E6] font-bold text-xs">
+                              {sortDirection === 'asc' ? '▲' : '▼'}
+                            </span>
+                          ) : (
+                            <span className="opacity-0 group-hover:opacity-60 text-slate-400 text-xs transition-opacity">↕</span>
+                          )}
+                        </div>
+                      </th>
+                    );
+                  })}
+                  <th 
+                    onClick={() => {
+                      setSortMonth(null);
+                      handleSort('creditoTotal');
+                    }}
+                    className="py-3 px-3 text-right min-w-[115px] bg-[#004A6D] text-[#00E3E6] cursor-pointer hover:bg-[#002A3A] transition-colors select-none"
+                    title="Ordenar por Total do Período"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Total Período</span>
+                      {sortMonth === null && sortField === 'creditoTotal' && (
+                        <span>{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th className="py-3 px-3 text-right min-w-[95px] bg-[#004A6D] text-white">
+                    Média/Mês
+                  </th>
+                  <th className="py-3 px-2 text-center min-w-[90px]">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F0F5F8]">
+                {empresasPaginadas.map((emp) => {
+                  const mesesVisiveis = ((selectedMonths && selectedMonths.length > 0) ? selectedMonths : [1, 2, 3, 4, 5, 6]);
+                  
+                  // Calcular valor total da métrica selecionada
+                  let totalMetrica = 0;
+                  if (metricMatriz === 'credito') totalMetrica = emp.creditoTotal;
+                  else if (metricMatriz === 'cupons') totalMetrica = emp.cuponsValidos;
+                  else if (metricMatriz === 'valorNF') totalMetrica = emp.valorTotalNotas;
+                  else if (metricMatriz === 'doacoes') totalMetrica = emp.creditoDoacoes;
+
+                  const mediaMes = mesesVisiveis.length > 0 ? (totalMetrica / mesesVisiveis.length) : 0;
+
+                  return (
+                    <tr 
+                      key={emp.id}
+                      onClick={() => handleSelecionarEmpresa(emp)}
+                      className="hover:bg-[#F8FCFD] cursor-pointer transition-colors group"
+                    >
+                      <td className="py-2.5 px-3 sticky left-0 z-10 bg-white group-hover:bg-[#F8FCFD] border-r border-slate-100 shadow-2xs">
+                        <div className="font-bold text-[#002A3A] group-hover:text-[#004A6D] truncate max-w-[200px]" title={emp.nomeFantasia}>
+                          {emp.nomeFantasia}
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate max-w-[200px]" title={emp.razaoSocial}>
+                          {emp.razaoSocial}
+                        </div>
+                      </td>
+
+                      <td className="py-2.5 px-2 font-mono text-[11px] text-slate-600">
+                        {emp.cnpj}
+                      </td>
+
+                      <td className="py-2.5 px-2 text-center">
+                        {emp.statusCarteira === 'ZERO_CREDITO' ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 inline-block" title="Coletou cupons mas crédito foi R$ 0,00">
+                            🟡 0 Crédito
+                          </span>
+                        ) : emp.statusCarteira === 'NOVA' ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 inline-block" title="Nova parceria recente">
+                            🟢 Nova
+                          </span>
+                        ) : emp.statusCarteira === 'PERDIDA' ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-300 inline-block" title="Inativa nos últimos meses">
+                            🔴 Perdida
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-50 text-sky-800 border border-sky-200 inline-block">
+                            Ativa
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Valores Mês a Mês */}
+                      {mesesVisiveis.map((mNum) => {
+                        const dadosM = emp.dadosMensais?.[mNum];
+                        let val = 0;
+                        if (dadosM) {
+                          if (metricMatriz === 'credito') val = dadosM.credito;
+                          else if (metricMatriz === 'cupons') val = dadosM.cupons;
+                          else if (metricMatriz === 'valorNF') val = dadosM.valorNF;
+                          else if (metricMatriz === 'doacoes') val = dadosM.doacoes;
+                        }
+
+                        const isZero = val === 0;
+
+                        return (
+                          <td 
+                            key={mNum} 
+                            className={`py-2.5 px-3 text-right font-medium text-[11px] ${
+                              isZero 
+                                ? 'text-slate-300 bg-slate-50/40' 
+                                : 'text-[#002A3A] font-semibold'
+                            }`}
+                          >
+                            {isZero 
+                              ? '-' 
+                              : (metricMatriz === 'cupons' ? formatarNumero(val) : formatarMoeda(val))}
+                          </td>
+                        );
+                      })}
+
+                      {/* Total do Período */}
+                      <td className="py-2.5 px-3 text-right font-black text-xs text-[#004A6D] bg-[#F4F9FA]">
+                        {metricMatriz === 'cupons' ? formatarNumero(totalMetrica) : formatarMoeda(totalMetrica)}
+                      </td>
+
+                      {/* Média Mensal */}
+                      <td className="py-2.5 px-3 text-right font-bold text-[11px] text-slate-600">
+                        {metricMatriz === 'cupons' ? formatarNumero(Math.round(mediaMes)) : formatarMoeda(mediaMes)}
+                      </td>
+
+                      <td className="py-2.5 px-2 text-center">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelecionarEmpresa(emp);
+                          }}
+                          className="p-1 rounded bg-[#D9FBFF] hover:bg-[#004A6D] text-[#004A6D] hover:text-white transition-colors cursor-pointer"
+                          title="Abrir Raio-X detalhado da empresa"
+                        >
+                          <TrendingUp className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Controles de Paginação (100 itens por página) */}
         {empresasFiltradas.length > pageSize && (

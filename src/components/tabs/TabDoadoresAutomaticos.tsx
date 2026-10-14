@@ -104,7 +104,7 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-[#002A3A] tracking-tight font-['Raleway',sans-serif]">
-              Doadores Automáticos
+              Doadores Fidelizados (Recorrentes SEFAZ)
             </h1>
             <BrandBadge highlightText="recorrência" prefix="Engajamento &" suffix="fidelidade" colorVariant="green" size="md" />
           </div>

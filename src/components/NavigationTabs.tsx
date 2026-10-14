@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp, Building2, HeartHandshake, Users, Target, Presentation, Code2 } from 'lucide-react';
 
-export type TabId = 'desempenho' | 'empresas' | 'doadores' | 'automaticos' | 'benchmarking' | 'apresentacao' | 'dev';
+export type TabId = 'desempenho' | 'empresas' | 'doadores' | 'automaticos' | 'campanhas' | 'benchmarking' | 'apresentacao' | 'dev';
 
 interface NavigationTabsProps {
   activeTab: TabId;
@@ -37,19 +37,27 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
     },
     {
       id: 'doadores' as TabId,
-      label: 'Doadores Reais',
-      fullTitle: 'Análise de Doadores de Pessoa Física',
+      label: 'Raio-X Doadores',
+      fullTitle: 'Raio-X de Doadores de Pessoa Física (CPF)',
       icon: HeartHandshake,
       badgeText: null,
       badgeColor: 'bg-[#FD3168] text-white'
     },
     {
       id: 'automaticos' as TabId,
-      label: 'Doadores Auto',
-      fullTitle: 'Doadores Automáticos Cadastrados',
+      label: 'Doadores Fidelizados',
+      fullTitle: 'Doadores Fidelizados (Recorrentes SEFAZ)',
       icon: Users,
       badgeText: null,
       badgeColor: 'bg-[#00E04B] text-[#002A3A]'
+    },
+    {
+      id: 'campanhas' as TabId,
+      label: 'Ações & Campanhas',
+      fullTitle: 'Ações & Campanhas de Captação (Bitrix24)',
+      icon: Target,
+      badgeText: null,
+      badgeColor: 'bg-[#00E3E6] text-[#002A3A]'
     },
     {
       id: 'benchmarking' as TabId,
@@ -64,7 +72,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
       label: 'Apresentação',
       fullTitle: 'Painel de Apresentação Institucional',
       icon: Presentation,
-      badgeText: 'Novo',
+      badgeText: null,
       badgeColor: 'bg-[#00E3E6] text-[#002A3A]'
     },
     {
@@ -81,8 +89,8 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
     <div className="bg-white border-b border-[#BCD3DF]/70 sticky top-[65px] z-20 px-3 lg:px-8 shadow-2xs">
       <div className="max-w-[1800px] mx-auto">
 
-        <nav 
-          className="grid grid-cols-2 sm:grid-cols-7 gap-1.5 py-2.5"
+        <nav
+          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 py-2.5"
           aria-label="Abas do Sistema NFP Analytics"
         >
           {tabs.map((tab) => {
@@ -95,11 +103,10 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
                 id={`tab-btn-${tab.id}`}
                 onClick={() => onSelectTab(tab.id)}
                 title={tab.fullTitle}
-                className={`flex items-center justify-center gap-1.5 px-2.5 py-2.5 rounded-xl font-extrabold text-xs lg:text-sm transition-all duration-200 cursor-pointer w-full text-center ${
-                  isActive
+                className={`flex items-center justify-center gap-1.5 px-2.5 py-2.5 rounded-xl font-extrabold text-xs lg:text-sm transition-all duration-200 cursor-pointer w-full text-center ${isActive
                     ? 'bg-[#004A6D] text-white shadow-md ring-1 ring-[#004A6D]'
                     : 'bg-slate-50 text-[#004A6D] hover:bg-[#D9FBFF]/60 hover:text-[#002A3A] border border-slate-200/70'
-                }`}
+                  }`}
               >
                 <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#00E3E6]' : 'text-[#004A6D]'}`} />
                 <span className="truncate">{tab.label}</span>

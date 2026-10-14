@@ -63,10 +63,19 @@ export interface EmpresaParceira {
   cep?: string;
   telefone?: string;
   email?: string;
+  tipo?: string; // CADASTRO, DESCONTINUAR, DESCARTAR, FECHOU, FORA, NOVO, DOAÇÃO, ANALISAR
   // Campos do Score de Eficiência (5 Níveis)
   scoreEficiencia?: number; // Percentual vs Benchmark do mês
   nivelScore?: NivelScore;
   scoreHistoricoMedio?: number; // Média dos meses históricos da empresa
+  // Detalhamento Mês a Mês para Matriz de Rentabilidade e Churn
+  dadosMensais?: Record<number, {
+    cupons: number;
+    credito: number;
+    valorNF: number;
+    doacoes: number;
+  }>;
+  statusCarteira?: 'NOVA' | 'ATIVA' | 'ZERO_CREDITO' | 'PERDIDA' | 'RETORNO';
 }
 
 

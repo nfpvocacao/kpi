@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { 
-  HeartHandshake, 
-  Search, 
-  UserCheck, 
-  Receipt, 
-  DollarSign, 
-  Store, 
-  CheckCircle2, 
+import {
+  HeartHandshake,
+  Search,
+  UserCheck,
+  Receipt,
+  DollarSign,
+  Store,
+  CheckCircle2,
   Award,
   ArrowRight,
   Loader2,
@@ -23,16 +23,16 @@ import {
   ArrowUp as ArrowUpIcon,
   ArrowDown as ArrowDownIcon
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar, 
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
   LineChart,
   Line,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   Cell
 } from 'recharts';
 import { KPICard } from '../KPICard';
@@ -52,8 +52,8 @@ type SortOrder = 'asc' | 'desc';
 
 type LojaSortField = 'nomeEmpresa' | 'cuponsAuto' | 'cuponsDireta' | 'cupons' | 'valNF' | 'creditoAuto' | 'creditoDireta' | 'credito' | 'participacao';
 
-export const TabDoadores: React.FC<TabDoadoresProps> = ({ 
-  selectedYears = [2026], 
+export const TabDoadores: React.FC<TabDoadoresProps> = ({
+  selectedYears = [2026],
   selectedMonths = [],
   initialSelectedDoadorCpf
 }) => {
@@ -290,17 +290,17 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
       .reduce((acc, d) => acc + d.totalCredito, 0);
 
     return [
-      { 
-        name: 'Doação Automática (AUT)', 
-        value: autoCredito, 
-        color: '#004A6D', 
-        count: doadores.filter(d => d.tipoDoacao === 'DOACAO_AUTOMATICA').length 
+      {
+        name: 'Doação Automática (AUT)',
+        value: autoCredito,
+        color: '#004A6D',
+        count: doadores.filter(d => d.tipoDoacao === 'DOACAO_AUTOMATICA').length
       },
-      { 
-        name: 'Doação Direta (Manual / App)', 
-        value: diretaCredito, 
-        color: '#00E3E6', 
-        count: doadores.filter(d => d.tipoDoacao === 'DOACAO').length 
+      {
+        name: 'Doação Direta (Manual / App)',
+        value: diretaCredito,
+        color: '#00E3E6',
+        count: doadores.filter(d => d.tipoDoacao === 'DOACAO').length
       }
     ];
   }, [doadores]);
@@ -403,18 +403,18 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
 
   return (
     <div className="space-y-6 relative">
-      
+
       {/* Title & Context */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-[#002A3A] tracking-tight font-['Raleway',sans-serif]">
-              Análise de Doadores Reais (Pessoas Físicas)
+              Raio-X de Doadores (Pessoas Físicas)
             </h1>
             <BrandBadge highlightText="trajetória" prefix="Construindo" suffix="social" colorVariant="yellow" size="sm" />
           </div>
           <p className="text-xs text-[#004A6D]/80">
-            Base auditada e apurada de doações pessoais via <code className="bg-[#D9FBFF] px-1 py-0.5 rounded text-[#004A6D] font-mono font-bold">TipoDoacao IN (&apos;DOACAO_AUTOMATICA&apos;, &apos;DOACAO&apos;)</code> no Supabase.
+            Histórico consolidado de doações por pessoa física, perfil de consumo, frequência de compras e impacto financeiro gerado para a instituição.
           </p>
         </div>
 
@@ -423,25 +423,22 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
           <div className="bg-white border border-[#BCD3DF] rounded-xl p-1 flex items-center shadow-2xs">
             <button
               onClick={() => setModalidadeFiltro('TODOS')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                modalidadeFiltro === 'TODOS' ? 'bg-[#004A6D] text-white' : 'text-[#004A6D] hover:bg-[#D9FBFF]'
-              }`}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${modalidadeFiltro === 'TODOS' ? 'bg-[#004A6D] text-white' : 'text-[#004A6D] hover:bg-[#D9FBFF]'
+                }`}
             >
               Todos
             </button>
             <button
               onClick={() => setModalidadeFiltro('DOACAO_AUTOMATICA')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                modalidadeFiltro === 'DOACAO_AUTOMATICA' ? 'bg-[#004A6D] text-white' : 'text-[#004A6D] hover:bg-[#D9FBFF]'
-              }`}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${modalidadeFiltro === 'DOACAO_AUTOMATICA' ? 'bg-[#004A6D] text-white' : 'text-[#004A6D] hover:bg-[#D9FBFF]'
+                }`}
             >
               Automática (AUT)
             </button>
             <button
               onClick={() => setModalidadeFiltro('DOACAO')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                modalidadeFiltro === 'DOACAO' ? 'bg-[#004A6D] text-white' : 'text-[#004A6D] hover:bg-[#D9FBFF]'
-              }`}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${modalidadeFiltro === 'DOACAO' ? 'bg-[#004A6D] text-white' : 'text-[#004A6D] hover:bg-[#D9FBFF]'
+                }`}
             >
               Direta (Manual)
             </button>
@@ -518,9 +515,9 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
             <span className="hidden sm:inline-block text-xs font-semibold text-[#004A6D] bg-[#D9FBFF] px-2.5 py-1 rounded-full">
               Clique em um doador para inspecionar
             </span>
-            <CopyChartButton 
-              chartRef={chartRef} 
-              title="Top_15_Doadores_Credito" 
+            <CopyChartButton
+              chartRef={chartRef}
+              title="Top_15_Doadores_Credito"
             />
           </div>
         </div>
@@ -534,24 +531,24 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={top15Doadores} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 11, fill: '#004A6D', fontWeight: 600 }} 
-                  angle={-25} 
-                  textAnchor="end" 
-                  height={50} 
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 11, fill: '#004A6D', fontWeight: 600 }}
+                  angle={-25}
+                  textAnchor="end"
+                  height={50}
                 />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: '#004A6D' }} 
-                  tickFormatter={(val) => `R$ ${val}`} 
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#004A6D' }}
+                  tickFormatter={(val) => `R$ ${val}`}
                 />
-                <Tooltip 
+                <Tooltip
                   formatter={(val: any) => [formatarMoeda(Number(val))]}
-                  contentStyle={{ 
-                    backgroundColor: '#FFFFFF', 
-                    color: '#002A3A', 
-                    borderRadius: '12px', 
-                    border: '1px solid #BCD3DF', 
+                  contentStyle={{
+                    backgroundColor: '#FFFFFF',
+                    color: '#002A3A',
+                    borderRadius: '12px',
+                    border: '1px solid #BCD3DF',
                     boxShadow: '0 10px 25px -5px rgba(0, 42, 58, 0.15), 0 8px 10px -6px rgba(0, 42, 58, 0.1)',
                     fontSize: '12px',
                     fontWeight: 'bold',
@@ -559,8 +556,8 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                   }}
                   labelStyle={{ color: '#002A3A', fontWeight: 'bold', marginBottom: '4px' }}
                 />
-                <Bar 
-                  dataKey="credito" 
+                <Bar
+                  dataKey="credito"
                   name="Crédito Gerado"
                   radius={[6, 6, 0, 0]}
                   onClick={(data: any) => {
@@ -569,9 +566,9 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                   className="cursor-pointer"
                 >
                   {top15Doadores.map((entry) => (
-                    <Cell 
-                      key={entry.id} 
-                      fill={entry.id === selectedDoadorId ? '#00E3E6' : '#004A6D'} 
+                    <Cell
+                      key={entry.id}
+                      fill={entry.id === selectedDoadorId ? '#00E3E6' : '#004A6D'}
                     />
                   ))}
                 </Bar>
@@ -583,7 +580,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
 
       {/* TABELA PRINCIPAL DE DOADORES REAIS COM ORDENAÇÃO COMPLETA */}
       <div className="bg-white border border-[#BCD3DF]/60 rounded-2xl p-5 shadow-2xs space-y-4">
-        
+
         {/* Table Header: Search Input + Score Level Filter Pills */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[#F0F5F8]">
           <div className="relative flex-1 max-w-md">
@@ -613,49 +610,43 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
             </span>
             <button
               onClick={() => setSelectedScoreLevel('TODOS')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${
-                selectedScoreLevel === 'TODOS' ? 'bg-[#004A6D] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
-              }`}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${selectedScoreLevel === 'TODOS' ? 'bg-[#004A6D] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
+                }`}
             >
               Todos ({formatarNumero(scoreCounts.todos)})
             </button>
             <button
               onClick={() => setSelectedScoreLevel('Elite (Diamante)')}
-              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${
-                selectedScoreLevel === 'Elite (Diamante)' ? 'bg-[#004A6D] text-[#00E3E6]' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
-              }`}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${selectedScoreLevel === 'Elite (Diamante)' ? 'bg-[#004A6D] text-[#00E3E6]' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
+                }`}
             >
               💎 Elite ({formatarNumero(scoreCounts.elite)})
             </button>
             <button
               onClick={() => setSelectedScoreLevel('Alta Performance')}
-              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${
-                selectedScoreLevel === 'Alta Performance' ? 'bg-[#EDCD01] text-[#002A3A]' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
-              }`}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${selectedScoreLevel === 'Alta Performance' ? 'bg-[#EDCD01] text-[#002A3A]' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
+                }`}
             >
               🥇 Ouro ({formatarNumero(scoreCounts.ouro)})
             </button>
             <button
               onClick={() => setSelectedScoreLevel('Na Média')}
-              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${
-                selectedScoreLevel === 'Na Média' ? 'bg-[#004A6D] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
-              }`}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${selectedScoreLevel === 'Na Média' ? 'bg-[#004A6D] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
+                }`}
             >
               🥈 Prata ({formatarNumero(scoreCounts.prata)})
             </button>
             <button
               onClick={() => setSelectedScoreLevel('Em Desenvolvimento')}
-              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${
-                selectedScoreLevel === 'Em Desenvolvimento' ? 'bg-[#FF9F43] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
-              }`}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${selectedScoreLevel === 'Em Desenvolvimento' ? 'bg-[#FF9F43] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
+                }`}
             >
               🥉 Bronze ({formatarNumero(scoreCounts.bronze)})
             </button>
             <button
               onClick={() => setSelectedScoreLevel('Iniciante')}
-              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${
-                selectedScoreLevel === 'Iniciante' ? 'bg-[#6C757D] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
-              }`}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${selectedScoreLevel === 'Iniciante' ? 'bg-[#6C757D] text-white' : 'bg-[#F4F9FA] text-[#004A6D] border border-[#BCD3DF] hover:bg-[#D9FBFF]'
+                }`}
             >
               🌱 Iniciante ({formatarNumero(scoreCounts.iniciante)})
             </button>
@@ -671,9 +662,9 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#F4F9FA] border-b border-[#BCD3DF] text-[#004A6D] font-bold uppercase text-[10px] sm:text-[11px]">
-                  
+
                   {/* Doador(a) */}
-                  <th 
+                  <th
                     onClick={() => handleSort('nome')}
                     className="py-2.5 px-3 cursor-pointer select-none group hover:bg-[#EAF5F8] transition-colors"
                   >
@@ -684,7 +675,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                   </th>
 
                   {/* CPF */}
-                  <th 
+                  <th
                     onClick={() => handleSort('cpf')}
                     className="py-2.5 px-3 cursor-pointer select-none group hover:bg-[#EAF5F8] transition-colors"
                   >
@@ -695,7 +686,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                   </th>
 
                   {/* Classificação (Score) */}
-                  <th 
+                  <th
                     onClick={() => handleSort('nivelScore')}
                     className="py-2.5 px-3 cursor-pointer select-none group hover:bg-[#EAF5F8] transition-colors"
                   >
@@ -706,7 +697,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                   </th>
 
                   {/* Doação Automática (Notas) */}
-                  <th 
+                  <th
                     onClick={() => handleSort('cuponsAutomatica')}
                     className="py-2.5 px-3 text-center bg-[#004A6D]/5 border-l border-r border-[#BCD3DF]/50 cursor-pointer select-none group hover:bg-[#004A6D]/10 transition-colors"
                   >
@@ -717,7 +708,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                   </th>
 
                   {/* Doação Direta (Notas) */}
-                  <th 
+                  <th
                     onClick={() => handleSort('cuponsDireta')}
                     className="py-2.5 px-3 text-center bg-[#00E3E6]/10 border-r border-[#BCD3DF]/50 cursor-pointer select-none group hover:bg-[#00E3E6]/20 transition-colors"
                   >
@@ -728,7 +719,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                   </th>
 
                   {/* Total Notas */}
-                  <th 
+                  <th
                     onClick={() => handleSort('totalCupons')}
                     className="py-2.5 px-3 text-right cursor-pointer select-none group hover:bg-[#EAF5F8] transition-colors"
                   >
@@ -739,7 +730,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                   </th>
 
                   {/* Crédito Doação Automática */}
-                  <th 
+                  <th
                     onClick={() => handleSort('creditoAutomatica')}
                     className="py-2.5 px-3 text-right bg-[#004A6D]/5 border-l border-r border-[#BCD3DF]/50 cursor-pointer select-none group hover:bg-[#004A6D]/10 transition-colors"
                   >
@@ -750,7 +741,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                   </th>
 
                   {/* Crédito Doação Direta */}
-                  <th 
+                  <th
                     onClick={() => handleSort('creditoDireta')}
                     className="py-2.5 px-3 text-right bg-[#00E3E6]/10 border-r border-[#BCD3DF]/50 cursor-pointer select-none group hover:bg-[#00E3E6]/20 transition-colors"
                   >
@@ -761,7 +752,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                   </th>
 
                   {/* Crédito Total */}
-                  <th 
+                  <th
                     onClick={() => handleSort('totalCredito')}
                     className="py-2.5 px-3 text-right cursor-pointer select-none group hover:bg-[#EAF5F8] transition-colors"
                   >
@@ -778,11 +769,10 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                 {doadoresSorted.map((d) => {
                   const isSelected = d.id === selectedDoadorId;
                   return (
-                    <tr 
-                      key={d.id} 
-                      className={`transition-colors cursor-pointer ${
-                        isSelected ? 'bg-[#D9FBFF]/40 font-semibold' : 'hover:bg-[#F8FCFD]'
-                      }`}
+                    <tr
+                      key={d.id}
+                      className={`transition-colors cursor-pointer ${isSelected ? 'bg-[#D9FBFF]/40 font-semibold' : 'hover:bg-[#F8FCFD]'
+                        }`}
                       onClick={() => handleSelectDoadorEInspecionar(d.id)}
                     >
                       <td className="py-3 px-3 font-bold text-[#002A3A]">
@@ -817,7 +807,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                         {formatarMoeda(d.totalCredito)}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleSelectDoadorEInspecionar(d.id);
@@ -839,9 +829,9 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
       {/* MÓDULO INTERATIVO ENCAPSULADO & COLAPSÁVEL: DOADOR X LOJAS */}
       <div ref={moduleRef} className="bg-gradient-to-br from-[#F8FCFD] to-[#EBF6F9] border-2 border-[#00E3E6]/60 rounded-2xl shadow-xs overflow-hidden transition-all scroll-mt-6">
 
-        
+
         {/* Module Header Bar (Collapsible Toggle) */}
-        <div 
+        <div
           onClick={() => setIsInteractiveModuleOpen(!isInteractiveModuleOpen)}
           className="p-4 sm:p-5 flex items-center justify-between cursor-pointer select-none hover:bg-[#D9FBFF]/20 transition-colors"
         >
@@ -881,7 +871,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
         {/* Encapsulated Body */}
         {isInteractiveModuleOpen && doadorSelecionado && (
           <div className="p-5 sm:p-6 border-t border-[#BCD3DF] space-y-6 bg-white/70">
-            
+
             {/* Top Selector + Clear Filter Button */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#BCD3DF]">
               <p className="text-xs text-[#004A6D]/80">
@@ -911,7 +901,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                       }}
                       className="w-full pl-9 pr-14 py-2 bg-white border-2 border-[#004A6D] rounded-xl text-xs font-bold text-[#002A3A] shadow-xs focus:ring-2 focus:ring-[#00E3E6] outline-none"
                     />
-                    
+
                     {/* Clear Filter Button inside Combobox */}
                     {(comboboxQuery || searchTerm) && (
                       <button
@@ -943,9 +933,8 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                               setIsComboboxOpen(false);
                               setComboboxQuery('');
                             }}
-                            className={`w-full text-left p-2.5 hover:bg-[#D9FBFF]/60 transition-colors flex items-center justify-between cursor-pointer ${
-                              d.id === selectedDoadorId ? 'bg-[#D9FBFF] font-bold' : ''
-                            }`}
+                            className={`w-full text-left p-2.5 hover:bg-[#D9FBFF]/60 transition-colors flex items-center justify-between cursor-pointer ${d.id === selectedDoadorId ? 'bg-[#D9FBFF] font-bold' : ''
+                              }`}
                           >
                             <div className="truncate pr-2">
                               <span className="text-xs font-bold text-[#002A3A] block truncate">{d.nome}</span>
@@ -993,9 +982,8 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
 
                 <div>
                   <span className="text-[10px] font-bold text-[#004A6D]/60 uppercase block">Modalidade NFP</span>
-                  <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-bold mt-0.5 ${
-                    doadorSelecionado.tipoDoacao === 'DOACAO_AUTOMATICA' ? 'bg-[#004A6D] text-white' : 'bg-[#00E3E6] text-[#002A3A]'
-                  }`}>
+                  <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-bold mt-0.5 ${doadorSelecionado.tipoDoacao === 'DOACAO_AUTOMATICA' ? 'bg-[#004A6D] text-white' : 'bg-[#00E3E6] text-[#002A3A]'
+                    }`}>
                     {doadorSelecionado.tipoDoacao === 'DOACAO_AUTOMATICA' ? 'Automática (AUT)' : 'Direta / Manual'}
                   </span>
                 </div>
@@ -1051,9 +1039,9 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="bg-white border-b border-[#F0F5F8] text-[#004A6D] font-bold uppercase text-[10px]">
-                        
+
                         {/* Estabelecimento / Loja (A-Z) */}
-                        <th 
+                        <th
                           onClick={() => handleLojaSort('nomeEmpresa')}
                           className="py-2.5 px-4 cursor-pointer select-none group hover:bg-[#F4F9FA] transition-colors"
                         >
@@ -1064,7 +1052,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                         </th>
 
                         {/* Cupons Automática */}
-                        <th 
+                        <th
                           onClick={() => handleLojaSort('cuponsAuto')}
                           className="py-2.5 px-3 text-center bg-[#004A6D]/5 border-l border-r border-[#BCD3DF]/30 cursor-pointer select-none group hover:bg-[#004A6D]/10 transition-colors"
                         >
@@ -1075,7 +1063,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                         </th>
 
                         {/* Cupons Direta */}
-                        <th 
+                        <th
                           onClick={() => handleLojaSort('cuponsDireta')}
                           className="py-2.5 px-3 text-center bg-[#00E3E6]/10 border-r border-[#BCD3DF]/30 cursor-pointer select-none group hover:bg-[#00E3E6]/20 transition-colors"
                         >
@@ -1086,7 +1074,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                         </th>
 
                         {/* Total Cupons */}
-                        <th 
+                        <th
                           onClick={() => handleLojaSort('cupons')}
                           className="py-2.5 px-3 text-right cursor-pointer select-none group hover:bg-[#F4F9FA] transition-colors"
                         >
@@ -1097,7 +1085,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                         </th>
 
                         {/* Valor Compras */}
-                        <th 
+                        <th
                           onClick={() => handleLojaSort('valNF')}
                           className="py-2.5 px-3 text-right cursor-pointer select-none group hover:bg-[#F4F9FA] transition-colors"
                         >
@@ -1108,7 +1096,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                         </th>
 
                         {/* Crédito Automática */}
-                        <th 
+                        <th
                           onClick={() => handleLojaSort('creditoAuto')}
                           className="py-2.5 px-3 text-right bg-[#004A6D]/5 border-l border-r border-[#BCD3DF]/30 cursor-pointer select-none group hover:bg-[#004A6D]/10 transition-colors"
                         >
@@ -1119,7 +1107,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                         </th>
 
                         {/* Crédito Doação Direta */}
-                        <th 
+                        <th
                           onClick={() => handleLojaSort('creditoDireta')}
                           className="py-2.5 px-3 text-right bg-[#00E3E6]/10 border-r border-[#BCD3DF]/30 cursor-pointer select-none group hover:bg-[#00E3E6]/20 transition-colors"
                         >
@@ -1130,7 +1118,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                         </th>
 
                         {/* Crédito Total */}
-                        <th 
+                        <th
                           onClick={() => handleLojaSort('credito')}
                           className="py-2.5 px-3 text-right cursor-pointer select-none group hover:bg-[#F4F9FA] transition-colors"
                         >
@@ -1141,7 +1129,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                         </th>
 
                         {/* Participação */}
-                        <th 
+                        <th
                           onClick={() => handleLojaSort('participacao')}
                           className="py-2.5 px-4 text-center cursor-pointer select-none group hover:bg-[#F4F9FA] transition-colors"
                         >
@@ -1196,8 +1184,8 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                             <td className="py-3 px-4 text-center">
                               <div className="flex items-center justify-center gap-2">
                                 <div className="w-14 bg-[#EEF5F8] rounded-full h-1.5 overflow-hidden">
-                                  <div 
-                                    className="bg-[#004A6D] h-full rounded-full" 
+                                  <div
+                                    className="bg-[#004A6D] h-full rounded-full"
                                     style={{ width: `${Math.min(Math.max(percCredito, 0), 100)}%` }}
                                   ></div>
                                 </div>
@@ -1223,7 +1211,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
       {isHistoricoModalOpen && doadorSelecionado && (
         <div className="fixed inset-0 z-50 bg-[#002A3A]/70 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-[#BCD3DF] rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-6 p-6">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-[#BCD3DF]/50 pb-4">
               <div>
@@ -1252,7 +1240,7 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
               </div>
             ) : (
               <div className="space-y-6">
-                
+
                 {/* Historical Line Chart */}
                 <div className="bg-[#F8FCFD] border border-[#BCD3DF] rounded-xl p-4 space-y-2">
                   <div className="flex items-center justify-between">
@@ -1276,23 +1264,23 @@ export const TabDoadores: React.FC<TabDoadoresProps> = ({
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F1F5" />
                           <XAxis dataKey="mesNome" tick={{ fontSize: 11, fill: '#004A6D' }} />
                           <YAxis tick={{ fontSize: 11, fill: '#004A6D' }} tickFormatter={(val) => `R$ ${val}`} />
-                          <Tooltip 
+                          <Tooltip
                             formatter={(val: any) => [formatarMoeda(Number(val)), 'Crédito Gerado']}
-                            contentStyle={{ 
-                              backgroundColor: '#FFFFFF', 
-                              color: '#002A3A', 
-                              borderRadius: '12px', 
+                            contentStyle={{
+                              backgroundColor: '#FFFFFF',
+                              color: '#002A3A',
+                              borderRadius: '12px',
                               border: '1px solid #BCD3DF',
                               fontSize: '12px',
                               fontWeight: 'bold',
                               padding: '8px 12px'
                             }}
                           />
-                          <Line 
-                            type="monotone" 
-                            dataKey="credito" 
-                            stroke="#004A6D" 
-                            strokeWidth={3} 
+                          <Line
+                            type="monotone"
+                            dataKey="credito"
+                            stroke="#004A6D"
+                            strokeWidth={3}
                             dot={{ fill: '#00E3E6', r: 5, strokeWidth: 2, stroke: '#004A6D' }}
                             activeDot={{ r: 7, fill: '#00E3E6' }}
                           />

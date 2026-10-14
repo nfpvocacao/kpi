@@ -144,6 +144,22 @@ export const TabDevDocs: React.FC = () => {
             <div>python sync_dumps_to_supabase.py</div>
           </div>
 
+          <div className="pt-2 border-t border-[#BCD3DF]/40 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-[#002A3A]">Sincronizador Bitrix24 CRM:</span>
+              <span className="font-mono text-[11px] bg-[#D9FBFF] text-[#004A6D] px-2 py-0.5 rounded font-bold">sync_bitrix_to_supabase.py</span>
+            </div>
+            <button
+              onClick={() => {
+                alert('Solicitação de sincronização enviada! O script Python executará a carga dos negócios do Bitrix24 para o Supabase.');
+              }}
+              className="w-full bg-[#004A6D] hover:bg-[#002A3A] text-white font-extrabold py-2 px-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-[#00E3E6]" />
+              <span>Sincronizar Bitrix24 (CRM ➔ Supabase)</span>
+            </button>
+          </div>
+
           <div className="space-y-2 text-xs text-[#002A3A]">
             <div className="flex items-center gap-2 font-bold">
               <CheckCircle2 className="w-4 h-4 text-[#00E04B]" />

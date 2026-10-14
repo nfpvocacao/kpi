@@ -1,6 +1,6 @@
 # NFP Analytics - Vocação 📊
 
-Plataforma integrada de inteligência de dados, auditoria fiscal e monitoramento de captação de recursos via **Nota Fiscal Paulista (SEFAZ-SP)** para a instituição **Vocação**.
+Plataforma integrada de inteligência de dados, auditoria fiscal e monitoramento de captação de recursos via **Nota Fiscal Paulista (SEFAZ-SP)** e **Bitrix24 CRM** para a instituição **Vocação**.
 
 ---
 
@@ -10,51 +10,52 @@ Plataforma integrada de inteligência de dados, auditoria fiscal e monitoramento
 3. [Navegação e Funcionalidades das Abas](#-navegação-e-funcionalidades-das-abas)
    - [1. Desempenho & Captação](#1-desempenho--captação)
    - [2. Operações por Empresas Parceiras](#2-operações-por-empresas-parceiras)
-   - [3. Doadores Reais (Pessoa Física)](#3-doadores-reais-pessoa-física)
-   - [4. Doadores Automáticos](#4-doadores-automáticos)
-   - [5. Benchmarking & Prospecção](#5-benchmarking--prospecção)
-   - [6. Apresentação Institucional](#6-apresentação-institucional)
-   - [7. Painel do Desenvolvedor & Processos ETL](#7-painel-do-desenvolvedor--processos-etl)
+   - [3. Raio-X de Doadores (Pessoa Física)](#3-raio-x-de-doadores-pessoa-física)
+   - [4. Doadores Fidelizados (Automáticos SEFAZ)](#4-doadores-fidelizados-automáticos-sefaz)
+   - [5. Ações & Campanhas (CRM Bitrix24 + Auditoria SEFAZ)](#5-ações--campanhas-crm-bitrix24--auditoria-sefaz)
+   - [6. Benchmarking & Prospecção](#6-benchmarking--prospecção)
+   - [7. Apresentação Institucional](#7-apresentação-institucional)
+   - [8. Painel do Desenvolvedor & Processos ETL](#8-painel-do-desenvolvedor--processos-etl)
 4. [Recursos Globais](#-recursos-globais)
-   - [Filtro Temporal Dinâmico](#filtro-temporal-dinâmico)
+   - [Filtro Temporal Dinâmico e Reativo](#filtro-temporal-dinâmico-e-reativo)
    - [Modo TV (Painel para Telões)](#modo-tv-painel-para-telões)
    - [Modal de Regras de Negócio e Legislação](#modal-de-regras-de-negócio-e-legislação)
-   - [Status do Banco e Sincronização](#status-do-banco-e-sincronização)
-5. [Regras de Negócio e Legislação Fiscal](#-regras-de-negócio-e-legislação-fiscal)
-6. [Pipeline de Dados & Processos de Carga (ETL)](#-pipeline-de-dados--processos-de-carga-etl)
-7. [Como Executar o Projeto Localmente](#-como-executar-o-projeto-localmente)
+   - [Status do Banco e Conexão Nuvem](#status-do-banco-e-conexão-nuvem)
+5. [Regras de Negócio e Cronograma Fiscal SEFAZ-SP](#-regras-de-negócio-e-cronograma-fiscal-sefaz-sp)
+6. [Pipeline de Dados & Sincronização 100% Cloud](#-pipeline-de-dados--sincronização-100-cloud)
+7. [Dicionário de Dados Oficial (Supabase PostgreSQL)](#-dicionário-de-dados-oficial-supabase-postgresql)
+8. [Como Executar o Projeto Localmente](#-como-executar-o-projeto-localmente)
 
 ---
 
 ## 🌟 Visão Geral
 
-O **NFP Analytics** consolida milhões de registros de cupons fiscais doados à Vocação através do programa estadual da Nota Fiscal Paulista. O objetivo é fornecer visibilidade em tempo real para:
+O **NFP Analytics** consolida milhões de registros de cupons fiscais doados à Vocação através do programa estadual da Nota Fiscal Paulista e integra o funil de captação institucional do Bitrix24. O sistema fornece visibilidade estratégica em tempo real para:
 - Mensurar a arrecadação líquida e evolução mês a mês / ano a ano (YoY).
-- Mapear a performance de cada parceiro comercial (redes de varejo, supermercados, farmácias, padarias e restaurantes).
+- Mapear a performance de cada parceiro comercial (redes de varejo, supermercados, farmácias e restaurantes).
 - Identificar e fidelizar os principais doadores (compras cadastradas via CPF ou urnas físicas).
-- Auditar a eficiência de liberação de créditos da SEFAZ por cupom e por estabelecimento.
-- Apoiar a tomada de decisões da equipe de captação e diretoria executiva.
+- Auditar o mérito de novas campanhas no Bitrix24, separando novos doadores de doadores preexistentes.
+- Monitorar a liquidação real dos créditos estaduais respeitando a defasagem fiscal de 4 meses da SEFAZ.
 
 ---
 
 ## 🛠 Arquitetura & Tecnologias
 
 ### Frontend
-- **React 18** com **TypeScript** e **Vite** (configurado na porta `5180`).
-- **Tailwind CSS** com sistema de cores customizado e tipografia Raleway.
-- **Lucide React** para iconografia técnica e visual.
-- **Recharts** para gráficos dinâmicos de área, barras e dispersão.
-- **html-to-image** para exportação e captura de gráficos para apresentações e relatórios.
+- **React 18** com **TypeScript** e **Vite** (porta `5180`).
+- **Tailwind CSS** com sistema de cores institucional e tipografia oficial.
+- **Lucide React** para iconografia técnica.
+- **Recharts** para gráficos dinâmicos de barras, linhas, áreas e comparativos de equipe.
+- **html-to-image** para exportação e captura de gráficos para apresentações executivas.
 
-### Banco de Dados & Armazenamento
-- **Supabase (PostgreSQL Cloud)**: Fonte de dados de alta disponibilidade conectada via `@supabase/supabase-js`.
-- **SQLite Local (`nfp_database.db`)**: Base local otimizada para processamento rápido de ETL e consultas offline.
-- **Arquivos de Base Fiscal**: Arquivos delimitados contendo cadastros oficiais de estabelecimentos e dados consolidados da SEFAZ (ex: `EMPRESAS NFP BASE LOCAL.txt`).
+### Banco de Dados & Armazenamento (100% Cloud)
+- **Supabase (PostgreSQL Cloud 24/7)**: Fonte primária oficial conectada via `@supabase/supabase-js`.
+- **Row Level Security & REST API**: Consultas de alto desempenho com suporte a paginação `Range` e ordenações dinâmicas.
 
-### Pipeline de Scripts (Python)
-- `etl_import.py`: Processamento massivo de arquivos da SEFAZ e cargas consolidadas.
-- `obter_dados.py` & `sync_local_empresas.py`: Normalização de CNPJs, nomes comerciais e agregações de receita.
-- `sync_dumps_to_supabase.py` & `local_sync_agent.py`: Sincronização automática entre a base local SQLite e a nuvem Supabase.
+### Pipeline de Scripts e Automação (Python)
+- `sync_bitrix_to_supabase.py`: Extrai os negócios e contatos do Bitrix24, cruza os CPFs com a base de doadores do Supabase (`vocacao_resumo_mensal_doadores`), calcula a anterioridade e persiste as iniciativas consolidadas em `nfp_campanhas_bitrix` com lista detalhada em `cpfs_detalhes`.
+- `atualizar_bgs_bitrix.py`: Script de higienização em lote de negócios via API REST do Bitrix24.
+- `autorun_nfp.bat`: Rotina de inicialização automática no Windows para manter a base sincronizada.
 
 ---
 
@@ -72,131 +73,205 @@ Aba principal com visão executiva e indicadores macro da entidade:
 
 ### 2. Operações por Empresas Parceiras
 Foco nas lojas, comércios e redes que geram cupons para a Vocação:
-- **Tabela de Lojas & Redes**: Listagem por Razão Social, Nome Fantasia, CNPJ e Bairro/Região.
-- **Métricas de Performance da Loja**:
-  - Volume de cupons arrecadados no estabelecimento.
-  - Valor financeiro gerado (R$).
-  - Valor médio por cupom daquela unidade específica.
+- **Tabela Padrão & Matriz Mês a Mês**: Alternância dinâmica entre a visualização sintética e a Matriz Mês a Mês com o histórico detalhado de cupons de cada mês selecionado (Jan a Dez) e total do período.
+- **Ordenação Dinâmica Multicoluna**: Ordenação instantânea por clique nos cabeçalhos de qualquer mês individual ou no totalizador do período.
+- **Filtro Oficial por Tipo**: Segmentação ágil da base pelos status operacionais:
+  `CADASTRO`, `NOVO`, `DOAÇÃO`, `DESCONTINUAR`, `DESCARTAR`, `FECHOU`, `FORA`, `ANALISAR`.
+- **Exportação CSV Direta**: Download completo sem limite de linhas respeitando exatamente os filtros ativos em tela e com a abertura mês a mês.
+- **Classificação de Carteira**:
+  - **Novas**: Empresas cujo primeiro registro de cupons ocorreu dentro do período selecionado.
+  - **Ativas**: Empresas recorrentes com histórico prévio consolidado.
+  - **Zero Crédito**: Identificação de lojas com cupons emitidos mas crédito líquido zerado pela SEFAZ.
 - **Filtros e Busca Rápida**: Pesquisa instantânea por nome da loja ou número de CNPJ.
-- **Ranking das Melhores Parceiras**: Destaque das unidades que mais contribuem para a receita da instituição.
 
-### 3. Doadores Reais (Pessoa Física)
-Mapeamento dos doadores individuais e engajamento:
-- **Raio-X do Doador**: Análise detalhada por CPF (com máscara de segurança).
-- **Comportamento de Compra**: Identificação dos principais estabelecimentos frequentados pelo doador.
-- **Matriz de Recorrência**: Divisão entre doadores frequentes (ativos todo mês), esporádicos e doadores inativos.
-- **Ticket Médio Pessoal**: Média de crédito gerado por nota fiscal daquele perfil de doador.
+### 3. Raio-X de Doadores (Pessoa Física)
+Mapeamento aprofundado dos doadores individuais (CPF) com leitura direta de `vocacao_resumo_mensal_doadores`:
+- **Raio-X do Doador**: Histórico completo de compras e doações por CPF.
+- **Comportamento de Compra**: Estabelecimentos mais frequentados pelo doador.
+- **Matriz de Recorrência & Níveis de Engajamento**: Divisão por scores (Elite Diamante, Alta Performance, Na Média, Em Desenvolvimento, Iniciante).
 
-### 4. Doadores Automáticos
-Gestão de cadastros na modalidade de doação digital direta da SEFAZ:
-- **Doação Automática via App NFP**: Pessoas que vincularam a Vocação como entidade beneficiária direta no login do site da Nota Fiscal Paulista.
-- **Geração Recorrente sem Digitação**: Cupons gerados automaticamente sempre que o doador pede CPF na nota no varejo do Estado de SP.
-- **Curva de Crescimento da Base**: Acompanhamento de novas adesões e taxa de retenção dos doadores cadastrados.
+### 4. Doadores Fidelizados (Automáticos SEFAZ)
+Gestão dos cadastros vinculados na modalidade de doação digital direta da SEFAZ:
+- **Doação Automática via App NFP**: Monitoramento da base fidelizada que vinculou a Vocação como entidade beneficiária direta.
+- **Consolidação Mensal via `vocacao_mapa_interno`**: Acompanhamento de doadores ativos, novos cadastros e taxa de retenção.
 
-### 5. Benchmarking & Prospecção
-Ferramenta estratégica de expansão territorial e prospecção:
-- **Mapeamento de Oportunidades**: Análise de estabelecimentos com alto potencial de crédito de ICMS que ainda não possuem caixas ou urnas de captação ativas.
-- **Segmentos do Varejo com Maior Retorno**: Identificação dos ramos de atividade (supermercados, lojas de material de construção, farmácias, restaurantes) com maior alíquota de crédito médio.
-- **Planejamento de Rota de Coleta**: Apoio para otimizar as rotas físicas de recolhimento de urnas de cupons.
+### 5. Ações & Campanhas (CRM Bitrix24 + Auditoria SEFAZ)
+Cockpit de auditoria e prestação de contas das iniciativas de captação presenciais e digitais:
+- **Origem Bitrix24**: Integração oficial com os negócios da Categoria 8 (NFP - Vigente).
+- **Consolidação Inteligente**: Agrupamento pelo campo oficial de Ação/Evento (`UF_CRM_1791479985`) e responsável captador, consolidando eventos de múltiplos dias em iniciativas únicas estáveis.
+- **Auditoria de Anterioridade (Mérito SEFAZ)**:
+  - **Novos CPFs Conquistados**: Doadores que nunca haviam realizado doações para a Vocação antes da data do evento.
+  - **CPFs Preexistentes**: Doadores que já possuíam histórico de doações anterior ao evento.
+- **Ativados SEFAZ Estritamente Reais**: Contagem de CPFs da ação que efetivamente registraram compras e cupons no período posterior ao evento.
+- **Crédito Realizado Estrito (Zero Estimativa)**:
+  - Aplica o ciclo fiscal da SEFAZ. Ações cujo mês de liberação de crédito ainda não foi homologado pelo Estado são marcadas como **R$ 0,00 ("Em Apuração")**.
+- **Modal de Auditoria de CPFs**:
+  - Tabela interna completa com todos os CPFs que compõem o número da ação.
+  - Busca interna instantânea por nome ou CPF.
+  - Exibição de CPFs limpos por padrão para conferência e auditoria.
+  - Botão **`🙈 Ocultar CPFs (Máscara)` / `👁️ Exibir CPFs Completos`** para alternar a privacidade visual durante apresentações.
+- **Ranking da Equipe**: Gráfico comparativo e tabela consolidada de desempenho por colaborador com linha de total geral.
 
-### 6. Apresentação Institucional
-Ambiente visual de alto impacto desenvolvido para apresentações:
-- **Visão Sintética Executiva**: Gráficos e números em escala ampliada, prontos para exibição em auditórios, reuniões de conselho ou encontros com patrocinadores.
-- **Exportação Rápida**: Facilidade para copiar ou salvar capturas dos gráficos com estilo institucional.
+### 6. Benchmarking & Prospecção
+Ferramenta estratégica de expansão territorial e prospecção de novos estabelecimentos comerciais parceiros.
 
-### 7. Painel do Desenvolvedor & Processos ETL
-Área restrita protegida por credencial técnica com:
-- **Dicionário das Tabelas Supabase**: Estrutura das tabelas (`metricas_mensais`, `empresas_nfp`, `doadores`, `historico_nfp`).
-- **Instruções Operacionais de Carga**: Passo a passo para rodar os scripts Python de importação de novas planilhas/dumps oficiais da SEFAZ.
-- **Monitoramento de Integridade**: Status de sincronização entre a base local e a nuvem.
+### 7. Apresentação Institucional
+Ambiente visual de alto impacto para projeção em telões, reuniões de diretoria e apresentações para patrocinadores com suporte a cópia de gráficos em alta resolução.
+
+### 8. Painel do Desenvolvedor & Processos ETL
+Área administrativa restrita protegida por senha com status dos serviços e documentação das tabelas em nuvem.
 
 ---
 
 ## 🎛 Recursos Globais
 
-### Filtro Temporal Dinâmico
-Presente no cabeçalho superior de todas as telas:
-- Suporta múltiplos anos combinados (ex: 2024 + 2025 + 2026).
-- Seleção de meses individuais ou trimestres.
-- Presets rápidos: **Últimos 12 Meses**, **Histórico Completo (2009 a 2027)** ou **Intervalo Customizado (Range)**.
+### Filtro Temporal Dinâmico e Reativo
+- Seleção de múltiplos anos (ex: 2024, 2025, 2026) e meses específicos.
+- **Reatividade Instantânea**: Atualização imediata de todas as abas e tabelas ao trocar de mês, sem necessidade de atualizar a página (F5).
 
 ### Modo TV (Painel para Telões)
-- Acionado pelo botão **Modo TV** no topo do sistema.
-- Exibe métricas em tela cheia com carrossel automático alternando entre Desempenho, Top Parceiros e Metas.
-- Ideal para telões na sede da organização e acompanhamento em equipe.
+- Exibição em tela cheia com carrossel automático alternando entre indicadores de Desempenho e Metas.
 
 ### Modal de Regras de Negócio e Legislação
-Acessível pelo botão de escudo / regras fiscais no topo:
-- Explicação transparente das regras da SEFAZ aplicadas aos cálculos do sistema (teto UFESP, rateio de 60%, limites de 7,5% por estabelecimento).
+- Transparência das fórmulas de rateio da SEFAZ-SP (teto de 10 UFESPs por nota, rateio estadual de 60%, limite de 7,5% do ICMS recolhido por estabelecimento).
 
-### Status do Banco e Sincronização
-- Modal de status detalhando a latência de resposta, total de cupons processados, registros desduplicados e data/hora do último sync.
-- Permite forçar atualização e verificar a saúde da conexão com o Supabase.
+### Status do Banco e Conexão Nuvem
+- Indicador 24/7 da conexão com o **Supabase PostgreSQL**, latência de resposta e data do último sync.
 
 ---
 
-## ⚖ Regras de Negócio e Legislação Fiscal
+## ⚖ Regras de Negócio e Cronograma Fiscal SEFAZ-SP
 
-O sistema adota estritamente os parâmetros legais da SEFAZ-SP (Resolução SF 56/2009 e alterações subsequentes):
-1. **Teto de 10 UFESPs por Cupom**:
-   - Um único cupom fiscal tem seu crédito limitado ao equivalente a 10 UFESPs (Unidades Fiscais do Estado de São Paulo), impedindo distorções provocadas por notas de valor excepcionalmente alto.
-2. **Reserva Exclusiva de 60% para Entidades**:
-   - Do montante total de ICMS devolvido pelo Estado de São Paulo, 60% é destinado prioritariamente às entidades de assistência social, saúde, educação e proteção animal devidamente cadastradas.
-3. **Limite de 7,5% do ICMS por Estabelecimento**:
-   - O rateio de créditos de uma loja é limitado a até 7,5% do ICMS efetivamente recolhido por aquele estabelecimento no mês de apuração.
-4. **Modalidades de Captação**:
-   - **Doação Automática com CPF**: O doador cadastra o CNPJ da entidade no portal/app da NFP uma única vez e todas as compras futuras destinam crédito automático.
-   - **Cupom sem CPF (Urna / Digitação)**: Cupons recolhidos em caixas de estabelecimentos parceiros e cadastrados via aplicativo ou leitor até o dia 20 do mês subsequente.
+### 1. Ciclo de Apuração e Liberação de Créditos
+O repasse dos créditos pela SEFAZ-SP segue uma defasagem fiscal de 4 meses:
+$$\text{Mês da Ação } (M) \longrightarrow \text{Primeiras Notas Emitidas } (M+1) \longrightarrow \text{Liquidação do Crédito pela SEFAZ } (M+4)$$
+
+- **Exemplo Prático (Ação em Junho/2026 - Mês 06)**:
+  - Evento realizado em Junho.
+  - Notas fiscais válidas com CPF começam em Julho (Mês 07).
+  - Crédito liberado pela SEFAZ em **Outubro/2026 (Mês 10)**.
+  - Se os créditos de Outubro/2026 ainda não foram homologados e importados na base, o crédito realizado permanece como **R$ 0,00 ("Em Apuração")**.
+
+### 2. Estimativa Paramétrica Móvel
+- **Cupons Médios por Doador/Mês**: 9,28 cupons.
+- **Ticket Médio por Cupom**: R$ 5,72.
+- **Valor Médio Mensal por Doador**: $\text{R\$} 53,08$ ($9{,}28 \times 5{,}72$).
+- **Crédito Estimado**: $\text{Novos CPFs} \times \text{R\$} 53,08$.
 
 ---
 
-## 🔄 Pipeline de Dados & Processos de Carga (ETL)
+## 🔄 Pipeline de Dados & Sincronização 100% Cloud
 
 ```
-[Arquivos SEFAZ-SP / TXT] 
-          │
-          ▼
- [Scripts Python de ETL] ───► [SQLite Local: nfp_database.db]
- (etl_import.py / obter_dados.py)           │
-                                            ▼
-                               [sync_dumps_to_supabase.py]
-                                            │
-                                            ▼
-                             [Supabase PostgreSQL (Nuvem)]
-                                            │
-                                            ▼
-                            [NFP Analytics (React + Vite)]
+┌─────────────────────────────────┐       ┌─────────────────────────────────┐
+│           CRM Bitrix24          │       │      Portal SEFAZ-SP (NFP)      │
+│  (Negócios Categoria 8 - NFP)   │       │   (Planilhas e Remessas Oficiais)│
+└────────────────┬────────────────┘       └────────────────┬────────────────┘
+                 │                                         │
+                 │                                         │
+                 ▼                                         ▼
+      ┌────────────────────────────────────────────────────────┐
+      │         Supabase PostgreSQL Cloud (Base Oficial)       │
+      │                                                        │
+      │  • vocacao_resumo_mensal_doadores (Histórico SEFAZ)    │
+      │  • vocacao_mapa_interno (Doadores Automáticos)         │
+      │  • nfp_responsaveis_bitrix (309 Colaboradores)         │
+      └──────────────────────────┬─────────────────────────────┘
+                                 │
+                 ┌───────────────┴───────────────┐
+                 │                               │
+                 ▼ (sync_bitrix_to_supabase.py)  ▼
+      ┌────────────────────────────────┐         │
+      │      nfp_campanhas_bitrix      │         │
+      │  • Ações consolidadas          │         │
+      │  • cpfs_detalhes (JSONB)       │         │
+      └────────────────┬───────────────┘         │
+                       │                         │
+                       └────────────┬────────────┘
+                                    │
+                                    ▼
+                 ┌─────────────────────────────────────┐
+                 │       NFP Analytics (React + Vite)  │
+                 │         http://localhost:5180       │
+                 └─────────────────────────────────────┘
 ```
 
-- **Passo 1**: Os arquivos de remessa ou relatórios da SEFAZ são baixados e colocados no diretório do projeto.
-- **Passo 2**: Os scripts Python descompactam, normalizam e limpam CNPJs com formatação inconsistente, tratando quebras de linha e desduplicando registros.
-- **Passo 3**: Os registros são persistidos na base local `nfp_database.db`.
-- **Passo 4**: O script de sincronização replica as métricas agregadas e consolidadas para o Supabase.
-- **Passo 5**: A aplicação web consome a API do Supabase em tempo real com carregamento sob demanda.
+1. **Extração CRM**: O script extrai negócios da Categoria 8 do Bitrix24 e busca os contatos associados com seus CPFs.
+2. **Cruzamento em Nuvem**: Os CPFs são cruzados diretamente contra a tabela `vocacao_resumo_mensal_doadores` no Supabase para auditar a anterioridade de cada doador.
+3. **Persistência Auditável**: As campanhas consolidadas e a lista detalhada de doadores são salvas com upsert em `nfp_campanhas_bitrix`.
+4. **Consumo no Frontend**: A aplicação consome os dados atualizados instantaneamente via `@supabase/supabase-js`.
+
+---
+
+## 🗄 Dicionário de Dados Oficial (Supabase PostgreSQL)
+
+### Tabela: `nfp_campanhas_bitrix`
+Armazena as iniciativas consolidadas de captação e resultados fiscais:
+- `id` (VARCHAR, PK): Identificador determinístico da ação (`BITRIX-{hash}`).
+- `nome_campanha` (VARCHAR): Nome da ação/evento (`UF_CRM_1791479985`).
+- `responsavel` (VARCHAR): Nome do colaborador responsável pela iniciativa.
+- `data_inicio` (DATE): Data de início do evento.
+- `data_fim` (DATE): Data de término do evento.
+- `total_cadastros` (INTEGER): Quantidade de cadastros registrados no Bitrix24.
+- `novos_cpfs_conquistados` (INTEGER): CPFs sem histórico prévio na SEFAZ.
+- `cpfs_preexistentes` (INTEGER): CPFs que já doavam antes do evento.
+- `ativados_com_credito` (INTEGER): CPFs que tiveram compras comprovadas após o evento.
+- `credito_estimado` (NUMERIC): Projeção calculada com base na média paramétrica.
+- `credito_realizado` (NUMERIC): Valor real de créditos homologados pela SEFAZ.
+- `previsao_liberacao` (VARCHAR): Status fiscal ("Liquidado" ou "Em Apuração").
+- `status` (VARCHAR): Status operacional da ação.
+- `cpfs_detalhes` (JSONB): Lista estruturada dos doadores `[{"nome": "...", "cpf": "...", "fone": "...", "statusMerito": "...", "ativado": bool}]`.
+
+### Tabela: `nfp_responsaveis_bitrix`
+Catálogo dimensional de 309 colaboradores e captadores vinculados ao Bitrix:
+- `id_bitrix` (INTEGER, PK): ID do usuário no Bitrix24.
+- `nome` (VARCHAR): Nome completo do colaborador.
+
+### Tabela: `vocacao_resumo_mensal_doadores`
+Base consolidada de doadores reais com compras registradas na SEFAZ:
+- `cpf_doador` (VARCHAR): CPF formatado do doador.
+- `ano` (INTEGER) / `mes` (INTEGER): Período de apuração.
+- `total_cupons` (INTEGER): Total de compras com CPF vinculadas.
+- `cupons_validos` (INTEGER): Cupons aprovados pela SEFAZ.
+- `total_credito_apurado` (NUMERIC): Crédito fiscal creditado à entidade.
+
+### Tabela: `vocacao_resumo_mensal_empresas`
+Base consolidada de faturamento e cupons por parceiro comercial:
+- `cnpj` (VARCHAR): CNPJ da empresa/loja parceira.
+- `nome_empresa` (VARCHAR): Razão Social ou Nome Fantasia.
+- `ano` (INTEGER) / `mes` (INTEGER): Competência da emissão das notas.
+- `total_cupons` (INTEGER): Volume de cupons doados.
+- `total_valor_nf` (NUMERIC): Valor total dos cupons fiscais emitidos.
+- `total_credito_apurado` (NUMERIC): Créditos efetivamente liberados pelo Estado.
+- `tipo` (VARCHAR): Classificação operacional (CADASTRO, NOVO, DOAÇÃO, DESCONTINUAR, DESCARTAR, FECHOU, FORA, ANALISAR).
 
 ---
 
 ## 🚀 Como Executar o Projeto Localmente
 
 ### Pré-requisitos
-- **Node.js** (v18 ou superior) e **npm**
-- **Python 3.10+** (para execução dos scripts de ETL locais)
+- **Node.js** (v18+) e **npm**
+- **Python 3.10+** (com biblioteca `requests` instalada)
 
 ### Instalação de Dependências
 ```bash
-# Na raiz do diretório c:/apps/kpi_nfp
 npm install
 ```
 
-### Executar o Servidor de Desenvolvimento
+### Executar a Aplicação Web
 ```bash
 npm run dev
 ```
-O Vite iniciará o servidor na porta configurada:
-👉 **http://localhost:5180**
+Acesse o painel: 👉 **http://localhost:5180**
+
+### Executar a Sincronização do Bitrix24 sob Demanda
+```bash
+python sync_bitrix_to_supabase.py
+```
+*(Ou utilize o botão de sincronização disponível na aba Dev no próprio sistema).*
 
 ### Gerar Build de Produção
 ```bash
 npm run build
 ```
-O build compila o TypeScript, atualiza a versão automaticamente via `update-version.js` e gera o bundle otimizado na pasta `dist/`.
+O script compilará o bundle otimizado em `dist/` e atualizará automaticamente o número de versão institucional do sistema.

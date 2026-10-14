@@ -10,6 +10,7 @@ import { TabDesempenho } from './components/tabs/TabDesempenho';
 import { TabEmpresas } from './components/tabs/TabEmpresas';
 import { TabDoadores } from './components/tabs/TabDoadores';
 import { TabDoadoresAutomaticos } from './components/tabs/TabDoadoresAutomaticos';
+import { TabCampanhas } from './components/tabs/TabCampanhas';
 import { TabBenchmarking } from './components/tabs/TabBenchmarking';
 import { TabApresentacao } from './components/tabs/TabApresentacao';
 import { TabDevDocs } from './components/tabs/TabDevDocs';
@@ -196,6 +197,13 @@ export default function App() {
         {activeTab === 'automaticos' && (
           <TabDoadoresAutomaticos
             metricasFiltradas={metricasFiltradas}
+            selectedYears={periodFilter.years}
+            selectedMonths={periodFilter.months}
+          />
+        )}
+
+        {activeTab === 'campanhas' && (
+          <TabCampanhas
             selectedYears={periodFilter.years}
             selectedMonths={periodFilter.months}
           />

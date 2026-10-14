@@ -95,7 +95,7 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
           fetchAllParallel(() =>
             supabase
               .from('nfp_empresas')
-              .select('cnpj, fantasia, empresa, id_vendedor, cidade, bairro, logradouro, cep, telefone, email', { count: 'exact' })
+              .select('cnpj, fantasia, empresa, id_vendedor, cidade, bairro, logradouro, cep, telefone, email, tipo', { count: 'exact' })
           )
         ]);
 
@@ -238,16 +238,36 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
               bairro: cadOficial?.bairro,
               cep: cadOficial?.cep,
               telefone: cadOficial?.telefone,
-              email: cadOficial?.email
+              email: cadOficial?.email,
+              tipo: cadOficial?.tipo ? String(cadOficial.tipo).trim().toUpperCase() : undefined,
+              dadosMensais: {}
             });
           }
 
           const item = map.get(cnpjKey)!;
-          item.cuponsValidos += Number(r.total_cupons || 0);
-          item.valorTotalNotas += Number(r.total_valor_nf || 0);
-          item.creditoTotal += Number(r.total_credito_apurado || 0);
+          const cuponsLinha = Number(r.total_cupons || 0);
+          const valorNFLinha = Number(r.total_valor_nf || 0);
+          const creditoLinha = Number(r.total_credito_apurado || 0);
+          const doacaoLinha = Number(r.credito_doacao || 0);
+
+          item.cuponsValidos += cuponsLinha;
+          item.valorTotalNotas += valorNFLinha;
+          item.creditoTotal += creditoLinha;
           item.creditoUrnas += Number(r.credito_cadastro || 0);
-          item.creditoDoacoes += Number(r.credito_doacao || 0);
+          item.creditoDoacoes += doacaoLinha;
+
+          // Guardar na matriz mensal por mês
+          const mesNum = Number(r.mes || 0);
+          if (mesNum > 0) {
+            if (!item.dadosMensais) item.dadosMensais = {};
+            if (!item.dadosMensais[mesNum]) {
+              item.dadosMensais[mesNum] = { cupons: 0, credito: 0, valorNF: 0, doacoes: 0 };
+            }
+            item.dadosMensais[mesNum].cupons += cuponsLinha;
+            item.dadosMensais[mesNum].credito += creditoLinha;
+            item.dadosMensais[mesNum].valorNF += valorNFLinha;
+            item.dadosMensais[mesNum].doacoes += doacaoLinha;
+          }
         });
 
         // Totais Finais dos Cards
@@ -294,6 +314,29 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
             nivel = 'CRITICO';
           }
 
+          // Diagnóstico de Carteira (Rascunho Gerência)
+          let statusCarteira: EmpresaParceira['statusCarteira'] = 'ATIVA';
+          const mesesAtivos = Object.keys(e.dadosMensais || {}).map(Number).sort((a,b) => a - b);
+          const totalCred = e.creditoTotal;
+          const totalCup = e.cuponsValidos;
+
+          if (totalCup > 0 && totalCred === 0) {
+            // "0 Crédito" (Fiscal): tem cupom mas crédito zero
+            statusCarteira = 'ZERO_CREDITO';
+          } else if (mesesAtivos.length > 0) {
+            const menorMes = mesesAtivos[0];
+            const maiorMes = mesesAtivos[mesesAtivos.length - 1];
+            // Se começou nos meses mais recentes do período (ex: mês 5 ou 6)
+            if (menorMes >= 5) {
+              statusCarteira = 'NOVA';
+            } else if (maiorMes <= 3) {
+              // Teve compras nos primeiros meses mas parou nos últimos (Perdeu / Churn)
+              statusCarteira = 'PERDIDA';
+            } else {
+              statusCarteira = 'ATIVA';
+            }
+          }
+
           return {
             ...e,
             creditoTotal: Number(e.creditoTotal.toFixed(2)),
@@ -302,7 +345,8 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
             valorTotalNotas: Number(e.valorTotalNotas.toFixed(2)),
             ticketMedioCupom: Number(ticketMedioLoja.toFixed(2)),
             scoreEficiencia: scorePct,
-            nivelScore: nivel
+            nivelScore: nivel,
+            statusCarteira: statusCarteira
           };
         });
 
