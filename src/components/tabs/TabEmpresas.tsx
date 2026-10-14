@@ -65,7 +65,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
   const [metricMatriz, setMetricMatriz] = useState<'credito' | 'cupons' | 'doacoes' | 'valorNF'>('credito');
   const [statusCarteiraFilter, setStatusCarteiraFilter] = useState<'TODOS' | 'NOVA' | 'ATIVA' | 'ZERO_CREDITO' | 'PERDIDA'>('TODOS');
   const [selectedTipoFilter, setSelectedTipoFilter] = useState<string>('TODOS');
-  const [sortMonth, setSortMonth] = useState<number | null>(null);
+  const [sortMonth, setSortMonth] = useState<string | number | null>(null);
 
   // Estado do botão flutuante "Ir ao Topo"
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -136,13 +136,12 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
     return Array.from(new Set(list)).sort((a, b) => a - b);
   }, [empresasLista]);
 
-  // Filter companies client-side for category, score level pills, vendedor/origem, min cupons, statusCarteira, tipo or sort
-  const empresasFiltradas = useMemo(() => {
+  // Base filtrada por todos os critérios (Tipo, Cupons, Categoria, Vendedor, Busca), exceto o statusCarteira dos cards
+  const empresasComFiltrosGerais = useMemo(() => {
     return empresasLista.filter((emp) => {
       const matchCategoria = selectedCategoria === 'TODAS' || emp.categoria === selectedCategoria;
       const matchScore = selectedScoreLevel === 'TODOS' || emp.nivelScore === selectedScoreLevel;
       const matchCupons = minCuponsFilter === 0 || emp.cuponsValidos >= minCuponsFilter;
-      const matchStatusCarteira = statusCarteiraFilter === 'TODOS' || emp.statusCarteira === statusCarteiraFilter;
       
       let matchTipo = true;
       if (selectedTipoFilter !== 'TODOS') {
@@ -164,7 +163,15 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
         matchVendedor = emp.idVendedor === vId;
       }
 
-      return matchCategoria && matchScore && matchCupons && matchVendedor && matchStatusCarteira && matchTipo;
+      return matchCategoria && matchScore && matchCupons && matchVendedor && matchTipo;
+    });
+  }, [empresasLista, selectedCategoria, selectedScoreLevel, selectedVendedorFilter, minCuponsFilter, selectedTipoFilter]);
+
+  // Filter companies client-side for category, score level pills, vendedor/origem, min cupons, statusCarteira, tipo or sort
+  const empresasFiltradas = useMemo(() => {
+    return empresasComFiltrosGerais.filter((emp) => {
+      const matchStatusCarteira = statusCarteiraFilter === 'TODOS' || emp.statusCarteira === statusCarteiraFilter;
+      return matchStatusCarteira;
     }).sort((a, b) => {
       // Se a ordenação ativa for por uma coluna de mês específico
       if (sortMonth !== null) {
@@ -199,7 +206,38 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
     setCurrentPage(1);
   }, [searchTerm, selectedCategoria, selectedScoreLevel, selectedVendedorFilter, minCuponsFilter, statusCarteiraFilter, selectedTipoFilter, selectedMonth]);
 
-  const totalPages = Math.ceil(empresasFiltradas.length / pageSize) || 1;
+  // Lista de colunas cronológicas da Matriz Mensal
+  // Se houver 1 ano selecionado: Jan, Fev, Mar ...
+  // Se houver múltiplos anos: Jan/25 ... Dez/25, Jan/26 ... Jun/26
+  const colunasMatriz = useMemo(() => {
+    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const anos = (selectedYears && selectedYears.length > 0) ? [...selectedYears].sort((a, b) => a - b) : [2026];
+    const meses = (selectedMonths && selectedMonths.length > 0) ? [...selectedMonths].sort((a, b) => a - b) : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+    const cols: { key: string; label: string; ano: number; mes: number }[] = [];
+
+    anos.forEach(ano => {
+      meses.forEach(mes => {
+        // Se for 2026 e não tiver meses além de 6
+        if (ano === 2026 && (!selectedMonths || selectedMonths.length === 0) && mes > 6) {
+          return;
+        }
+
+        const sufAno = String(ano).slice(-2);
+        const label = anos.length > 1 ? `${nomesMeses[mes - 1]}/${sufAno}` : nomesMeses[mes - 1];
+        const key = anos.length > 1 ? `${ano}-${String(mes).padStart(2, '0')}` : String(mes);
+
+        cols.push({
+          key,
+          label,
+          ano,
+          mes
+        });
+      });
+    });
+
+    return cols;
+  }, [selectedYears, selectedMonths]);
 
   const empresasPaginadas = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -513,8 +551,8 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                 }`}
               >
                 <span className="text-[10px] uppercase font-bold tracking-wider block opacity-80">Todas as Lojas</span>
-                <span className="text-lg font-black block mt-0.5">{formatarNumero(empresasLista.length)}</span>
-                <span className="text-[10px] opacity-75">Base no período</span>
+                <span className="text-lg font-black block mt-0.5">{formatarNumero(empresasComFiltrosGerais.length)}</span>
+                <span className="text-[10px] opacity-75">Resultado dos filtros</span>
               </button>
 
               <button
@@ -528,7 +566,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
               >
                 <span className="text-[10px] uppercase font-bold tracking-wider block text-emerald-700">🟢 Novas Parcerias</span>
                 <span className="text-lg font-black block mt-0.5 text-emerald-950">
-                  {formatarNumero(empresasLista.filter(e => e.statusCarteira === 'NOVA').length)}
+                  {formatarNumero(empresasComFiltrosGerais.filter(e => e.statusCarteira === 'NOVA').length)}
                 </span>
                 <span className="text-[10px] text-emerald-700">Iniciaram recentemente</span>
               </button>
@@ -545,7 +583,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
               >
                 <span className="text-[10px] uppercase font-bold tracking-wider block text-amber-700">🟡 Alerta 0 Crédito</span>
                 <span className="text-lg font-black block mt-0.5 text-amber-950">
-                  {formatarNumero(empresasLista.filter(e => e.statusCarteira === 'ZERO_CREDITO').length)}
+                  {formatarNumero(empresasComFiltrosGerais.filter(e => e.statusCarteira === 'ZERO_CREDITO').length)}
                 </span>
                 <span className="text-[10px] text-amber-700">Gargalo fiscal (notas zeradas)</span>
               </button>
@@ -562,7 +600,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
               >
                 <span className="text-[10px] uppercase font-bold tracking-wider block text-rose-700">🔴 Perdeu / Inativa</span>
                 <span className="text-lg font-black block mt-0.5 text-rose-950">
-                  {formatarNumero(empresasLista.filter(e => e.statusCarteira === 'PERDIDA').length)}
+                  {formatarNumero(empresasComFiltrosGerais.filter(e => e.statusCarteira === 'PERDIDA').length)}
                 </span>
                 <span className="text-[10px] text-rose-700">Ação de relacionamento</span>
               </button>
@@ -675,9 +713,6 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const mesesVisiveis = ((selectedMonths && selectedMonths.length > 0) ? selectedMonths : [1, 2, 3, 4, 5, 6]);
-                  const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                  
                   // Cabeçalho CSV
                   const headers = [
                     'CNPJ',
@@ -687,7 +722,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                     'Categoria',
                     'Vendedor/Captador',
                     'Status Carteira',
-                    ...mesesVisiveis.map(m => `${nomesMeses[m-1]} (${metricMatriz.toUpperCase()})`),
+                    ...colunasMatriz.map(c => `${c.label} (${metricMatriz.toUpperCase()})`),
                     'Total Periodo',
                     'Media Mes'
                   ];
@@ -701,10 +736,10 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                     else if (metricMatriz === 'valorNF') totalMetrica = emp.valorTotalNotas;
                     else if (metricMatriz === 'doacoes') totalMetrica = emp.creditoDoacoes;
 
-                    const mediaMes = mesesVisiveis.length > 0 ? (totalMetrica / mesesVisiveis.length) : 0;
+                    const mediaMes = colunasMatriz.length > 0 ? (totalMetrica / colunasMatriz.length) : 0;
 
-                    const colunasMeses = mesesVisiveis.map(m => {
-                      const dadosM = emp.dadosMensais?.[m];
+                    const colunasMeses = colunasMatriz.map(col => {
+                      const dadosM = emp.dadosMensais?.[col.key] || emp.dadosMensais?.[col.mes];
                       if (!dadosM) return '0';
                       if (metricMatriz === 'credito') return dadosM.credito.toFixed(2);
                       if (metricMatriz === 'cupons') return String(dadosM.cupons);
@@ -982,26 +1017,25 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   <th className="py-3 px-2 min-w-[125px]">CNPJ</th>
                   <th className="py-3 px-2 text-center min-w-[110px]">Diagnóstico</th>
                   {/* Colunas dos Meses Selecionados com Ordenação */}
-                  {((selectedMonths && selectedMonths.length > 0) ? selectedMonths : [1, 2, 3, 4, 5, 6]).map((mNum) => {
-                    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                    const isSortedThisMonth = sortMonth === mNum;
+                  {colunasMatriz.map((col) => {
+                    const isSortedThisMonth = sortMonth === col.key;
 
                     return (
                       <th 
-                        key={mNum} 
+                        key={col.key} 
                         onClick={() => {
-                          if (sortMonth === mNum) {
+                          if (sortMonth === col.key) {
                             setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
                           } else {
-                            setSortMonth(mNum);
+                            setSortMonth(col.key);
                             setSortDirection('desc');
                           }
                         }}
                         className="py-3 px-3 text-right min-w-[95px] cursor-pointer hover:bg-[#004A6D]/80 transition-colors select-none group"
-                        title={`Clique para ordenar as empresas pelo valor de ${nomesMeses[mNum - 1]}`}
+                        title={`Clique para ordenar as empresas pelo valor de ${col.label}`}
                       >
                         <div className="flex items-center justify-end gap-1">
-                          <span>{nomesMeses[mNum - 1]}</span>
+                          <span>{col.label}</span>
                           {isSortedThisMonth ? (
                             <span className="text-[#00E3E6] font-bold text-xs">
                               {sortDirection === 'asc' ? '▲' : '▼'}
@@ -1036,8 +1070,6 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
               </thead>
               <tbody className="divide-y divide-[#F0F5F8]">
                 {empresasPaginadas.map((emp) => {
-                  const mesesVisiveis = ((selectedMonths && selectedMonths.length > 0) ? selectedMonths : [1, 2, 3, 4, 5, 6]);
-                  
                   // Calcular valor total da métrica selecionada
                   let totalMetrica = 0;
                   if (metricMatriz === 'credito') totalMetrica = emp.creditoTotal;
@@ -1045,7 +1077,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                   else if (metricMatriz === 'valorNF') totalMetrica = emp.valorTotalNotas;
                   else if (metricMatriz === 'doacoes') totalMetrica = emp.creditoDoacoes;
 
-                  const mediaMes = mesesVisiveis.length > 0 ? (totalMetrica / mesesVisiveis.length) : 0;
+                  const mediaMes = colunasMatriz.length > 0 ? (totalMetrica / colunasMatriz.length) : 0;
 
                   return (
                     <tr 
@@ -1086,9 +1118,9 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                         )}
                       </td>
 
-                      {/* Valores Mês a Mês */}
-                      {mesesVisiveis.map((mNum) => {
-                        const dadosM = emp.dadosMensais?.[mNum];
+                      {/* Valores Mês a Mês (Indexados sem misturar anos) */}
+                      {colunasMatriz.map((col) => {
+                        const dadosM = emp.dadosMensais?.[col.key] || emp.dadosMensais?.[col.mes];
                         let val = 0;
                         if (dadosM) {
                           if (metricMatriz === 'credito') val = dadosM.credito;
@@ -1101,7 +1133,7 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
 
                         return (
                           <td 
-                            key={mNum} 
+                            key={col.key} 
                             className={`py-2.5 px-3 text-right font-medium text-[11px] ${
                               isZero 
                                 ? 'text-slate-300 bg-slate-50/40' 
@@ -1341,7 +1373,11 @@ export const TabEmpresas: React.FC<TabEmpresasProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#F0F5F8]">
-                    {[...historicoMensal].reverse().map((h, idx) => (
+                    {[...historicoMensal].sort((a, b) => {
+                      const ymA = (a.ano || 0) * 100 + (a.mes || 0);
+                      const ymB = (b.ano || 0) * 100 + (b.mes || 0);
+                      return ymB - ymA;
+                    }).map((h, idx) => (
                       <tr key={idx} className="hover:bg-[#F8FCFD]">
                         <td className="py-2 px-3 font-bold text-[#002A3A]">{h.mesNome}</td>
                         <td className="py-2 px-3 text-right font-medium">{formatarNumero(h.cupons)}</td>

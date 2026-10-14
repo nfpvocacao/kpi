@@ -179,6 +179,7 @@ export default function App() {
 
         {activeTab === 'empresas' && (
           <TabEmpresas 
+            key={`tab-empresas-${periodFilter.years.join('_')}-${periodFilter.months.join('_')}`}
             selectedYears={periodFilter.years} 
             selectedMonths={periodFilter.months}
             onNavigateToDoador={handleNavigateToDoador}

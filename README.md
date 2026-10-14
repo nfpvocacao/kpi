@@ -52,10 +52,13 @@ O **NFP Analytics** consolida milhões de registros de cupons fiscais doados à 
 - **Supabase (PostgreSQL Cloud 24/7)**: Fonte primária oficial conectada via `@supabase/supabase-js`.
 - **Row Level Security & REST API**: Consultas de alto desempenho com suporte a paginação `Range` e ordenações dinâmicas.
 
-### Pipeline de Scripts e Automação (Python)
+### Pipeline de Scripts e Automação (Python & Batch)
+- `obter_dados.py`: Automação Selenium com certificado digital A1 para login na SEFAZ-SP, extração dos dados atualizados de doadores plenos e restritos e gravação direta na planilha oficial no Google Drive (`G:\...`) com espelhamento automático para a pasta local `planilhas/` e raiz.
+- `autorun_nfp.bat`: Executor sequencial em lote no Windows para extração SEFAZ (`obter_dados.py`), ETL de importação (`etl_import.py`) e sincronização de negócios Bitrix24 (`sync_bitrix_to_supabase.py`).
+- `process_month_dump.py`: Processa dumps de Diário (`Diario_AAAA_MM.csv`) e arquivos de Créditos da Fazenda, deduplica notas, consolida as tabelas `vocacao_resumo_mensal_doadores`, `vocacao_doador_estabelecimento_mensal`, `vocacao_resumo_mensal_empresas` e executa o **UPSERT com priorização da coluna `tipo`** na tabela `nfp_empresas` (`CADASTRO` > `DOACAO` > `DOACAO_AUTOMATICA`).
+- `push_mapa_to_supabase.py`: Lê a planilha oficial `2025-01-01 Mapa Automatizacoes.xlsx` (do Drive com espelhamento local automático), cruza os dados apurados de `AUTCup` e `AUTCred` da aba `Consolidado` com a aba `Mapa`, recalcula o ticket médio oficial ($\text{Ticket Médio} = \text{AUTCred} / \text{AUTCup}$) e efetua o UPSERT nas tabelas `vocacao_consolidado_interno` e `vocacao_mapa_interno` no Supabase.
 - `sync_bitrix_to_supabase.py`: Extrai os negócios e contatos do Bitrix24, cruza os CPFs com a base de doadores do Supabase (`vocacao_resumo_mensal_doadores`), calcula a anterioridade e persiste as iniciativas consolidadas em `nfp_campanhas_bitrix` com lista detalhada em `cpfs_detalhes`.
 - `atualizar_bgs_bitrix.py`: Script de higienização em lote de negócios via API REST do Bitrix24.
-- `autorun_nfp.bat`: Rotina de inicialização automática no Windows para manter a base sincronizada.
 
 ---
 
@@ -73,8 +76,9 @@ Aba principal com visão executiva e indicadores macro da entidade:
 
 ### 2. Operações por Empresas Parceiras
 Foco nas lojas, comércios e redes que geram cupons para a Vocação:
-- **Tabela Padrão & Matriz Mês a Mês**: Alternância dinâmica entre a visualização sintética e a Matriz Mês a Mês com o histórico detalhado de cupons de cada mês selecionado (Jan a Dez) e total do período.
+- **Tabela Padrão & Matriz Mês a Mês**: Alternância dinâmica entre a visualização sintética e a Matriz Mês a Mês com o histórico detalhado de cupons de cada mês selecionado (com suporte a todos os 12 meses de Jan a Dez) e total do período.
 - **Ordenação Dinâmica Multicoluna**: Ordenação instantânea por clique nos cabeçalhos de qualquer mês individual ou no totalizador do período.
+- **Tabela de Suporte no Modal da Empresa**: Desmembramento completo mês a mês por empresa (Cupons, Crédito Cadastro, Crédito Doação, Outros/Consumo e Crédito Total Apurado), ordenado cronologicamente de forma decrescente (mais recente primeiro).
 - **Filtro Oficial por Tipo**: Segmentação ágil da base pelos status operacionais:
   `CADASTRO`, `NOVO`, `DOAÇÃO`, `DESCONTINUAR`, `DESCARTAR`, `FECHOU`, `FORA`, `ANALISAR`.
 - **Exportação CSV Direta**: Download completo sem limite de linhas respeitando exatamente os filtros ativos em tela e com a abertura mês a mês.
@@ -82,7 +86,7 @@ Foco nas lojas, comércios e redes que geram cupons para a Vocação:
   - **Novas**: Empresas cujo primeiro registro de cupons ocorreu dentro do período selecionado.
   - **Ativas**: Empresas recorrentes com histórico prévio consolidado.
   - **Zero Crédito**: Identificação de lojas com cupons emitidos mas crédito líquido zerado pela SEFAZ.
-- **Filtros e Busca Rápida**: Pesquisa instantânea por nome da loja ou número de CNPJ.
+- **Filtros e Busca Rápida**: Pesquisa instantânea por nome da loja ou número de CNPJ com reatividade instantânea na troca de períodos.
 
 ### 3. Raio-X de Doadores (Pessoa Física)
 Mapeamento aprofundado dos doadores individuais (CPF) com leitura direta de `vocacao_resumo_mensal_doadores`:
@@ -93,7 +97,9 @@ Mapeamento aprofundado dos doadores individuais (CPF) com leitura direta de `voc
 ### 4. Doadores Fidelizados (Automáticos SEFAZ)
 Gestão dos cadastros vinculados na modalidade de doação digital direta da SEFAZ:
 - **Doação Automática via App NFP**: Monitoramento da base fidelizada que vinculou a Vocação como entidade beneficiária direta.
-- **Consolidação Mensal via `vocacao_mapa_interno`**: Acompanhamento de doadores ativos, novos cadastros e taxa de retenção.
+- **Consolidação Mensal via `vocacao_mapa_interno`**: Acompanhamento de doadores ativos (plenos e restritos), novos cadastros e taxa de retenção.
+- **Tabela Analítica Reativa (>= 2025)**: Exibição detalhada de competências a partir de 2025 ordenada cronologicamente de forma decrescente (mais recente primeiro).
+- **Curva Real de Ticket Médio**: Gráficos contínuos com recálculo preciso baseado em $\text{AUTCred} / \text{AUTCup}$ eliminando descontinuidades ou zeramentos indevidos.
 
 ### 5. Ações & Campanhas (CRM Bitrix24 + Auditoria SEFAZ)
 Cockpit de auditoria e prestação de contas das iniciativas de captação presenciais e digitais:
@@ -235,15 +241,29 @@ Base consolidada de doadores reais com compras registradas na SEFAZ:
 - `cupons_validos` (INTEGER): Cupons aprovados pela SEFAZ.
 - `total_credito_apurado` (NUMERIC): Crédito fiscal creditado à entidade.
 
-### Tabela: `vocacao_resumo_mensal_empresas`
-Base consolidada de faturamento e cupons por parceiro comercial:
-- `cnpj` (VARCHAR): CNPJ da empresa/loja parceira.
-- `nome_empresa` (VARCHAR): Razão Social ou Nome Fantasia.
-- `ano` (INTEGER) / `mes` (INTEGER): Competência da emissão das notas.
-- `total_cupons` (INTEGER): Volume de cupons doados.
-- `total_valor_nf` (NUMERIC): Valor total dos cupons fiscais emitidos.
-- `total_credito_apurado` (NUMERIC): Créditos efetivamente liberados pelo Estado.
-- `tipo` (VARCHAR): Classificação operacional (CADASTRO, NOVO, DOAÇÃO, DESCONTINUAR, DESCARTAR, FECHOU, FORA, ANALISAR).
+### Tabela: `vocacao_mapa_interno`
+Indicadores analíticos mensais de doadores recorrentes da Nota Fiscal Paulista:
+- `mes` (DATE, PK): Data de competência (ex: `2025-01-01`).
+- `doadores_plenos` (INTEGER): Quantidade de doadores automáticos ativos sem restrições.
+- `doadores_restritos` (INTEGER): Doadores com travas ou restrições no app da SEFAZ.
+- `total_doadores` (INTEGER): Soma de doadores plenos e restritos.
+- `qtde_cupons` (INTEGER): Quantidade total de cupons capturados no mês.
+- `val_nf` (NUMERIC): Valor total de notas fiscais associadas.
+- `aut_empr` (INTEGER): Total de empresas parceiras reconhecidas.
+- `aut_cup` (INTEGER): Total de cupons gerados via doação automática.
+- `aut_cred` (NUMERIC): Créditos efetivamente liberados na modalidade automática.
+- `ticket_medio` (NUMERIC): Retorno financeiro médio por cupom automático ($\text{AUTCred} / \text{AUTCup}$).
+
+### Tabela: `vocacao_consolidado_interno`
+Consolidação macro por canal de captação (Cadastro, Doação Direta, Automática e Consumo):
+- `ano_mes` (INTEGER, PK): Ano e mês concatenados (ex: `202501`).
+- `total_empresas` (INTEGER): Quantidade de estabelecimentos comerciais ativos.
+- `tt_cupons` (INTEGER): Soma geral de cupons processados.
+- `tt_val_nf` (NUMERIC): Faturamento total das notas fiscais.
+- `tt_creditos` (NUMERIC): Receita líquida total liberada no período.
+- `aut_empr` / `aut_cup` / `aut_cred`: Métricas desmembradas exclusivas de doações automáticas.
+- `cad_empr` / `cad_cup` / `cad_cred`: Métricas de cupons lançados via cadastro de voluntários.
+- `doa_empr` / `doa_cup` / `doa_cred`: Métricas de urnas físicas e depósitos diretos.
 
 ---
 

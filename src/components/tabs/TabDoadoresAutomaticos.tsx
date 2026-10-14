@@ -91,9 +91,9 @@ export const TabDoadoresAutomaticos: React.FC<TabDoadoresAutomaticosProps> = ({
     ? (totalCreditoAuto / totalCuponsAuto)
     : (arrayTicketsValidos.length > 0 ? arrayTicketsValidos.reduce((acc, t) => acc + t, 0) / arrayTicketsValidos.length : 0);
 
-  // Tabela Analítica: Linhas da seleção do filtro (respeitando o filtro de data), > 2025 (>= 2026) e ordenadas com o mais recente PRIMEIRO (DESC)
+  // Tabela Analítica: Linhas da seleção do filtro (respeitando o filtro de data), >= 2025 e ordenadas com o mais recente PRIMEIRO (DESC)
   const tabelaAnaliticaData = filteredMapaInterno
-    .filter(row => (row.ano || 0) >= 2026)
+    .filter(row => (row.ano || 0) >= 2025)
     .sort((a, b) => String(b.ano_mes || '').localeCompare(String(a.ano_mes || '')));
 
   return (

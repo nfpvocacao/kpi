@@ -68,8 +68,8 @@ export interface EmpresaParceira {
   scoreEficiencia?: number; // Percentual vs Benchmark do mês
   nivelScore?: NivelScore;
   scoreHistoricoMedio?: number; // Média dos meses históricos da empresa
-  // Detalhamento Mês a Mês para Matriz de Rentabilidade e Churn
-  dadosMensais?: Record<number, {
+  // Detalhamento Mês a Mês para Matriz de Rentabilidade e Churn (chave pode ser mes 1..12 ou "2025-01")
+  dadosMensais?: Record<string | number, {
     cupons: number;
     credito: number;
     valorNF: number;

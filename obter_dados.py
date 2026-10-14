@@ -261,6 +261,17 @@ def atualizar_planilha_mapa(caminho_excel, dados):
 
     wb.save(caminho_excel)
     print(f"Planilha atualizada e salva com sucesso! Total de meses atualizados: {atualizados}")
+
+    # Espelhar automaticamente a planilha atualizada exclusivamente para a pasta planilhas/
+    import shutil
+    dest = os.path.join(os.path.dirname(__file__), "planilhas", "2025-01-01 Mapa Automatizacoes.xlsx")
+    try:
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copy2(caminho_excel, dest)
+        print(f"[COPIA LOCAL] Planilha espelhada em: {dest}")
+    except Exception as e_cp:
+        print(f"[AVISO] Falha ao espelhar em {dest}: {e_cp}")
+
     return True
 
 if __name__ == "__main__":

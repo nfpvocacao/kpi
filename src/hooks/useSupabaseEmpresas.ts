@@ -256,10 +256,23 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
           item.creditoUrnas += Number(r.credito_cadastro || 0);
           item.creditoDoacoes += doacaoLinha;
 
-          // Guardar na matriz mensal por mês
+          // Guardar na matriz mensal por mês específico (e por ano-mês caso haja múltiplos anos)
           const mesNum = Number(r.mes || 0);
+          const anoNum = Number(r.ano || 2026);
           if (mesNum > 0) {
             if (!item.dadosMensais) item.dadosMensais = {};
+            
+            // 1. Chave composta inequívoca por competência: "2025-01"
+            const chaveAnoMes = `${anoNum}-${String(mesNum).padStart(2, '0')}`;
+            if (!item.dadosMensais[chaveAnoMes]) {
+              item.dadosMensais[chaveAnoMes] = { cupons: 0, credito: 0, valorNF: 0, doacoes: 0 };
+            }
+            item.dadosMensais[chaveAnoMes].cupons += cuponsLinha;
+            item.dadosMensais[chaveAnoMes].credito += creditoLinha;
+            item.dadosMensais[chaveAnoMes].valorNF += valorNFLinha;
+            item.dadosMensais[chaveAnoMes].doacoes += doacaoLinha;
+
+            // 2. Chave simples numérica para compatibilidade de visualização em ano único
             if (!item.dadosMensais[mesNum]) {
               item.dadosMensais[mesNum] = { cupons: 0, credito: 0, valorNF: 0, doacoes: 0 };
             }
@@ -537,7 +550,7 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
         queryHist = queryHist.in('mes', months);
       }
 
-      queryHist = queryHist.order('mes', { ascending: true });
+      queryHist = queryHist.order('ano', { ascending: false }).order('mes', { ascending: false });
 
       const { data, error: histError } = await queryHist;
 
