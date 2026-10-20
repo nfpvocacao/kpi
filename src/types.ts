@@ -64,6 +64,7 @@ export interface EmpresaParceira {
   telefone?: string;
   email?: string;
   tipo?: string; // CADASTRO, DESCONTINUAR, DESCARTAR, FECHOU, FORA, NOVO, DOAÇÃO, ANALISAR
+  dataInicio?: string; // Primeiro mês histórico de CADASTRO (ex: '2025-01', '2026-06')
   // Campos do Score de Eficiência (5 Níveis)
   scoreEficiencia?: number; // Percentual vs Benchmark do mês
   nivelScore?: NivelScore;

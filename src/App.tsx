@@ -8,6 +8,7 @@ import { Header } from './components/Header';
 import { NavigationTabs, TabId } from './components/NavigationTabs';
 import { TabDesempenho } from './components/tabs/TabDesempenho';
 import { TabEmpresas } from './components/tabs/TabEmpresas';
+import { TabComissoes } from './components/tabs/TabComissoes';
 import { TabDoadores } from './components/tabs/TabDoadores';
 import { TabDoadoresAutomaticos } from './components/tabs/TabDoadoresAutomaticos';
 import { TabCampanhas } from './components/tabs/TabCampanhas';
@@ -183,6 +184,15 @@ export default function App() {
             selectedYears={periodFilter.years} 
             selectedMonths={periodFilter.months}
             onNavigateToDoador={handleNavigateToDoador}
+          />
+        )}
+
+        {activeTab === 'comissoes' && (
+          <TabComissoes 
+            key={`tab-comissoes-${periodFilter.years.join('_')}-${periodFilter.months.join('_')}`}
+            metricasFiltradas={metricasFiltradas}
+            selectedYears={periodFilter.years} 
+            selectedMonths={periodFilter.months}
           />
         )}
 

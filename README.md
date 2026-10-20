@@ -10,12 +10,13 @@ Plataforma integrada de inteligência de dados, auditoria fiscal e monitoramento
 3. [Navegação e Funcionalidades das Abas](#-navegação-e-funcionalidades-das-abas)
    - [1. Desempenho & Captação](#1-desempenho--captação)
    - [2. Operações por Empresas Parceiras](#2-operações-por-empresas-parceiras)
-   - [3. Raio-X de Doadores (Pessoa Física)](#3-raio-x-de-doadores-pessoa-física)
-   - [4. Doadores Fidelizados (Automáticos SEFAZ)](#4-doadores-fidelizados-automáticos-sefaz)
-   - [5. Ações & Campanhas (CRM Bitrix24 + Auditoria SEFAZ)](#5-ações--campanhas-crm-bitrix24--auditoria-sefaz)
-   - [6. Benchmarking & Prospecção](#6-benchmarking--prospecção)
-   - [7. Apresentação Institucional](#7-apresentação-institucional)
-   - [8. Painel do Desenvolvedor & Processos ETL](#8-painel-do-desenvolvedor--processos-etl)
+   - [3. Apuração de Comissões & Bonificações NFP (Política Oficial)](#3-apuração-de-comissões--bonificações-nfp-política-oficial)
+   - [4. Raio-X de Doadores (Pessoa Física)](#4-raio-x-de-doadores-pessoa-física)
+   - [5. Doadores Fidelizados (Automáticos SEFAZ)](#5-doadores-fidelizados-automáticos-sefaz)
+   - [6. Ações & Campanhas (CRM Bitrix24 + Auditoria SEFAZ)](#6-ações--campanhas-crm-bitrix24--auditoria-sefaz)
+   - [7. Benchmarking & Prospecção](#7-benchmarking--prospecção)
+   - [8. Apresentação Institucional](#8-apresentação-institucional)
+   - [9. Painel do Desenvolvedor & Processos ETL](#9-painel-do-desenvolvedor--processos-etl)
 4. [Recursos Globais](#-recursos-globais)
    - [Filtro Temporal Dinâmico e Reativo](#filtro-temporal-dinâmico-e-reativo)
    - [Modo TV (Painel para Telões)](#modo-tv-painel-para-telões)
@@ -55,7 +56,7 @@ O **NFP Analytics** consolida milhões de registros de cupons fiscais doados à 
 ### Pipeline de Scripts e Automação (Python & Batch)
 - `obter_dados.py`: Automação Selenium com certificado digital A1 para login na SEFAZ-SP, extração dos dados atualizados de doadores plenos e restritos e gravação direta na planilha oficial no Google Drive (`G:\...`) com espelhamento automático para a pasta local `planilhas/` e raiz.
 - `autorun_nfp.bat`: Executor sequencial em lote no Windows para extração SEFAZ (`obter_dados.py`), ETL de importação (`etl_import.py`) e sincronização de negócios Bitrix24 (`sync_bitrix_to_supabase.py`).
-- `process_month_dump.py`: Processa dumps de Diário (`Diario_AAAA_MM.csv`) e arquivos de Créditos da Fazenda, deduplica notas, consolida as tabelas `vocacao_resumo_mensal_doadores`, `vocacao_doador_estabelecimento_mensal`, `vocacao_resumo_mensal_empresas` e executa o **UPSERT com priorização da coluna `tipo`** na tabela `nfp_empresas` (`CADASTRO` > `DOACAO` > `DOACAO_AUTOMATICA`).
+- `process_month_dump.py`: Processa dumps de Diário (`Diario_AAAA_MM.csv`) e arquivos de Créditos da Fazenda (`G:\Drives compartilhados\NFP\Fazenda\`). Possui **modo interativo** solicitando a competência (`MM/AAAA`, ex: `06/2026`), deduplica notas fiscais, separa estritamente os créditos de CADASTRO e DOAÇÃO, consolida as tabelas `vocacao_resumo_mensal_doadores`, `vocacao_doador_estabelecimento_mensal`, `vocacao_resumo_mensal_empresas` e executa o **UPSERT em `nfp_empresas` com gravação e preservação contínua da coluna `data_inicio`** (base para cálculo de lojas novas vs. recorrentes na apuração de comissões).
 - `push_mapa_to_supabase.py`: Lê a planilha oficial `2025-01-01 Mapa Automatizacoes.xlsx` (do Drive com espelhamento local automático), cruza os dados apurados de `AUTCup` e `AUTCred` da aba `Consolidado` com a aba `Mapa`, recalcula o ticket médio oficial ($\text{Ticket Médio} = \text{AUTCred} / \text{AUTCup}$) e efetua o UPSERT nas tabelas `vocacao_consolidado_interno` e `vocacao_mapa_interno` no Supabase.
 - `sync_bitrix_to_supabase.py`: Extrai os negócios e contatos do Bitrix24, cruza os CPFs com a base de doadores do Supabase (`vocacao_resumo_mensal_doadores`), calcula a anterioridade e persiste as iniciativas consolidadas em `nfp_campanhas_bitrix` com lista detalhada em `cpfs_detalhes`.
 - `atualizar_bgs_bitrix.py`: Script de higienização em lote de negócios via API REST do Bitrix24.
@@ -88,20 +89,46 @@ Foco nas lojas, comércios e redes que geram cupons para a Vocação:
   - **Zero Crédito**: Identificação de lojas com cupons emitidos mas crédito líquido zerado pela SEFAZ.
 - **Filtros e Busca Rápida**: Pesquisa instantânea por nome da loja ou número de CNPJ com reatividade instantânea na troca de períodos.
 
-### 3. Raio-X de Doadores (Pessoa Física)
+### 3. Apuração de Comissões & Bonificações NFP (Política Oficial)
+Módulo executivo de remuneração variável e auditoria contábil conforme a **Política NFP Vocação**:
+- **Frente Cadastro (Comissão da Equipe Comercial)**:
+  - **1º Mês de Entrada (`data_inicio`)**: Classificação **`NOVA`** com alíquota de **1,0%** sobre o crédito de Cadastro e Doação Direta.
+  - **2º Mês em Diante**: Transição automática e vitalícia para **`RECORRENTE`** com alíquota de **0,5%** (Manutenção de Carteira).
+  - **Histórico Oficial "Marco Zero" (Jan/2025)**: As lojas ativas na largada receberam `data_inicio = '2025-01'` e passam a pontuar 0,5% nos meses seguintes.
+  - **Apuração Cronológica Precisa**: Ao visualizar períodos acumulados ou o ano fechado, o sistema calcula a comissão mês a mês, assegurando o valor correto de 1% no mês de estreia e 0,5% nos subsequentes.
+- **Frente 4 (Comissão da Coordenação do Programa NFP)**:
+  A base mensal elegível consolida 4 parcelas transparentes sem dupla contagem:
+  1. **Captação e Manutenção de Estabelecimentos**: Créditos da Frente Cadastro reconhecidos no mês (ex: R$ 240.595,23 em Jun/2026).
+  2. **Base Histórica de 2025**: Parcela fixa contratual de **R$ 53.025,14 por mês** (R$ 636.301,63 / 12).
+  3. **Automatizações Individuais da Equipe**: Créditos reconhecidos das automatizações de pessoas físicas captadas nos eventos presenciais e digitais da equipe (com defasagem fiscal D+1/D+4).
+  4. **Doações (PF)**: Créditos reconhecidos de doações de cupons PF (ex: R$ 5.843,15 em Jun/2026).
+  - **Tabela Progressiva Escalonada da Coordenação** (incide sobre a base integral):
+    - Até R$ 229.999,99: **4%**
+    - R$ 230.000,00 a R$ 279.999,99: **5%**
+    - R$ 280.000,00 a R$ 329.999,99: **6%**
+    - R$ 330.000,00 a R$ 379.999,99: **7%**
+    - R$ 380.000,00 a R$ 429.999,99: **8%**
+    - R$ 430.000,00 a R$ 479.999,99: **9%**
+    - A partir de R$ 480.000,00: **10%**
+- **Três Visualizações Executivas**:
+  - **📊 Resumo por Vendedor**: Tabela sintética com total de lojas, novas, recorrentes, créditos e comissões calculadas por captador, linha de conciliação de doações espontâneas/sem vendedor e rodapé institucional.
+  - **📅 Evolução Mensal (Grade)**: Matriz mês a mês (Jan a Dez + Total) da comissão de cada captador e da coordenação.
+  - **🏢 Analítico por CNPJ**: Tabela auditável com todas as lojas, botões de filtro rápido (**`⭐ Novas do Mês`**, `Recorrentes`, `Todas`), indicação da data de início, vendedor responsável e exportação CSV.
+
+### 4. Raio-X de Doadores (Pessoa Física)
 Mapeamento aprofundado dos doadores individuais (CPF) com leitura direta de `vocacao_resumo_mensal_doadores`:
 - **Raio-X do Doador**: Histórico completo de compras e doações por CPF.
 - **Comportamento de Compra**: Estabelecimentos mais frequentados pelo doador.
 - **Matriz de Recorrência & Níveis de Engajamento**: Divisão por scores (Elite Diamante, Alta Performance, Na Média, Em Desenvolvimento, Iniciante).
 
-### 4. Doadores Fidelizados (Automáticos SEFAZ)
+### 5. Doadores Fidelizados (Automáticos SEFAZ)
 Gestão dos cadastros vinculados na modalidade de doação digital direta da SEFAZ:
 - **Doação Automática via App NFP**: Monitoramento da base fidelizada que vinculou a Vocação como entidade beneficiária direta.
 - **Consolidação Mensal via `vocacao_mapa_interno`**: Acompanhamento de doadores ativos (plenos e restritos), novos cadastros e taxa de retenção.
 - **Tabela Analítica Reativa (>= 2025)**: Exibição detalhada de competências a partir de 2025 ordenada cronologicamente de forma decrescente (mais recente primeiro).
 - **Curva Real de Ticket Médio**: Gráficos contínuos com recálculo preciso baseado em $\text{AUTCred} / \text{AUTCup}$ eliminando descontinuidades ou zeramentos indevidos.
 
-### 5. Ações & Campanhas (CRM Bitrix24 + Auditoria SEFAZ)
+### 6. Ações & Campanhas (CRM Bitrix24 + Auditoria SEFAZ)
 Cockpit de auditoria e prestação de contas das iniciativas de captação presenciais e digitais:
 - **Origem Bitrix24**: Integração oficial com os negócios da Categoria 8 (NFP - Vigente).
 - **Consolidação Inteligente**: Agrupamento pelo campo oficial de Ação/Evento (`UF_CRM_1791479985`) e responsável captador, consolidando eventos de múltiplos dias em iniciativas únicas estáveis.
@@ -118,13 +145,13 @@ Cockpit de auditoria e prestação de contas das iniciativas de captação prese
   - Botão **`🙈 Ocultar CPFs (Máscara)` / `👁️ Exibir CPFs Completos`** para alternar a privacidade visual durante apresentações.
 - **Ranking da Equipe**: Gráfico comparativo e tabela consolidada de desempenho por colaborador com linha de total geral.
 
-### 6. Benchmarking & Prospecção
+### 7. Benchmarking & Prospecção
 Ferramenta estratégica de expansão territorial e prospecção de novos estabelecimentos comerciais parceiros.
 
-### 7. Apresentação Institucional
+### 8. Apresentação Institucional
 Ambiente visual de alto impacto para projeção em telões, reuniões de diretoria e apresentações para patrocinadores com suporte a cópia de gráficos em alta resolução.
 
-### 8. Painel do Desenvolvedor & Processos ETL
+### 9. Painel do Desenvolvedor & Processos ETL
 Área administrativa restrita protegida por senha com status dos serviços e documentação das tabelas em nuvem.
 
 ---

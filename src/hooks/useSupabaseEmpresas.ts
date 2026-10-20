@@ -92,10 +92,12 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
           }),
 
           // Query 3: Cadastro Oficial de Empresas (Paginado em Paralelo)
+          // Buscar todas as empresas que possuem vendedor ou data_inicio definida
           fetchAllParallel(() =>
             supabase
               .from('nfp_empresas')
-              .select('cnpj, fantasia, empresa, id_vendedor, cidade, bairro, logradouro, cep, telefone, email, tipo', { count: 'exact' })
+              .select('cnpj, fantasia, empresa, id_vendedor, cidade, bairro, logradouro, cep, telefone, email, tipo, data_inicio', { count: 'exact' })
+              .or('id_vendedor.not.is.null,data_inicio.not.is.null')
           )
         ]);
 
@@ -240,6 +242,7 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
               telefone: cadOficial?.telefone,
               email: cadOficial?.email,
               tipo: cadOficial?.tipo ? String(cadOficial.tipo).trim().toUpperCase() : undefined,
+              dataInicio: cadOficial?.data_inicio ? String(cadOficial.data_inicio).trim() : undefined,
               dadosMensais: {}
             });
           }
