@@ -57,6 +57,7 @@ export interface EmpresaParceira {
   // Campos de Identificação da Parceria / Base Cadastrada
   isCadastrada?: boolean;
   idVendedor?: number | null;
+  idVendedorAbertura?: number | null;
   nomeVendedor?: string;
   logradouro?: string;
   bairro?: string;

@@ -106,7 +106,7 @@ export const TabComissoes: React.FC<TabComissoesProps> = ({
       const vId = emp.idVendedor;
       return vId !== null && vId !== undefined && vId > 0 && VENDEDORES_COMISSIONAVEIS_IDS.includes(vId);
     });
-    const comissoesPorEmpresa = new Map<string, { comissao: number; isNova: boolean }>();
+    const comissoesPorEmpresa = new Map<string, { comissao: number; isNova: boolean; isAbertura?: boolean }>();
 
     filtradas.forEach(emp => {
       const vId = emp.idVendedor!;
@@ -150,13 +150,21 @@ export const TabComissoes: React.FC<TabComissoesProps> = ({
       v.totalCredito += credLojaTotal;
 
       // -------------------------------------------------------------
-      // REGRA OFICIAL DE 1º MÊS (1,0%) vs 2º MÊS EM DIANTE (0,5%)
+      // REGRA OFICIAL DE NOVAS (1,0% ABERTURA) vs RECORRENTES (0,5% MANUTENÇÃO)
+      // * 1% só é pago se o vendedor atual for quem abriu a empresa (idVendedor === idVendedorAbertura).
+      // -------------------------------------------------------------
+      // REGRA OFICIAL DE ABERTURA (1,0%) vs RECORRENTES (0,5%)
+      // * 1% é pago para as empresas onde o vendedor atual é quem abriu (idVendedor === idVendedorAbertura).
+      // * Se o vendedor NÃO foi quem abriu, ela é tratada como recorrente (0,5%).
       // -------------------------------------------------------------
       const anoBase = selectedYears[0] || 2026;
       const dMensais = emp.dadosMensais || {};
 
-      // A loja é considerada nova se sua data_inicio bate com qualquer um dos meses ativos
-      const teveMesNovoNoPeriodo = mesesAtivos.some(m => emp.dataInicio === `${anoBase}-${String(m).padStart(2, '0')}`);
+      const isVendedorAbertura = Boolean(
+        emp.idVendedor &&
+        emp.idVendedorAbertura &&
+        Number(emp.idVendedor) === Number(emp.idVendedorAbertura)
+      );
 
       let lojaComissaoNovasAcum = 0;
       let lojaComissaoRecorrAcum = 0;
@@ -165,22 +173,20 @@ export const TabComissoes: React.FC<TabComissoesProps> = ({
 
       // Cálculo financeiro mês a mês
       mesesAtivos.forEach(m => {
-        const chaveCompetenciaMes = `${anoBase}-${String(m).padStart(2, '0')}`;
-        const isNovoNoMes = Boolean(emp.dataInicio && emp.dataInicio === chaveCompetenciaMes);
-
         const dadosDoMes = dMensais[m];
         if (!dadosDoMes || (dadosDoMes.credito || 0) <= 0) return;
 
         const credMes = Number(dadosDoMes.credito || 0);
         v.creditoPorMes[m] = (v.creditoPorMes[m] || 0) + credMes;
 
-        if (isNovoNoMes) {
+        if (isVendedorAbertura) {
+          // Vendedor que abriu a empresa recebe 1,0% (Abertura / Novas)
           const comissaoMes = credMes * 0.01;
           lojaCreditoNovasAcum += credMes;
           lojaComissaoNovasAcum += comissaoMes;
           v.comissaoPorMes[m] = (v.comissaoPorMes[m] || 0) + comissaoMes;
         } else {
-          // Do 2º mês em diante -> 0,5% (Recorrente de Manutenção)
+          // Vendedor que não abriu recebe 0,5% (Recorrente de Manutenção)
           const comissaoMes = credMes * 0.005;
           lojaCreditoRecorrAcum += credMes;
           lojaComissaoRecorrAcum += comissaoMes;
@@ -188,7 +194,7 @@ export const TabComissoes: React.FC<TabComissoesProps> = ({
         }
       });
 
-      if (teveMesNovoNoPeriodo) {
+      if (isVendedorAbertura) {
         v.lojasNovas += 1;
       } else {
         v.lojasRecorrentes += 1;
@@ -198,12 +204,13 @@ export const TabComissoes: React.FC<TabComissoesProps> = ({
       v.creditoRecorrente += lojaCreditoRecorrAcum;
       v.comissaoNovas += lojaComissaoNovasAcum;
       v.comissaoRecorrente += lojaComissaoRecorrAcum;
-      v.creditoTotal = v.creditoNovas + v.creditoRecorrente;
+      v.totalCredito = v.creditoNovas + v.creditoRecorrente;
       v.comissaoTotal = v.comissaoNovas + v.comissaoRecorrente;
 
       comissoesPorEmpresa.set(emp.id, {
         comissao: lojaComissaoNovasAcum + lojaComissaoRecorrAcum,
-        isNova: teveMesNovoNoPeriodo
+        isNova: isVendedorAbertura,
+        isAbertura: isVendedorAbertura
       });
     });
 
@@ -483,7 +490,7 @@ export const TabComissoes: React.FC<TabComissoesProps> = ({
             </span>
           </div>
           <p className="text-xs text-[#004A6D]/80 mt-1 max-w-3xl">
-            Cálculo oficial de remuneração variável conforme a Política NFP Vocação. As lojas são tratadas como <strong>Novas (1,0%) no 1º mês</strong> e passam a <strong>Recorrentes (0,5%) nos meses seguintes</strong>.
+            Cálculo oficial de remuneração variável conforme a Política NFP Vocação. As lojas são tratadas como <strong>Novas (1,0%)</strong> quando o vendedor atual é o <strong>vendedor de abertura</strong> (<code className="text-[10px] bg-slate-100 px-1 py-0.5 rounded">id_vendedor == id_vendedor_abertura</code>); caso contrário, são comissionadas como <strong>Recorrentes (0,5%)</strong>.
           </p>
         </div>
 
@@ -517,36 +524,26 @@ export const TabComissoes: React.FC<TabComissoesProps> = ({
         </div>
       )}
 
-      {/* Cards de KPIs Principais (Equipe + Coordenação) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Cards de KPIs Principais (Equipe Comercial) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KPICard
-          id="kpi-comissao-total-geral"
-          title="Total Comissões do Período"
-          value={formatarMoeda(kpisEquipe.totalComissaoGeral)}
-          subValue={`Equipe: ${formatarMoeda(kpisEquipe.totalComissaoVendedores)} | Coordenação: ${formatarMoeda(kpisEquipe.totalComissaoCoordenacao)}`}
+          id="kpi-comissao-total-equipe"
+          title="Total Comissões Equipe Comercial"
+          value={formatarMoeda(kpisEquipe.totalComissaoVendedores)}
+          subValue={`Novas (1%): ${formatarMoeda(kpisEquipe.totalComissaoNovas)} | Recorr. (0,5%): ${formatarMoeda(kpisEquipe.totalComissaoRecorrente)}`}
           icon={Award}
           iconBgColor="bg-[#EDCD01]/20"
           iconColor="text-[#002A3A]"
         />
 
         <KPICard
-          id="kpi-comissao-total-equipe"
-          title="Comissão Equipe Comercial"
-          value={formatarMoeda(kpisEquipe.totalComissaoVendedores)}
-          subValue={`Novas (1%): ${formatarMoeda(kpisEquipe.totalComissaoNovas)} | Recorr. (0,5%): ${formatarMoeda(kpisEquipe.totalComissaoRecorrente)}`}
+          id="kpi-comissao-novas"
+          title="Comissão Lojas Novas (1,0%)"
+          value={formatarMoeda(kpisEquipe.totalComissaoNovas)}
+          subValue={`Lojas abertas pelo captador oficial`}
           icon={BadgePercent}
           iconBgColor="bg-[#00E04B]/20"
           iconColor="text-[#006E24]"
-        />
-
-        <KPICard
-          id="kpi-comissao-coordenacao"
-          title="Comissão Coordenação NFP"
-          value={formatarMoeda(kpisEquipe.totalComissaoCoordenacao)}
-          subValue={`Base Elegível c/ R$ 53k fixo 2025 (Faixa 6%-10%)`}
-          icon={TrendingUp}
-          iconBgColor="bg-[#D9FBFF]"
-          iconColor="text-[#004A6D]"
         />
 
         <KPICard
@@ -943,55 +940,20 @@ export const TabComissoes: React.FC<TabComissoesProps> = ({
                     {formatarMoeda(kpisEquipe.totalComissaoVendedores)}
                   </td>
                 </tr>
-
-                {/* Linha da Coordenação do Programa NFP */}
-                <tr className="bg-[#D9FBFF]/30 border-t border-[#00E3E6]/60 text-[#002A3A] font-bold">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-[#004A6D] text-white font-black flex items-center justify-center text-[10px]">
-                        ★
-                      </span>
-                      <div>
-                        <div>Coordenação do Programa NFP</div>
-                        <div className="text-[10px] text-[#004A6D]/80 font-normal">
-                          Base Elegível + R$ 53k fixo 2025
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  {mesesAtivos.map(m => {
-                    const infoCoord = comissaoCoordenacaoPorMes[m];
-                    const val = infoCoord ? infoCoord.valorComissao : 0;
-                    return (
-                      <td key={m} className="py-3 px-3 text-right font-bold text-[#004A6D]">
-                        <div>{formatarMoeda(val)}</div>
-                        {infoCoord && (
-                          <div className="text-[9px] text-[#006E24] font-medium">
-                            {(infoCoord.aliquota * 100).toFixed(0)}% da base
-                          </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                  <td className="py-3 px-4 text-right font-black text-[#002A3A] bg-[#00E3E6]/20 text-sm">
-                    {formatarMoeda(totalComissaoCoordenacao)}
-                  </td>
-                </tr>
               </tbody>
               <tfoot className="bg-[#004A6D] text-white font-black text-xs">
                 <tr>
-                  <td className="py-3.5 px-4">TOTAL GERAL DE COMISSÕES A PAGAR</td>
+                  <td className="py-3.5 px-4">TOTAL COMISSÕES EQUIPE COMERCIAL</td>
                   {mesesAtivos.map(m => {
                     const subEquipe = evolucaoMensalVendedores.reduce((acc, v) => acc + (v.comissaoPorMes[m] || 0), 0);
-                    const valCoord = comissaoCoordenacaoPorMes[m]?.valorComissao || 0;
                     return (
                       <td key={m} className="py-3.5 px-3 text-right text-[#00E3E6]">
-                        {formatarMoeda(subEquipe + valCoord)}
+                        {formatarMoeda(subEquipe)}
                       </td>
                     );
                   })}
                   <td className="py-3.5 px-4 text-right text-sm text-[#EDCD01] bg-[#003852]">
-                    {formatarMoeda(kpisEquipe.totalComissaoGeral)}
+                    {formatarMoeda(kpisEquipe.totalComissaoVendedores)}
                   </td>
                 </tr>
               </tfoot>
@@ -1080,9 +1042,19 @@ export const TabComissoes: React.FC<TabComissoesProps> = ({
                           </div>
                         </td>
                         <td className="py-2.5 px-3 font-semibold text-[#002A3A]">
-                          {emp.nomeVendedor || (emp.idVendedor ? `Captador #${emp.idVendedor}` : (
-                            <span className="text-amber-800 font-medium italic">Sem Vendedor / Espontânea</span>
-                          ))}
+                          <div>
+                            {emp.nomeVendedor || (emp.idVendedor ? `Captador #${emp.idVendedor}` : (
+                              <span className="text-amber-800 font-medium italic">Sem Vendedor / Espontânea</span>
+                            ))}
+                          </div>
+                          {emp.idVendedorAbertura && (
+                            <div className="text-[10px] text-slate-500 font-normal">
+                              Abertura: {VENDEDORES_MAP[emp.idVendedorAbertura] || `ID #${emp.idVendedorAbertura}`}
+                              {emp.idVendedor && Number(emp.idVendedor) === Number(emp.idVendedorAbertura) && (
+                                <span className="ml-1 text-[#006E24] font-bold">✓ (Mesmo)</span>
+                              )}
+                            </div>
+                          )}
                         </td>
                         <td className="py-2.5 px-2 text-center font-mono text-xs font-bold text-[#004A6D]">
                           {emp.dataInicio ? (

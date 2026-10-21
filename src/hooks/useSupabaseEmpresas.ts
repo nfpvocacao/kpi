@@ -96,8 +96,8 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
           fetchAllParallel(() =>
             supabase
               .from('nfp_empresas')
-              .select('cnpj, fantasia, empresa, id_vendedor, cidade, bairro, logradouro, cep, telefone, email, tipo, data_inicio', { count: 'exact' })
-              .or('id_vendedor.not.is.null,data_inicio.not.is.null')
+              .select('cnpj, fantasia, empresa, id_vendedor, id_vendedor_abertura, cidade, bairro, logradouro, cep, telefone, email, tipo, data_inicio', { count: 'exact' })
+              .or('id_vendedor.not.is.null,id_vendedor_abertura.not.is.null,data_inicio.not.is.null')
           )
         ]);
 
@@ -235,6 +235,7 @@ export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {
               cidade: cidade,
               isCadastrada: isCadastrada,
               idVendedor: idVendedor,
+              idVendedorAbertura: cadOficial?.id_vendedor_abertura ?? null,
               nomeVendedor: idVendedor ? (VENDEDORES_MAP[idVendedor] || `Captador #${idVendedor}`) : undefined,
               logradouro: cadOficial?.logradouro,
               bairro: cadOficial?.bairro,
