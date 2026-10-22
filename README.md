@@ -7,7 +7,8 @@ Plataforma integrada de inteligência de dados, auditoria fiscal e monitoramento
 ## 📌 Sumário
 1. [Visão Geral](#-visão-geral)
 2. [Arquitetura & Tecnologias](#-arquitetura--tecnologias)
-3. [Navegação e Funcionalidades das Abas](#-navegação-e-funcionalidades-das-abas)
+3. [Autenticação & Controle de Acesso por Telas (RBAC Granular)](#-autenticação--controle-de-acesso-por-telas-rbac-granular)
+4. [Navegação e Funcionalidades das Abas](#-navegação-e-funcionalidades-das-abas)
    - [1. Desempenho & Captação](#1-desempenho--captação)
    - [2. Operações por Empresas Parceiras](#2-operações-por-empresas-parceiras)
    - [3. Apuração de Comissões & Bonificações NFP (Política Oficial)](#3-apuração-de-comissões--bonificações-nfp-política-oficial)
@@ -17,15 +18,15 @@ Plataforma integrada de inteligência de dados, auditoria fiscal e monitoramento
    - [7. Benchmarking & Prospecção](#7-benchmarking--prospecção)
    - [8. Apresentação Institucional](#8-apresentação-institucional)
    - [9. Painel do Desenvolvedor & Processos ETL](#9-painel-do-desenvolvedor--processos-etl)
-4. [Recursos Globais](#-recursos-globais)
+5. [Recursos Globais](#-recursos-globais)
    - [Filtro Temporal Dinâmico e Reativo](#filtro-temporal-dinâmico-e-reativo)
    - [Modo TV (Painel para Telões)](#modo-tv-painel-para-telões)
    - [Modal de Regras de Negócio e Legislação](#modal-de-regras-de-negócio-e-legislação)
    - [Status do Banco e Conexão Nuvem](#status-do-banco-e-conexão-nuvem)
-5. [Regras de Negócio e Cronograma Fiscal SEFAZ-SP](#-regras-de-negócio-e-cronograma-fiscal-sefaz-sp)
-6. [Pipeline de Dados & Sincronização 100% Cloud](#-pipeline-de-dados--sincronização-100-cloud)
-7. [Dicionário de Dados Oficial (Supabase PostgreSQL)](#-dicionário-de-dados-oficial-supabase-postgresql)
-8. [Como Executar o Projeto Localmente](#-como-executar-o-projeto-localmente)
+6. [Regras de Negócio e Cronograma Fiscal SEFAZ-SP](#-regras-de-negócio-e-cronograma-fiscal-sefaz-sp)
+7. [Pipeline de Dados & Sincronização 100% Cloud](#-pipeline-de-dados--sincronização-100-cloud)
+8. [Dicionário de Dados Oficial (Supabase PostgreSQL)](#-dicionário-de-dados-oficial-supabase-postgresql)
+9. [Como Executar o Projeto Localmente](#-como-executar-o-projeto-localmente)
 
 ---
 
@@ -63,6 +64,29 @@ O **NFP Analytics** consolida milhões de registros de cupons fiscais doados à 
 
 ---
 
+## 🔐 Autenticação & Controle de Acesso por Telas (RBAC Granular)
+
+A plataforma conta com um sistema corporativo completo de autenticação e governança de acessos:
+- **Tela de Login Institucional (`LoginScreen`)**:
+  - Acesso bloqueado para usuários não autenticados.
+  - Credenciais auditadas diretamente no Supabase com hashing criptográfico seguro via extensão `pgcrypto` (`crypt` / `bcrypt` com salt).
+  - Sessão persistida de forma segura no navegador (`localStorage`) via `AuthContext`.
+- **Controle Granular de Telas por Usuário**:
+  - Cada colaborador possui uma lista customizada de abas liberadas (`abas_permitidas: TEXT[]`).
+  - O menu superior de navegação renderiza dinamicamente apenas as abas para as quais o usuário tem autorização expressa.
+  - Tentativas de acesso a rotas restritas são interceptadas com fallback imediato para a primeira aba permitida.
+  - Usuários marcados como **Administradores (`is_admin = true`)** possuem acesso universal a todas as 9 abas e ao modal de gestão de usuários.
+- **Painel Administrativo de Usuários & Telas (`UsuariosModal`)**:
+  - Apenas administradores podem abrir o painel pelo cabeçalho.
+  - Permite cadastrar novos colaboradores, editar nomes/e-mails, redefinir senhas, vincular o `id_vendedor` oficial e marcar/desmarcar individualmente o acesso a qualquer uma das 9 abas da aplicação.
+- **Autoatendimento de Troca de Senha (`AlterarSenhaModal`)**:
+  - Qualquer usuário logado pode alterar sua própria senha diretamente pelo botão **`🔑 Senha`** no cabeçalho.
+  - Validação da senha atual antes de autorizar a nova senha, executada em nível de banco através da RPC segura `nfp_alterar_minha_senha`.
+- **Isolamento de Carteira para Vendedores**:
+  - Ao logar com perfil vinculado a um captador comercial (`id_vendedor`), a aba de Comissões pré-seleciona e bloqueia a visualização para a carteira exclusiva daquele captador, resguardando a privacidade das demais carteiras.
+
+---
+
 ## 📑 Navegação e Funcionalidades das Abas
 
 ### 1. Desempenho & Captação
@@ -90,30 +114,18 @@ Foco nas lojas, comércios e redes que geram cupons para a Vocação:
 - **Filtros e Busca Rápida**: Pesquisa instantânea por nome da loja ou número de CNPJ com reatividade instantânea na troca de períodos.
 
 ### 3. Apuração de Comissões & Bonificações NFP (Política Oficial)
-Módulo executivo de remuneração variável e auditoria contábil conforme a **Política NFP Vocação**:
+Módulo executivo de remuneração variável e auditoria contábil embasado na **nova regra de comissão da Política NFP Vocação**:
 - **Frente Cadastro (Comissão da Equipe Comercial)**:
-  - **1º Mês de Entrada (`data_inicio`)**: Classificação **`NOVA`** com alíquota de **1,0%** sobre o crédito de Cadastro e Doação Direta.
-  - **2º Mês em Diante**: Transição automática e vitalícia para **`RECORRENTE`** com alíquota de **0,5%** (Manutenção de Carteira).
-  - **Histórico Oficial "Marco Zero" (Jan/2025)**: As lojas ativas na largada receberam `data_inicio = '2025-01'` e passam a pontuar 0,5% nos meses seguintes.
-  - **Apuração Cronológica Precisa**: Ao visualizar períodos acumulados ou o ano fechado, o sistema calcula a comissão mês a mês, assegurando o valor correto de 1% no mês de estreia e 0,5% nos subsequentes.
-- **Frente 4 (Comissão da Coordenação do Programa NFP)**:
-  A base mensal elegível consolida 4 parcelas transparentes sem dupla contagem:
-  1. **Captação e Manutenção de Estabelecimentos**: Créditos da Frente Cadastro reconhecidos no mês (ex: R$ 240.595,23 em Jun/2026).
-  2. **Base Histórica de 2025**: Parcela fixa contratual de **R$ 53.025,14 por mês** (R$ 636.301,63 / 12).
-  3. **Automatizações Individuais da Equipe**: Créditos reconhecidos das automatizações de pessoas físicas captadas nos eventos presenciais e digitais da equipe (com defasagem fiscal D+1/D+4).
-  4. **Doações (PF)**: Créditos reconhecidos de doações de cupons PF (ex: R$ 5.843,15 em Jun/2026).
-  - **Tabela Progressiva Escalonada da Coordenação** (incide sobre a base integral):
-    - Até R$ 229.999,99: **4%**
-    - R$ 230.000,00 a R$ 279.999,99: **5%**
-    - R$ 280.000,00 a R$ 329.999,99: **6%**
-    - R$ 330.000,00 a R$ 379.999,99: **7%**
-    - R$ 380.000,00 a R$ 429.999,99: **8%**
-    - R$ 430.000,00 a R$ 479.999,99: **9%**
-    - A partir de R$ 480.000,00: **10%**
+  - **Lojas Novas (Abertura - 1,0%)**: Classificação com alíquota de **1,0%** sobre o crédito de Cadastro e Doação Direta aplicada quando o vendedor atual da loja é o vendedor de abertura original (`id_vendedor == id_vendedor_abertura`).
+  - **Lojas Recorrentes (Manutenção - 0,5%)**: Alíquota de **0,5%** aplicada a todos os demais estabelecimentos ativos da carteira (manutenção contínua de lojas abertas por outros captadores ou pelo histórico institucional).
+  - **Identificação Oficial de Abertura (`id_vendedor_abertura`)**: Registro definitivo na tabela `nfp_empresas` mapeado para mais de 1.300 estabelecimentos parceiros com base no histórico contratual de captação.
+  - **Apuração Cronológica Precisa**: Ao visualizar períodos acumulados ou o ano fechado, o sistema calcula a comissão mês a mês, assegurando a exatidão das alíquotas conforme os créditos homologados pela SEFAZ.
+- **Privacidade e Governança**:
+  - A interface de comissões é estritamente focada nos resultados e premiações da equipe de captação comercial. Indicadores de coordenação e métricas gerenciais restritas são resguardados, garantindo transparência operacional e conformidade interna.
 - **Três Visualizações Executivas**:
   - **📊 Resumo por Vendedor**: Tabela sintética com total de lojas, novas, recorrentes, créditos e comissões calculadas por captador, linha de conciliação de doações espontâneas/sem vendedor e rodapé institucional.
-  - **📅 Evolução Mensal (Grade)**: Matriz mês a mês (Jan a Dez + Total) da comissão de cada captador e da coordenação.
-  - **🏢 Analítico por CNPJ**: Tabela auditável com todas as lojas, botões de filtro rápido (**`⭐ Novas do Mês`**, `Recorrentes`, `Todas`), indicação da data de início, vendedor responsável e exportação CSV.
+  - **📅 Evolução Mensal (Grade)**: Matriz mês a mês (Jan a Dez + Total) da comissão de cada captador da equipe comercial.
+  - **🏢 Analítico por CNPJ**: Tabela auditável com todas as lojas, botões de filtro rápido (**`⭐ Novas do Mês`**, `Recorrentes`, `Todas`), indicação da data de início, vendedor responsável, vendedor de abertura e exportação CSV.
 
 ### 4. Raio-X de Doadores (Pessoa Física)
 Mapeamento aprofundado dos doadores individuais (CPF) com leitura direta de `vocacao_resumo_mensal_doadores`:
@@ -290,7 +302,26 @@ Consolidação macro por canal de captação (Cadastro, Doação Direta, Automá
 - `tt_creditos` (NUMERIC): Receita líquida total liberada no período.
 - `aut_empr` / `aut_cup` / `aut_cred`: Métricas desmembradas exclusivas de doações automáticas.
 - `cad_empr` / `cad_cup` / `cad_cred`: Métricas de cupons lançados via cadastro de voluntários.
-- `doa_empr` / `doa_cup` / `doa_cred`: Métricas de urnas físicas e depósitos diretos.
+### Tabela: `nfp_usuarios`
+Tabela corporativa de autenticação, perfis e permissões granulares de tela:
+- `id` (UUID, PK): Identificador único do usuário gerado via `gen_random_uuid()`.
+- `email` (TEXT, UNIQUE): E-mail de acesso institucional.
+- `nome` (TEXT): Nome completo do colaborador.
+- `senha_hash` (TEXT): Hash seguro da senha criptografado com `pgcrypto` (`crypt` / `bcrypt`).
+- `id_vendedor` (INTEGER, NULL): ID numérico do captador comercial correspondente (ex: 9 para Priscila, 3 para Márcia).
+- `abas_permitidas` (TEXT[]): Array com as slugs das abas acessíveis pelo usuário (ex: `{'desempenho','empresas','campanhas'}`).
+- `is_admin` (BOOLEAN): Flag que concede acesso irrestrito a todas as 9 abas e liberação do painel de gestão de usuários.
+- `ativo` (BOOLEAN): Status do usuário no sistema.
+- `created_at` (TIMESTAMPTZ): Registro cronológico de criação.
+
+### Tabela: `nfp_empresas`
+Cadastro cadastral de estabelecimentos parceiros com vínculo histórico de captação:
+- `cnpj` (VARCHAR, PK): CNPJ oficial do estabelecimento comercial parceiro.
+- `nome` (VARCHAR): Razão social ou nome fantasia da loja.
+- `tipo` (VARCHAR): Classificação de status operacional (`CADASTRO`, `NOVO`, `DOAÇÃO`, etc.).
+- `data_inicio` (VARCHAR): Competência de largada (`AAAA-MM`).
+- `id_vendedor` (INTEGER): ID do vendedor atual gestor da carteira.
+- `id_vendedor_abertura` (INTEGER): ID do vendedor de abertura original (chave de apuração para comissão de Novas a 1,0%).
 
 ---
 
