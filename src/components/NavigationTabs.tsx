@@ -1,5 +1,6 @@
 import React from 'react';
 import { TrendingUp, Building2, HeartHandshake, Users, Target, Presentation, Code2, BadgePercent } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 export type TabId = 'desempenho' | 'empresas' | 'comissoes' | 'doadores' | 'automaticos' | 'campanhas' | 'benchmarking' | 'apresentacao' | 'dev';
 
@@ -18,6 +19,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
   onSelectTab,
   metricsBadgeCounts
 }) => {
+  const { usuario, temPermissaoAba } = useAuth();
   const tabs = [
     {
       id: 'desempenho' as TabId,
@@ -93,15 +95,18 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
     }
   ];
 
+  // Filtra as abas conforme as permissões individuais flegadas para o usuário
+  const abasPermitidas = tabs.filter(tab => temPermissaoAba(tab.id));
+
   return (
     <div className="bg-white border-b border-[#BCD3DF]/70 sticky top-[65px] z-20 px-3 lg:px-8 shadow-2xs">
       <div className="max-w-[1800px] mx-auto">
 
         <nav
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-1.5 py-2.5"
+          className="flex flex-wrap items-center gap-1.5 py-2.5"
           aria-label="Abas do Sistema NFP Analytics"
         >
-          {tabs.map((tab) => {
+          {abasPermitidas.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
 
@@ -111,7 +116,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
                 id={`tab-btn-${tab.id}`}
                 onClick={() => onSelectTab(tab.id)}
                 title={tab.fullTitle}
-                className={`flex items-center justify-center gap-1.5 px-2.5 py-2.5 rounded-xl font-extrabold text-xs lg:text-sm transition-all duration-200 cursor-pointer w-full text-center ${isActive
+                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl font-extrabold text-xs lg:text-sm transition-all duration-200 cursor-pointer text-center ${isActive
                     ? 'bg-[#004A6D] text-white shadow-md ring-1 ring-[#004A6D]'
                     : 'bg-slate-50 text-[#004A6D] hover:bg-[#D9FBFF]/60 hover:text-[#002A3A] border border-slate-200/70'
                   }`}

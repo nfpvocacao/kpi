@@ -21,6 +21,10 @@ import { BusinessRulesModal } from './components/BusinessRulesModal';
 import { TvModeModal } from './components/TvModeModal';
 import { BrandLogo } from './components/BrandLogo';
 import { BrandBadge } from './components/BrandBadge';
+import { LoginScreen } from './components/LoginScreen';
+import { UsuariosModal } from './components/UsuariosModal';
+import { AlterarSenhaModal } from './components/AlterarSenhaModal';
+import { useAuth } from './contexts/AuthContext';
 import { 
   INITIAL_DATABASE_STATE, 
   METRICAS_MENSAIS, 
@@ -33,6 +37,7 @@ import { DatabaseState, PeriodFilter } from './types';
 import { APP_VERSION } from './version';
 
 export default function App() {
+  const { usuario, isLoading: isAuthLoading, temPermissaoAba } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>('desempenho');
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({
     years: [2026],
@@ -49,7 +54,17 @@ export default function App() {
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isTvModeOpen, setIsTvModeOpen] = useState(false);
+  const [isUsuariosModalOpen, setIsUsuariosModalOpen] = useState(false);
+  const [isAlterarSenhaModalOpen, setIsAlterarSenhaModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // Redireciona automaticamente se a aba ativa não for permitida para o usuário
+  React.useEffect(() => {
+    if (usuario && !temPermissaoAba(activeTab)) {
+      const primeiraPermitida = (usuario.abas_permitidas && usuario.abas_permitidas[0]) || 'desempenho';
+      setActiveTab(primeiraPermitida);
+    }
+  }, [usuario, activeTab]);
 
   // Filter metrics based on selected period filter (supports mixed years & months AND exact date ranges)
   const { metricasFiltradas, metricasAnterior, periodoLabel } = useMemo(() => {
@@ -140,6 +155,20 @@ export default function App() {
     setActiveTab('doadores');
   };
 
+  // Se ainda estiver carregando a sessão
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-[#002A3A] flex items-center justify-center text-white text-xs font-bold">
+        Carregando NFP Analytics...
+      </div>
+    );
+  }
+
+  // Se não estiver logado, exibe a Tela de Login oficial
+  if (!usuario) {
+    return <LoginScreen />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F6FAFD] text-[#002A3A] font-['Raleway',sans-serif]">
       
@@ -152,9 +181,10 @@ export default function App() {
         onOpenRulesModal={() => setIsRulesModalOpen(true)}
         onSyncDatabase={handleSync}
         onOpenTvMode={() => setIsTvModeOpen(true)}
+        onOpenUsuariosModal={() => setIsUsuariosModalOpen(true)}
+        onOpenAlterarSenhaModal={() => setIsAlterarSenhaModalOpen(true)}
         isSyncing={isSyncing}
       />
-
 
       {/* 5-Tabs Navigation Bar */}
       <NavigationTabs
@@ -278,6 +308,18 @@ export default function App() {
         metricasFiltradas={metricasFiltradas}
         metricasAnterior={metricasAnterior}
         periodoLabel={periodoLabel}
+      />
+
+      {/* Modal de Gestão de Usuários e Permissões por Telas (Admin) */}
+      <UsuariosModal
+        isOpen={isUsuariosModalOpen}
+        onClose={() => setIsUsuariosModalOpen(false)}
+      />
+
+      {/* Modal para o próprio usuário alterar sua senha */}
+      <AlterarSenhaModal
+        isOpen={isAlterarSenhaModalOpen}
+        onClose={() => setIsAlterarSenhaModalOpen(false)}
       />
 
     </div>

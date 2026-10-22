@@ -24,6 +24,8 @@ import { MetricaMensal, EmpresaParceira, VENDEDORES_MAP } from '../../types';
 import { formatarMoeda, formatarNumero } from '../../data/mockDatabase';
 import { useSupabaseEmpresas } from '../../hooks/useSupabaseEmpresas';
 
+import { useAuth } from '../../contexts/AuthContext';
+
 interface TabComissoesProps {
   metricasFiltradas?: MetricaMensal[];
   selectedYears?: number[];
@@ -40,13 +42,23 @@ export const TabComissoes: React.FC<TabComissoesProps> = ({
   selectedYears = [2026],
   selectedMonths = []
 }) => {
+  const { usuario } = useAuth();
   const { topEmpresas, isLoading } = useSupabaseEmpresas({
     selectedYears,
     selectedMonths,
     limit: 10000
   });
 
-  const [selectedVendedor, setSelectedVendedor] = useState<string>('TODOS');
+  // Se o usuário logado for um captador com id_vendedor (e não for admin), fixa na carteira dele
+  const vendedorFixo = (!usuario?.is_admin && usuario?.id_vendedor) ? String(usuario.id_vendedor) : null;
+  const [selectedVendedor, setSelectedVendedor] = useState<string>(vendedorFixo || 'TODOS');
+
+  React.useEffect(() => {
+    if (vendedorFixo) {
+      setSelectedVendedor(vendedorFixo);
+    }
+  }, [vendedorFixo]);
+
   const [filtroTipo, setFiltroTipo] = useState<'TODAS' | 'NOVAS' | 'RECORRENTES'>('TODAS');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [activeSubTab, setActiveSubTab] = useState<'sintetico' | 'evolucao' | 'analitico'>('sintetico');
@@ -490,7 +502,7 @@ export const TabComissoes: React.FC<TabComissoesProps> = ({
             </span>
           </div>
           <p className="text-xs text-[#004A6D]/80 mt-1 max-w-3xl">
-            Cálculo oficial de remuneração variável conforme a Política NFP Vocação. As lojas são tratadas como <strong>Novas (1,0%)</strong> quando o vendedor atual é o <strong>vendedor de abertura</strong> (<code className="text-[10px] bg-slate-100 px-1 py-0.5 rounded">id_vendedor == id_vendedor_abertura</code>); caso contrário, são comissionadas como <strong>Recorrentes (0,5%)</strong>.
+            Cálculo oficial de remuneração variável embasado na nova política e regras de comissionamento NFP Vocação.
           </p>
         </div>
 
