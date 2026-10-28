@@ -8,6 +8,7 @@ import { Header } from './components/Header';
 import { NavigationTabs, TabId } from './components/NavigationTabs';
 import { TabDesempenho } from './components/tabs/TabDesempenho';
 import { TabEmpresas } from './components/tabs/TabEmpresas';
+import { TabMapaEmpresas } from './components/tabs/TabMapaEmpresas';
 import { TabComissoes } from './components/tabs/TabComissoes';
 import { TabDoadores } from './components/tabs/TabDoadores';
 import { TabDoadoresAutomaticos } from './components/tabs/TabDoadoresAutomaticos';
@@ -214,6 +215,14 @@ export default function App() {
             selectedYears={periodFilter.years} 
             selectedMonths={periodFilter.months}
             onNavigateToDoador={handleNavigateToDoador}
+          />
+        )}
+
+        {activeTab === 'mapa' && (
+          <TabMapaEmpresas 
+            key={`tab-mapa-${periodFilter.years.join('_')}-${periodFilter.months.join('_')}`}
+            selectedYears={periodFilter.years} 
+            selectedMonths={periodFilter.months}
           />
         )}
 

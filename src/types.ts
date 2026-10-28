@@ -62,6 +62,10 @@ export interface EmpresaParceira {
   logradouro?: string;
   bairro?: string;
   cep?: string;
+  numero?: string;
+  estado?: string;
+  latitude?: number;
+  longitude?: number;
   telefone?: string;
   email?: string;
   tipo?: string; // CADASTRO, DESCONTINUAR, DESCARTAR, FECHOU, FORA, NOVO, DOAÇÃO, ANALISAR

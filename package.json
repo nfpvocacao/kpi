@@ -4,14 +4,18 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 5180",
+    "dev": "vite --port 3000 --host 127.0.0.1",
     "build": "node update-version.js && tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.0",
+    "@types/leaflet": "^1.9.22",
+    "@types/leaflet.markercluster": "^1.5.6",
     "clsx": "^2.1.1",
     "html-to-image": "^1.11.13",
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
     "lucide-react": "^0.395.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

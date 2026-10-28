@@ -123,7 +123,7 @@ def carregar_doadores_sefaz_supabase():
     Retorna o histórico completo por CPF: meses em que doou e créditos liquidados.
     """
     print("[+] Consultando base real de doadores no Supabase (vocacao_resumo_mensal_doadores)...")
-    url = f"{SUPABASE_URL}/rest/v1/vocacao_resumo_mensal_doadores?select=cpf_doador,ano,mes,total_cupons,total_credito_apurado"
+    url = f"{SUPABASE_URL}/rest/v1/vocacao_resumo_mensal_doadores?select=cpf_doador,ano,mes,total_cupons,total_credito_apurado&order=cpf_doador.asc,ano.asc,mes.asc"
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}"
@@ -269,8 +269,10 @@ def processar_campanhas(todos_negocios, contatos_map, historico_sefaz, mapa_resp
         
         novos_cpfs = 0
         preexistentes = 0
-        ativados_com_credito = 0
-        credito_realizado_total = 0.0
+        ativados_1m = 0
+        ativados_acum = 0
+        credito_realizado_1m = 0.0
+        credito_realizado_acum = 0.0
         
         cpfs_detalhes_lista = []
         
@@ -281,12 +283,15 @@ def processar_campanhas(todos_negocios, contatos_map, historico_sefaz, mapa_resp
             registros_anteriores = [r for r in registros_sefaz if r["periodo_ym"] < periodo_evento_ym]
             is_preexistente = len(registros_anteriores) > 0
             
-            # Checar ativação real: compras/doações pós-evento (a partir de M+1)
-            registros_pos_evento = [r for r in registros_sefaz if r["periodo_ym"] >= competencia_inicial_ym and r["cupons"] > 0]
-            is_ativado = len(registros_pos_evento) > 0
+            # 1. Ativação e crédito estritamente no PRIMEIRO MÊS pós-evento (M+1)
+            registros_1m = [r for r in registros_sefaz if r["periodo_ym"] == competencia_inicial_ym and r["cupons"] > 0]
+            is_ativado_1m = len(registros_1m) > 0
+            credito_cpf_1m = sum(r["credito"] for r in registros_1m)
             
-            # Crédito real apurado pós-evento
-            credito_cpf = sum(r["credito"] for r in registros_pos_evento)
+            # 2. Ativação e crédito ACUMULADO de longo prazo (a partir de M+1 em diante)
+            registros_acum = [r for r in registros_sefaz if r["periodo_ym"] >= competencia_inicial_ym and r["cupons"] > 0]
+            is_ativado_acum = len(registros_acum) > 0
+            credito_cpf_acum = sum(r["credito"] for r in registros_acum)
             
             if is_preexistente:
                 preexistentes += 1
@@ -294,42 +299,56 @@ def processar_campanhas(todos_negocios, contatos_map, historico_sefaz, mapa_resp
             else:
                 novos_cpfs += 1
                 status_merito = "NOVO"
-                if is_ativado:
-                    ativados_com_credito += 1
-                credito_realizado_total += credito_cpf
+                if is_ativado_1m:
+                    ativados_1m += 1
+                if is_ativado_acum:
+                    ativados_acum += 1
+                credito_realizado_1m += credito_cpf_1m
+                credito_realizado_acum += credito_cpf_acum
                 
             cpfs_detalhes_lista.append({
                 "nome": c_data["nome"],
                 "cpf": cpf,
                 "fone": c_data["fone"],
                 "statusMerito": status_merito,
-                "ativado": is_ativado,
-                "credito": round(credito_cpf, 2)
+                "ativado": is_ativado_1m,
+                "ativado_acum": is_ativado_acum,
+                "credito": round(credito_cpf_1m, 2),
+                "credito_acumulado": round(credito_cpf_acum, 2)
             })
             
         # Caso a ação não tenha tido CPFs mapeados individualmente (negócio em lote genérico)
         if len(g["cpfs_dict"]) == 0:
             novos_cpfs = int(total_cadastros * 0.75)
             preexistentes = total_cadastros - novos_cpfs
-            ativados_com_credito = 0
-            credito_realizado_total = 0.0
+            ativados_1m = 0
+            ativados_acum = 0
+            credito_realizado_1m = 0.0
+            credito_realizado_acum = 0.0
             
         credito_estimado = round(novos_cpfs * VALOR_MEDIO_MENSAL_DOADOR, 2)
         
         # Status fiscal:
-        # A base do banco atualmente possui competências até Junho/2026 (202606).
-        # Se a competência pós-evento (competencia_inicial_ym) já está na base:
-        #   -> O crédito é Liquidado (ex: ação de Maio tem pós-evento em Junho/2026, que já está na base).
-        # Se a competência pós-evento é Julho/2026 ou posterior:
-        #   -> Permanece Em Apuração (ex: ação de Junho tem pós-evento em Julho/2026, ainda não importado).
+        # A base do banco Supabase possui competências homologadas até Julho/2026 (202607).
+        # Se a competência pós-evento (competencia_inicial_ym) já está na base (<= 202607):
+        #   -> O crédito está Liquidado (independentemente de ter gerado crédito ou R$ 0,00).
+        # Se a competência pós-evento for futura (> 202607):
+        #   -> Permanece Em Apuração (ex: ação de Julho tem pós-evento em Agosto/2026).
         nomes_meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
         nome_mes_comp = nomes_meses[prox_mes - 1]
         
-        if competencia_inicial_ym <= 202606:
-            previsao_liberacao = f"Liquidado ({nome_mes_comp}/{prox_ano})"
+        # Competência máxima disponível no banco
+        max_competencia_base = max(
+            (r["periodo_ym"] for regs in historico_sefaz.values() for r in regs),
+            default=202607
+        )
+        
+        if competencia_inicial_ym <= max_competencia_base:
+            previsao_liberacao = "Liquidado"
         else:
             previsao_liberacao = f"Em Apuração ({nome_mes_comp}/{prox_ano})"
-            credito_realizado_total = 0.0
+            credito_realizado_1m = 0.0
+            credito_realizado_acum = 0.0
 
         # Gerar ID determinístico estável baseado na Ação/Evento e Responsável
         hash_id = hashlib.md5(f"{chave_grupo}".encode('utf-8')).hexdigest()[:12]
@@ -344,9 +363,11 @@ def processar_campanhas(todos_negocios, contatos_map, historico_sefaz, mapa_resp
             "total_cadastros": total_cadastros,
             "novos_cpfs_conquistados": novos_cpfs,
             "cpfs_preexistentes": preexistentes,
-            "ativados_com_credito": ativados_com_credito,
+            "ativados_com_credito": ativados_1m,
+            "ativados_total": ativados_acum,
             "credito_estimado": float(credito_estimado),
-            "credito_realizado": float(round(credito_realizado_total, 2)),
+            "credito_realizado": float(round(credito_realizado_1m, 2)),
+            "credito_realizado_acumulado": float(round(credito_realizado_acum, 2)),
             "previsao_liberacao": previsao_liberacao,
             "status": "CONCLUIDA",
             "cpfs_detalhes": cpfs_detalhes_lista

@@ -65,9 +65,11 @@ export interface CampanhaCaptacao {
   totalCadastrosBitrix: number;
   novosCpfsConquistados: number; // Validados: sem créditos anteriores
   cpfsPreexistentes: number;     // Já doavam antes do evento
-  ativadosComCredito: number;    // Já geraram compras no app da NFP
+  ativadosComCredito: number;    // Ativados no 1º mês (M+1)
+  ativadosTotal?: number;        // Ativados no histórico total
   creditoEstimado: number;       // Calculado com média móvel (9,28 cupons * R$ 5,72)
-  creditoRealizado: number;      // Créditos reais liberados pela SEFAZ após a defasagem
+  creditoRealizado: number;      // Crédito realizado no 1º mês pós-evento (M+1)
+  creditoRealizadoAcumulado?: number; // Crédito acumulado total pós-evento (+1M retorno histórico)
   mesPrevisaoLiberacao: string;  // Mês em que a SEFAZ homologa os créditos
   descricao?: string;
   cpfsDetalhes?: DoadorCampanhaDetalhe[];
@@ -82,8 +84,10 @@ export type CampanhaSortField =
   | 'novosCpfsConquistados' 
   | 'cpfsPreexistentes' 
   | 'ativadosComCredito' 
+  | 'ativadosTotal'
   | 'creditoEstimado' 
-  | 'creditoRealizado';
+  | 'creditoRealizado'
+  | 'creditoRealizadoAcumulado';
 
 export interface ResumoResponsavel {
   responsavel: string;
@@ -93,9 +97,12 @@ export interface ResumoResponsavel {
   taxaConversaoNovos: number;
   cpfsPreexistentes: number;
   ativadosComCredito: number;
+  ativadosTotal: number;
   taxaAtivacao: number;
+  taxaAtivacaoTotal: number;
   creditoEstimado: number;
   creditoRealizado: number;
+  creditoRealizadoAcumulado: number;
 }
 
 // Parâmetros médios reais apurados (ex: Junho/2026: 12.993 cupons / 1.400 doadores = 9,28 cup/doador; Ticket = R$ 5,72)
@@ -298,9 +305,12 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
           taxaConversaoNovos: 0,
           cpfsPreexistentes: 0,
           ativadosComCredito: 0,
+          ativadosTotal: 0,
           taxaAtivacao: 0,
+          taxaAtivacaoTotal: 0,
           creditoEstimado: 0,
-          creditoRealizado: 0
+          creditoRealizado: 0,
+          creditoRealizadoAcumulado: 0
         });
       }
 
@@ -310,14 +320,17 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
       item.novosCpfsConquistados += c.novosCpfsConquistados;
       item.cpfsPreexistentes += c.cpfsPreexistentes;
       item.ativadosComCredito += c.ativadosComCredito;
+      item.ativadosTotal += (c.ativadosTotal ?? c.ativadosComCredito);
       item.creditoEstimado += c.creditoEstimado;
       item.creditoRealizado += c.creditoRealizado;
+      item.creditoRealizadoAcumulado += (c.creditoRealizadoAcumulado ?? c.creditoRealizado);
     });
 
     return Array.from(mapa.values()).map(item => ({
       ...item,
       taxaConversaoNovos: item.totalCadastrosBitrix > 0 ? (item.novosCpfsConquistados / item.totalCadastrosBitrix) * 100 : 0,
-      taxaAtivacao: item.novosCpfsConquistados > 0 ? (item.ativadosComCredito / item.novosCpfsConquistados) * 100 : 0
+      taxaAtivacao: item.novosCpfsConquistados > 0 ? (item.ativadosComCredito / item.novosCpfsConquistados) * 100 : 0,
+      taxaAtivacaoTotal: item.novosCpfsConquistados > 0 ? (item.ativadosTotal / item.novosCpfsConquistados) * 100 : 0
     })).sort((a, b) => b.novosCpfsConquistados - a.novosCpfsConquistados);
   }, [campanhasBase]);
 
@@ -329,20 +342,26 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
       novosCpfsConquistados: acc.novosCpfsConquistados + r.novosCpfsConquistados,
       cpfsPreexistentes: acc.cpfsPreexistentes + r.cpfsPreexistentes,
       ativadosComCredito: acc.ativadosComCredito + r.ativadosComCredito,
+      ativadosTotal: acc.ativadosTotal + r.ativadosTotal,
       creditoEstimado: acc.creditoEstimado + r.creditoEstimado,
       creditoRealizado: acc.creditoRealizado + r.creditoRealizado,
+      creditoRealizadoAcumulado: acc.creditoRealizadoAcumulado + r.creditoRealizadoAcumulado,
       taxaConversaoNovos: 0,
-      taxaAtivacao: 0
+      taxaAtivacao: 0,
+      taxaAtivacaoTotal: 0
     }), {
       totalAcoes: 0,
       totalCadastrosBitrix: 0,
       novosCpfsConquistados: 0,
       cpfsPreexistentes: 0,
       ativadosComCredito: 0,
+      ativadosTotal: 0,
       creditoEstimado: 0,
       creditoRealizado: 0,
+      creditoRealizadoAcumulado: 0,
       taxaConversaoNovos: 0,
-      taxaAtivacao: 0
+      taxaAtivacao: 0,
+      taxaAtivacaoTotal: 0
     });
   }, [resumoPorResponsavel]);
 
@@ -460,6 +479,7 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
   const totalAtivados = campanhasFiltradas.reduce((acc, c) => acc + c.ativadosComCredito, 0);
   const totalCreditoEstimado = campanhasFiltradas.reduce((acc, c) => acc + c.creditoEstimado, 0);
   const totalCreditoRealizado = campanhasFiltradas.reduce((acc, c) => acc + c.creditoRealizado, 0);
+  const totalCreditoAcumulado = campanhasFiltradas.reduce((acc, c) => acc + (c.creditoRealizadoAcumulado ?? c.creditoRealizado), 0);
 
   const taxaConversaoNovos = totalCadastros > 0 ? (totalNovosValidados / totalCadastros) * 100 : 0;
 
@@ -521,13 +541,13 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
         {/* KPI 3: Crédito Realizado SEFAZ */}
         <KPICard
           id="kpi-credito-realizado"
-          title="Crédito Realizado (Liquidado)"
+          title="Crédito Realizado (1º Mês)"
           value={formatarMoeda(totalCreditoRealizado)}
-          subValue="Créditos homologados e pagos pela SEFAZ"
+          subValue={`Retorno histórico total (+1M): ${formatarMoeda(totalCreditoAcumulado)}`}
           icon={Coins}
           iconBgColor="bg-emerald-500/20"
           iconColor="text-emerald-700"
-          badge={{ text: 'Outubro Apurado', color: 'bg-emerald-100 text-emerald-800' }}
+          badge={{ text: 'Mês Seguinte (M+1)', color: 'bg-emerald-100 text-emerald-800' }}
         />
 
         {/* KPI 4: Crédito Estimado Total */}
@@ -785,14 +805,27 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
                   </div>
                 </th>
 
-                {/* Ativados SEFAZ */}
+                {/* Ativados 1M */}
                 <th 
                   onClick={() => handleSort('ativadosComCredito')}
                   className="py-3 px-3 text-center cursor-pointer hover:bg-[#D9FBFF]/60 transition-colors group"
+                  title="Doadores que geraram cupons no 1º mês após o evento (M+1)"
                 >
                   <div className="flex items-center justify-center">
-                    <span>Ativados SEFAZ</span>
+                    <span>Ativados 1M</span>
                     {renderSortIcon('ativadosComCredito')}
+                  </div>
+                </th>
+
+                {/* Ativados Total */}
+                <th 
+                  onClick={() => handleSort('ativadosTotal')}
+                  className="py-3 px-3 text-center cursor-pointer hover:bg-[#D9FBFF]/60 transition-colors group"
+                  title="Total de doadores que geraram cupons em qualquer período pós-evento"
+                >
+                  <div className="flex items-center justify-center">
+                    <span>Ativados Total</span>
+                    {renderSortIcon('ativadosTotal')}
                   </div>
                 </th>
 
@@ -807,14 +840,27 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
                   </div>
                 </th>
 
-                {/* Crédito Realizado */}
+                {/* Crédito Realizado 1M */}
                 <th 
                   onClick={() => handleSort('creditoRealizado')}
-                  className="py-3 px-4 text-right cursor-pointer hover:bg-[#D9FBFF]/60 transition-colors group"
+                  className="py-3 px-3 text-right cursor-pointer hover:bg-[#D9FBFF]/60 transition-colors group"
+                  title="Crédito apurado estritamente no 1º mês após o evento (M+1)"
                 >
                   <div className="flex items-center justify-end">
-                    <span>Crédito Realizado</span>
+                    <span>Crédito Realizado 1M</span>
                     {renderSortIcon('creditoRealizado')}
+                  </div>
+                </th>
+
+                {/* Crédito Real Total (Retorno Histórico) */}
+                <th 
+                  onClick={() => handleSort('creditoRealizadoAcumulado')}
+                  className="py-3 px-3 text-right cursor-pointer hover:bg-[#D9FBFF]/60 transition-colors group"
+                  title="Total retorno histórico acumulado pós-evento (M+1 em diante)"
+                >
+                  <div className="flex items-center justify-end">
+                    <span>Crédito Real Total</span>
+                    {renderSortIcon('creditoRealizadoAcumulado')}
                   </div>
                 </th>
 
@@ -824,11 +870,20 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
             </thead>
             <tbody className="divide-y divide-[#BCD3DF]/40 font-medium text-[#002A3A]">
               {campanhasFiltradas.map((campanha) => {
-                const taxaAtiv = campanha.novosCpfsConquistados > 0 
-                  ? ((campanha.ativadosComCredito / campanha.novosCpfsConquistados) * 100).toFixed(0) 
+                const ativ1M = campanha.ativadosComCredito || 0;
+                const ativTot = campanha.ativadosTotal ?? ativ1M;
+
+                const taxaAtiv1M = campanha.novosCpfsConquistados > 0 
+                  ? ((ativ1M / campanha.novosCpfsConquistados) * 100).toFixed(0) 
                   : '0';
 
-                const temCreditoReal = campanha.creditoRealizado > 0;
+                const taxaAtivTot = campanha.novosCpfsConquistados > 0 
+                  ? ((ativTot / campanha.novosCpfsConquistados) * 100).toFixed(0) 
+                  : '0';
+
+                const cred1M = campanha.creditoRealizado || 0;
+                const credAcum = campanha.creditoRealizadoAcumulado ?? cred1M;
+                const isLiquidado = campanha.mesPrevisaoLiberacao.toLowerCase().includes('liquidado');
 
                 return (
                   <tr 
@@ -886,12 +941,23 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
                       </span>
                     </td>
 
+                    {/* Coluna ATIVADOS 1M */}
                     <td className="py-3 px-3 text-center">
                       <span className="font-extrabold text-[#004A6D]">
-                        {formatarNumero(campanha.ativadosComCredito)}
+                        {formatarNumero(ativ1M)}
                       </span>
                       <span className="text-[10px] text-slate-500 ml-1">
-                        ({taxaAtiv}%)
+                        ({taxaAtiv1M}%)
+                      </span>
+                    </td>
+
+                    {/* Coluna ATIVADOS TOTAL */}
+                    <td className="py-3 px-3 text-center">
+                      <span className="font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200 text-[11px]">
+                        {formatarNumero(ativTot)}
+                      </span>
+                      <span className="text-[10px] text-slate-500 ml-1">
+                        ({taxaAtivTot}%)
                       </span>
                     </td>
 
@@ -900,11 +966,24 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
                       {formatarMoeda(campanha.creditoEstimado)}
                     </td>
 
-                    {/* Coluna CRÉDITO REALIZADO */}
-                    <td className="py-3 px-4 text-right whitespace-nowrap">
-                      {temCreditoReal ? (
+                    {/* Coluna CRÉDITO REALIZADO 1M */}
+                    <td className="py-3 px-3 text-right whitespace-nowrap">
+                      {cred1M > 0 ? (
                         <span className="font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                          {formatarMoeda(campanha.creditoRealizado)}
+                          {formatarMoeda(cred1M)}
+                        </span>
+                      ) : (
+                        <span className="font-medium text-slate-400 text-[11px] italic">
+                          R$ 0,00
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Coluna CRÉDITO REALIZADO +1M (Retorno Histórico) */}
+                    <td className="py-3 px-3 text-right whitespace-nowrap">
+                      {credAcum > 0 ? (
+                        <span className="font-extrabold text-sky-800 bg-sky-50 px-2 py-0.5 rounded-lg border border-sky-200">
+                          {formatarMoeda(credAcum)}
                         </span>
                       ) : (
                         <span className="font-medium text-slate-400 text-[11px] italic">
@@ -915,13 +994,13 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
 
                     {/* Coluna PREVISÃO DE LIBERAÇÃO */}
                     <td className="py-3 px-3 text-center whitespace-nowrap">
-                      {temCreditoReal ? (
-                        <span className="text-emerald-700 font-bold text-[10px] inline-flex items-center gap-1">
+                      {isLiquidado ? (
+                        <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md font-bold text-[10px] inline-flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                           Liquidado
                         </span>
                       ) : (
-                        <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[10px] font-semibold inline-flex items-center gap-1">
+                        <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md text-[10px] font-semibold inline-flex items-center gap-1">
                           <Hourglass className="w-3 h-3 text-amber-600" />
                           {campanha.mesPrevisaoLiberacao}
                         </span>
@@ -1060,9 +1139,11 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
                     <th className="py-2.5 px-2 text-center">Cadastros</th>
                     <th className="py-2.5 px-2 text-center">Novos CPFs</th>
                     <th className="py-2.5 px-2 text-center">Preexistentes</th>
-                    <th className="py-2.5 px-2 text-center">Ativados</th>
+                    <th className="py-2.5 px-2 text-center">Ativados 1M</th>
+                    <th className="py-2.5 px-2 text-center">Ativados Total</th>
                     <th className="py-2.5 px-3 text-right">Crédito Est.</th>
-                    <th className="py-2.5 px-3 text-right">Crédito Real</th>
+                    <th className="py-2.5 px-3 text-right">Crédito Real 1M</th>
+                    <th className="py-2.5 px-3 text-right">Crédito Real Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#BCD3DF]/30 font-medium text-[#002A3A]">
@@ -1118,6 +1199,13 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
                           </span>
                         </td>
 
+                        <td className="py-3 px-2 text-center font-extrabold text-emerald-800">
+                          {formatarNumero(resp.ativadosTotal)}
+                          <span className="text-[10px] font-normal text-slate-500 ml-1">
+                            ({resp.taxaAtivacaoTotal.toFixed(0)}%)
+                          </span>
+                        </td>
+
                         <td className="py-3 px-3 text-right font-bold text-slate-600">
                           {formatarMoeda(resp.creditoEstimado)}
                         </td>
@@ -1126,6 +1214,18 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
                           {resp.creditoRealizado > 0 ? (
                             <span className="font-black text-emerald-700">
                               {formatarMoeda(resp.creditoRealizado)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">
+                              R$ 0,00
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-3 text-right">
+                          {resp.creditoRealizadoAcumulado > 0 ? (
+                            <span className="font-black text-sky-800">
+                              {formatarMoeda(resp.creditoRealizadoAcumulado)}
                             </span>
                           ) : (
                             <span className="text-slate-400 italic text-[11px]">
@@ -1159,11 +1259,17 @@ export const TabCampanhas: React.FC<TabCampanhasProps> = ({
                     <td className="py-2.5 px-2 text-center text-[#00E3E6]">
                       {formatarNumero(totaisEquipe.ativadosComCredito)}
                     </td>
+                    <td className="py-2.5 px-2 text-center text-emerald-300">
+                      {formatarNumero(totaisEquipe.ativadosTotal)}
+                    </td>
                     <td className="py-2.5 px-3 text-right text-slate-200">
                       {formatarMoeda(totaisEquipe.creditoEstimado)}
                     </td>
                     <td className="py-2.5 px-3 text-right text-[#00E04B]">
                       {formatarMoeda(totaisEquipe.creditoRealizado)}
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-[#00E3E6]">
+                      {formatarMoeda(totaisEquipe.creditoRealizadoAcumulado)}
                     </td>
                   </tr>
                 </tfoot>

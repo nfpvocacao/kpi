@@ -11,13 +11,14 @@ Plataforma integrada de inteligência de dados, auditoria fiscal e monitoramento
 4. [Navegação e Funcionalidades das Abas](#-navegação-e-funcionalidades-das-abas)
    - [1. Desempenho & Captação](#1-desempenho--captação)
    - [2. Operações por Empresas Parceiras](#2-operações-por-empresas-parceiras)
-   - [3. Apuração de Comissões & Bonificações NFP (Política Oficial)](#3-apuração-de-comissões--bonificações-nfp-política-oficial)
-   - [4. Raio-X de Doadores (Pessoa Física)](#4-raio-x-de-doadores-pessoa-física)
-   - [5. Doadores Fidelizados (Automáticos SEFAZ)](#5-doadores-fidelizados-automáticos-sefaz)
-   - [6. Ações & Campanhas (CRM Bitrix24 + Auditoria SEFAZ)](#6-ações--campanhas-crm-bitrix24--auditoria-sefaz)
-   - [7. Benchmarking & Prospecção](#7-benchmarking--prospecção)
-   - [8. Apresentação Institucional](#8-apresentação-institucional)
-   - [9. Painel do Desenvolvedor & Processos ETL](#9-painel-do-desenvolvedor--processos-etl)
+   - [3. Mapa Parceiros (Geolocalização & Booking-Style)](#3-mapa-parceiros-geolocalização--booking-style)
+   - [4. Apuração de Comissões & Bonificações NFP (Política Oficial)](#4-apuração-de-comissões--bonificações-nfp-política-oficial)
+   - [5. Raio-X de Doadores (Pessoa Física)](#5-raio-x-de-doadores-pessoa-física)
+   - [6. Doadores Fidelizados (Automáticos SEFAZ)](#6-doadores-fidelizados-automáticos-sefaz)
+   - [7. Ações & Campanhas (CRM Bitrix24 + Auditoria SEFAZ)](#7-ações--campanhas-crm-bitrix24--auditoria-sefaz)
+   - [8. Benchmarking & Prospecção](#8-benchmarking--prospecção)
+   - [9. Apresentação Institucional](#9-apresentação-institucional)
+   - [10. Painel do Desenvolvedor & Processos ETL](#10-painel-do-desenvolvedor--processos-etl)
 5. [Recursos Globais](#-recursos-globais)
    - [Filtro Temporal Dinâmico e Reativo](#filtro-temporal-dinâmico-e-reativo)
    - [Modo TV (Painel para Telões)](#modo-tv-painel-para-telões)
@@ -75,10 +76,10 @@ A plataforma conta com um sistema corporativo completo de autenticação e gover
   - Cada colaborador possui uma lista customizada de abas liberadas (`abas_permitidas: TEXT[]`).
   - O menu superior de navegação renderiza dinamicamente apenas as abas para as quais o usuário tem autorização expressa.
   - Tentativas de acesso a rotas restritas são interceptadas com fallback imediato para a primeira aba permitida.
-  - Usuários marcados como **Administradores (`is_admin = true`)** possuem acesso universal a todas as 9 abas e ao modal de gestão de usuários.
+  - Usuários marcados como **Administradores (`is_admin = true`)** possuem acesso universal a todas as 10 abas e ao modal de gestão de usuários.
 - **Painel Administrativo de Usuários & Telas (`UsuariosModal`)**:
   - Apenas administradores podem abrir o painel pelo cabeçalho.
-  - Permite cadastrar novos colaboradores, editar nomes/e-mails, redefinir senhas, vincular o `id_vendedor` oficial e marcar/desmarcar individualmente o acesso a qualquer uma das 9 abas da aplicação.
+  - Permite cadastrar novos colaboradores, editar nomes/e-mails, redefinir senhas, vincular o `id_vendedor` oficial e marcar/desmarcar individualmente o acesso a qualquer uma das 10 abas da aplicação.
 - **Autoatendimento de Troca de Senha (`AlterarSenhaModal`)**:
   - Qualquer usuário logado pode alterar sua própria senha diretamente pelo botão **`🔑 Senha`** no cabeçalho.
   - Validação da senha atual antes de autorizar a nova senha, executada em nível de banco através da RPC segura `nfp_alterar_minha_senha`.
@@ -113,7 +114,29 @@ Foco nas lojas, comércios e redes que geram cupons para a Vocação:
   - **Zero Crédito**: Identificação de lojas com cupons emitidos mas crédito líquido zerado pela SEFAZ.
 - **Filtros e Busca Rápida**: Pesquisa instantânea por nome da loja ou número de CNPJ com reatividade instantânea na troca de períodos.
 
-### 3. Apuração de Comissões & Bonificações NFP (Política Oficial)
+### 3. Mapa Parceiros (Geolocalização & Booking-Style)
+Interface executiva de inteligência territorial e auditoria geográfica inspirada no padrão de usabilidade do **Booking.com**:
+- **Geocodificação Rigorosa e Auditada**:
+  - Enriquecimento contínuo de CNPJs via API oficial de CEPs brasileiros (`BrasilAPI /cep/v2/`), garantindo precisão métrica de logradouro e bairro sem pinos fictícios ou distorções no interior do estado.
+  - Validação estrita por Bounding Box municipal da Grande São Paulo e conferência de prefixo postal.
+- **Split-View Interativo (Mapa + Lista Lateral Dinâmica)**:
+  - Painel lateral sincronizado em tempo real com a área visível do mapa (`mapBounds`). Ao arrastar o mapa ou aplicar zoom, a lista filtra automaticamente apenas os estabelecimentos contidos no enquadramento.
+  - Seleção bidirecional: clicar em um card da lista executa zoom suave (`flyTo`) e abre automaticamente o popup informativo com o Raio-X completo das frentes de captação.
+- **Detalhamento dos Cards**:
+  - Exibição de Categoria, Razão Social / Nome Fantasia, CNPJ, Endereço com CEP e Vendedor responsável.
+  - Grade com 3 métricas essenciais por parceiro: **Urnas (R$)**, **Doações Automáticas (R$)** e **Ticket Médio por Cupom (R$)**.
+- **Menu de Ordenação da Lista Lateral**:
+  - Alternância imediata da ordem de exibição entre: **Maior Crédito**, **Maior Ticket Médio por Cupom**, **Mais Cupons** e **Nome (A-Z)**.
+- **Radar de Oportunidades Comercial**:
+  - Botão de inteligência executiva (`🎯 Radar Oportunidades`) que isola estabelecimentos com alto volume de captação em urnas físicas ($\ge \text{R\$\ 150}$) e baixa/nula adesão em doações automáticas pelo aplicativo ($\le \text{R\$\ 20}$). Permite à equipe comercial identificar parceiros estratégicos para campanhas de ativação de caixa.
+- **Filtro de Vendedor e Lojas Sem Vendedor**:
+  - Segmentação por captador individual e opção rápida **"⚠️ Apenas Sem Vendedor (Oportunidades)"** para prospecção de parceiros órfãos.
+- **Modo Tela Cheia (100% da Tela)**:
+  - Botão de expansão para visão panorâmica total (`Maximize2` / `Minimize2`) com suporte a atalho de teclado `ESC` e recálculo automático de tamanho do mapa (`invalidateSize`).
+- **Exportação Excel/CSV com UTF-8 BOM**:
+  - Botão direto para exportar planilhas contendo apenas os parceiros visíveis na tela, com CNPJ, endereço completo, valores por frente e vendedor.
+
+### 4. Apuração de Comissões & Bonificações NFP (Política Oficial)
 Módulo executivo de remuneração variável e auditoria contábil embasado na **nova regra de comissão da Política NFP Vocação**:
 - **Frente Cadastro (Comissão da Equipe Comercial)**:
   - **Lojas Novas (Abertura - 1,0%)**: Classificação com alíquota de **1,0%** sobre o crédito de Cadastro e Doação Direta aplicada quando o vendedor atual da loja é o vendedor de abertura original (`id_vendedor == id_vendedor_abertura`).
@@ -127,20 +150,20 @@ Módulo executivo de remuneração variável e auditoria contábil embasado na *
   - **📅 Evolução Mensal (Grade)**: Matriz mês a mês (Jan a Dez + Total) da comissão de cada captador da equipe comercial.
   - **🏢 Analítico por CNPJ**: Tabela auditável com todas as lojas, botões de filtro rápido (**`⭐ Novas do Mês`**, `Recorrentes`, `Todas`), indicação da data de início, vendedor responsável, vendedor de abertura e exportação CSV.
 
-### 4. Raio-X de Doadores (Pessoa Física)
+### 5. Raio-X de Doadores (Pessoa Física)
 Mapeamento aprofundado dos doadores individuais (CPF) com leitura direta de `vocacao_resumo_mensal_doadores`:
 - **Raio-X do Doador**: Histórico completo de compras e doações por CPF.
 - **Comportamento de Compra**: Estabelecimentos mais frequentados pelo doador.
 - **Matriz de Recorrência & Níveis de Engajamento**: Divisão por scores (Elite Diamante, Alta Performance, Na Média, Em Desenvolvimento, Iniciante).
 
-### 5. Doadores Fidelizados (Automáticos SEFAZ)
+### 6. Doadores Fidelizados (Automáticos SEFAZ)
 Gestão dos cadastros vinculados na modalidade de doação digital direta da SEFAZ:
 - **Doação Automática via App NFP**: Monitoramento da base fidelizada que vinculou a Vocação como entidade beneficiária direta.
 - **Consolidação Mensal via `vocacao_mapa_interno`**: Acompanhamento de doadores ativos (plenos e restritos), novos cadastros e taxa de retenção.
 - **Tabela Analítica Reativa (>= 2025)**: Exibição detalhada de competências a partir de 2025 ordenada cronologicamente de forma decrescente (mais recente primeiro).
 - **Curva Real de Ticket Médio**: Gráficos contínuos com recálculo preciso baseado em $\text{AUTCred} / \text{AUTCup}$ eliminando descontinuidades ou zeramentos indevidos.
 
-### 6. Ações & Campanhas (CRM Bitrix24 + Auditoria SEFAZ)
+### 7. Ações & Campanhas (CRM Bitrix24 + Auditoria SEFAZ)
 Cockpit de auditoria e prestação de contas das iniciativas de captação presenciais e digitais:
 - **Origem Bitrix24**: Integração oficial com os negócios da Categoria 8 (NFP - Vigente).
 - **Consolidação Inteligente**: Agrupamento pelo campo oficial de Ação/Evento (`UF_CRM_1791479985`) e responsável captador, consolidando eventos de múltiplos dias em iniciativas únicas estáveis.
@@ -157,13 +180,13 @@ Cockpit de auditoria e prestação de contas das iniciativas de captação prese
   - Botão **`🙈 Ocultar CPFs (Máscara)` / `👁️ Exibir CPFs Completos`** para alternar a privacidade visual durante apresentações.
 - **Ranking da Equipe**: Gráfico comparativo e tabela consolidada de desempenho por colaborador com linha de total geral.
 
-### 7. Benchmarking & Prospecção
+### 8. Benchmarking & Prospecção
 Ferramenta estratégica de expansão territorial e prospecção de novos estabelecimentos comerciais parceiros.
 
-### 8. Apresentação Institucional
+### 9. Apresentação Institucional
 Ambiente visual de alto impacto para projeção em telões, reuniões de diretoria e apresentações para patrocinadores com suporte a cópia de gráficos em alta resolução.
 
-### 9. Painel do Desenvolvedor & Processos ETL
+### 10. Painel do Desenvolvedor & Processos ETL
 Área administrativa restrita protegida por senha com status dos serviços e documentação das tabelas em nuvem.
 
 ---

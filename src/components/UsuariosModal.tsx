@@ -22,6 +22,7 @@ interface UsuariosModalProps {
 const TODAS_AS_ABAS: { id: TabId; label: string; desc: string }[] = [
   { id: 'desempenho', label: 'Desempenho', desc: 'Métricas gerais e consolidadas de captação NFP' },
   { id: 'empresas', label: 'Empresas', desc: 'Detalhamento de lojas e empresas parceiras' },
+  { id: 'mapa', label: 'Mapa Parceiros', desc: 'Geolocalização, raio-x das frentes e inteligência de parceiros' },
   { id: 'comissoes', label: 'Comissões', desc: 'Cálculo de carteiras e comissões da equipe' },
   { id: 'doadores', label: 'Raio-X Doadores', desc: 'Análise de doadores individuais e CPFs' },
   { id: 'automaticos', label: 'Doadores Fidelizados', desc: 'Doações automáticas recorrentes SEFAZ' },

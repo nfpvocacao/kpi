@@ -1,8 +1,8 @@
 import React from 'react';
-import { TrendingUp, Building2, HeartHandshake, Users, Target, Presentation, Code2, BadgePercent } from 'lucide-react';
+import { TrendingUp, Building2, MapPin, HeartHandshake, Users, Target, Presentation, Code2, BadgePercent } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-export type TabId = 'desempenho' | 'empresas' | 'comissoes' | 'doadores' | 'automaticos' | 'campanhas' | 'benchmarking' | 'apresentacao' | 'dev';
+export type TabId = 'desempenho' | 'empresas' | 'mapa' | 'comissoes' | 'doadores' | 'automaticos' | 'campanhas' | 'benchmarking' | 'apresentacao' | 'dev';
 
 interface NavigationTabsProps {
   activeTab: TabId;
@@ -36,6 +36,14 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
       icon: Building2,
       badgeText: null,
       badgeColor: 'bg-[#EDCD01] text-[#002A3A]'
+    },
+    {
+      id: 'mapa' as TabId,
+      label: 'Mapa Parceiros',
+      fullTitle: 'Geolocalização & Retorno das Empresas Parceiras',
+      icon: MapPin,
+      badgeText: 'Novo',
+      badgeColor: 'bg-[#FF5722] text-white'
     },
     {
       id: 'comissoes' as TabId,

@@ -42,8 +42,10 @@ export function useSupabaseCampanhas() {
             novosCpfsConquistados: Number(d.novos_cpfs_conquistados || 0),
             cpfsPreexistentes: Number(d.cpfs_preexistentes || 0),
             ativadosComCredito: Number(d.ativados_com_credito || 0),
+            ativadosTotal: Number(d.ativados_total ?? d.ativados_com_credito ?? 0),
             creditoEstimado: Number(d.credito_estimado || 0),
             creditoRealizado: Number(d.credito_realizado || 0),
+            creditoRealizadoAcumulado: Number(d.credito_realizado_acumulado ?? d.credito_realizado ?? 0),
             mesPrevisaoLiberacao: d.previsao_liberacao || d.mes_previsao_liberacao || 'Em Apuração',
             descricao: d.descricao || '',
             cpfsDetalhes: Array.isArray(d.cpfs_detalhes) ? d.cpfs_detalhes : []
