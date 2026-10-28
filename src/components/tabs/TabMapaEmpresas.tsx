@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet.markercluster';
-import { 
-  MapPin, 
-  Search, 
-  Building2, 
-  DollarSign, 
-  Receipt, 
-  ExternalLink, 
-  Compass, 
-  Layers, 
-  Filter, 
-  TrendingUp, 
-  Navigation, 
-  Phone, 
+import {
+  MapPin,
+  Search,
+  Building2,
+  DollarSign,
+  Receipt,
+  ExternalLink,
+  Compass,
+  Layers,
+  Filter,
+  TrendingUp,
+  Navigation,
+  Phone,
   Mail,
   Loader2,
   Sparkles,
@@ -42,6 +42,7 @@ interface TabMapaEmpresasProps {
 }
 
 export type FrenteCaptaçãoFilter = 'TODAS' | 'CADASTRO' | 'DOACAO';
+export type NivelScoreFilter = 'TODOS' | 'EXCEPCIONAL' | 'BOM' | 'MODERADO' | 'BAIXO' | 'CRITICO';
 
 const formatShort = (v: number) => {
   if (v >= 1000000) return `R$ ${(v / 1000000).toFixed(1)}M`;
@@ -50,37 +51,41 @@ const formatShort = (v: number) => {
   return `R$ ${v.toFixed(0)}`;
 };
 
-// Ícone individual estilizado Booking com cor indicadora de frente de captação
-const createCustomIcon = (credito: number, isSelected: boolean, frente: FrenteCaptaçãoFilter, cadCred: number, doaCred: number) => {
-  let bgClass = 'bg-[#002A3A] text-white border-white';
-  let badgeSize = 'px-2 py-1 text-xs font-bold';
+  // Cores Oficiais de Nível idênticas à aba Empresas
+  const NIVEL_PIN_STYLES: Record<string, { bg: string; text: string; border: string; ring: string }> = {
+    EXCEPCIONAL: { bg: 'bg-[#008A2E]', text: 'text-white', border: 'border-[#00E04B]', ring: 'ring-[#00E04B]' },
+    BOM: { bg: 'bg-[#004A6D]', text: 'text-white', border: 'border-[#00E3E6]', ring: 'ring-[#00E3E6]' },
+    MODERADO: { bg: 'bg-[#C29B00]', text: 'text-[#002A3A]', border: 'border-[#EDCD01]', ring: 'ring-[#EDCD01]' },
+    BAIXO: { bg: 'bg-[#E03F2A]', text: 'text-white', border: 'border-[#FF8A7A]', ring: 'ring-[#E03F2A]' },
+    CRITICO: { bg: 'bg-[#D81B4E]', text: 'text-white', border: 'border-[#FD3168]', ring: 'ring-[#FD3168]' }
+  };
 
-  // Destaque visual por valor ou frente
-  if (credito > 50000) {
-    bgClass = isSelected 
-      ? 'bg-[#FF5722] text-white ring-4 ring-[#FF5722]/50 scale-110' 
-      : 'bg-[#FF5722] text-white border-white';
-  } else if (credito > 10000) {
-    bgClass = isSelected 
-      ? 'bg-[#EDCD01] text-[#002A3A] ring-4 ring-[#EDCD01]/50 scale-110' 
-      : 'bg-[#EDCD01] text-[#002A3A] border-[#002A3A]';
-  } else {
-    bgClass = isSelected 
-      ? 'bg-[#00E3E6] text-[#002A3A] ring-4 ring-[#00E3E6]/50 scale-110' 
-      : 'bg-[#002A3A] text-white border-white';
-  }
+  // Ícone individual estilizado Booking com cor indicadora de nível e dot da frente
+  const createCustomIcon = (
+    credito: number,
+    isSelected: boolean,
+    frente: FrenteCaptaçãoFilter,
+    cadCred: number,
+    doaCred: number,
+    nivel: string = 'CRITICO'
+  ) => {
+    const style = NIVEL_PIN_STYLES[nivel] || NIVEL_PIN_STYLES.CRITICO;
+    const bgClass = isSelected
+      ? `${style.bg} ${style.text} border-2 ${style.border} ring-4 ${style.ring}/50 scale-110`
+      : `${style.bg} ${style.text} border-2 ${style.border}`;
+    const badgeSize = 'px-2 py-1 text-xs font-bold';
 
-  // Ponto indicador da frente predominante
-  let dotColor = 'bg-[#00E3E6]'; // default
-  if (cadCred > doaCred) {
-    dotColor = 'bg-[#EDCD01]'; // Urnas / Cadastro
-  } else if (doaCred > cadCred) {
-    dotColor = 'bg-[#FD3168]'; // Doações
-  }
+    // Ponto indicador da frente predominante
+    let dotColor = 'bg-[#00E3E6]'; // default
+    if (cadCred > doaCred) {
+      dotColor = 'bg-[#EDCD01]'; // Urnas / Cadastro
+    } else if (doaCred > cadCred) {
+      dotColor = 'bg-[#FD3168]'; // Doações
+    }
 
-  const html = `
+    const html = `
     <div class="relative flex items-center justify-center cursor-pointer transition-transform transform">
-      <div class="shadow-lg border-2 rounded-full ${bgClass} ${badgeSize} flex items-center gap-1.5 whitespace-nowrap shadow-black/30">
+      <div class="shadow-lg rounded-full ${bgClass} ${badgeSize} flex items-center gap-1.5 whitespace-nowrap shadow-black/30">
         <span class="w-2 h-2 rounded-full ${dotColor}"></span>
         <span>${formatShort(credito)}</span>
       </div>
@@ -88,160 +93,166 @@ const createCustomIcon = (credito: number, isSelected: boolean, frente: FrenteCa
     </div>
   `;
 
-  return L.divIcon({
-    className: 'custom-booking-pin',
-    html,
-    iconSize: [68, 32],
-    iconAnchor: [34, 30],
-    popupAnchor: [0, -30]
-  });
-};
-
-export const TabMapaEmpresas: React.FC<TabMapaEmpresasProps> = ({
-  selectedYears = [2026],
-  selectedMonths = [],
-  onSelectEmpresaParaFiltro
-}) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const clusterGroupRef = useRef<any>(null);
-  const markersByIdRef = useRef<Record<string, L.Marker>>({});
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedVendedor, setSelectedVendedor] = useState<string>('TODOS');
-  const [selectedFrente, setSelectedFrente] = useState<FrenteCaptaçãoFilter>('TODAS');
-  const [isRadarOportunidades, setIsRadarOportunidades] = useState(false);
-  const [sortBy, setSortBy] = useState<'CREDITO' | 'TICKET_MEDIO' | 'CUPONS' | 'NOME'>('CREDITO');
-  const [selectedEmpresaId, setSelectedEmpresaId] = useState<string | null>(null);
-  const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
-  const [geoDataMap, setGeoDataMap] = useState<Record<string, { lat: number; lng: number; logradouro?: string; bairro?: string; cep?: string; numero?: string; cidade?: string; estado?: string; fonte?: string }>>({});
-  const [isLoadingGeo, setIsLoadingGeo] = useState<boolean>(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  
-  // Easter egg: "CHUPA FÁBIO!" ao atingir zoom máximo (200ms)
-  const [showVocacaoEasterEgg, setShowVocacaoEasterEgg] = useState(false);
-
-  // Redimensiona o Leaflet ao entrar ou sair do modo tela cheia
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.invalidateSize();
-      }
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [isFullscreen]);
-
-  // Tecla ESC para sair de tela cheia
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFullscreen]);
-
-  // Carrega empresas do Supabase para o período selecionado
-  const { topEmpresas, isLoading: isEmpresasLoading } = useSupabaseEmpresas({
-    selectedYears,
-    selectedMonths,
-    limit: 500
-  });
-
-  // Carrega base de geolocalização com alta precisão
-  useEffect(() => {
-    let isMounted = true;
-    async function loadGeo() {
-      try {
-        setIsLoadingGeo(true);
-        const res = await fetch('/data/empresas_geo.json?t=' + Date.now());
-        if (res.ok) {
-          const json = await res.json();
-          if (isMounted) setGeoDataMap(json);
-        }
-      } catch (err) {
-        console.warn('Geo data ainda não gerado ou arquivo ausente, usando fallback.');
-      } finally {
-        if (isMounted) setIsLoadingGeo(false);
-      }
-    }
-    loadGeo();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Mescla dados de negócio com os dados geográficos REAIS e CONFIRMADOS (Sem coordenadas inventadas)
-  const empresasCompletas = useMemo(() => {
-    return topEmpresas
-      .map(emp => {
-        const cleanCnpj = emp.cnpj.replace(/\D/g, '').padStart(14, '0');
-        const geo = geoDataMap[cleanCnpj] || geoDataMap[emp.cnpj];
-
-        // Apenas estabelecimentos com geocodificação real confirmada entram no mapa
-        if (!geo || !geo.lat || !geo.lng) {
-          return null;
-        }
-
-        return {
-          ...emp,
-          latitude: geo.lat,
-          longitude: geo.lng,
-          hasGeo: true,
-          logradouro: geo.logradouro || emp.logradouro,
-          bairro: geo.bairro || emp.bairro,
-          cep: geo.cep || emp.cep,
-          numero: geo.numero || emp.numero,
-          cidade: geo.cidade || emp.cidade || 'São Paulo',
-          estado: geo.estado || emp.estado || 'SP',
-          creditoUrnas: emp.creditoUrnas || 0,
-          creditoDoacoes: emp.creditoDoacoes || 0
-        };
-      })
-      .filter((e): e is NonNullable<typeof e> => e !== null);
-  }, [topEmpresas, geoDataMap]);
-
-  // Filtros de busca e frentes de captação
-  const empresasFiltradas = useMemo(() => {
-    return empresasCompletas.filter(emp => {
-      // Filtro por Frente de Captação
-      if (selectedFrente === 'CADASTRO' && (emp.creditoUrnas || 0) <= 0) {
-        return false;
-      }
-      if (selectedFrente === 'DOACAO' && (emp.creditoDoacoes || 0) <= 0) {
-        return false;
-      }
-      // Radar de Oportunidades: tem bom retorno em urnas (>= R$ 150) mas zero ou pouco em doações automáticas (<= R$ 20)
-      if (isRadarOportunidades) {
-        const temUrnas = (emp.creditoUrnas || 0) >= 150;
-        const semDoacoes = (emp.creditoDoacoes || 0) <= 20;
-        if (!temUrnas || !semDoacoes) return false;
-      }
-
-      // Busca por CNPJ, Nome, Bairro ou CEP
-      if (searchTerm.trim()) {
-        const term = searchTerm.toLowerCase();
-        const matchCnpj = emp.cnpj.includes(term);
-        const matchNome = (emp.razaoSocial || '').toLowerCase().includes(term) || (emp.nomeFantasia || '').toLowerCase().includes(term);
-        const matchBairro = (emp.bairro || '').toLowerCase().includes(term);
-        const matchCep = (emp.cep || '').toLowerCase().includes(term);
-        if (!matchCnpj && !matchNome && !matchBairro && !matchCep) return false;
-      }
-
-      // Vendedor (Todos, por ID ou Apenas Sem Vendedor / Órfãs)
-      if (selectedVendedor !== 'TODOS') {
-        if (selectedVendedor === 'SEM_VENDEDOR') {
-          if (emp.idVendedor || emp.idVendedorAbertura) return false;
-        } else {
-          const vendId = parseInt(selectedVendedor, 10);
-          if (emp.idVendedor !== vendId && emp.idVendedorAbertura !== vendId) return false;
-        }
-      }
-
-      return true;
+    return L.divIcon({
+      className: 'custom-booking-pin',
+      html,
+      iconSize: [68, 32],
+      iconAnchor: [34, 30],
+      popupAnchor: [0, -30]
     });
-  }, [empresasCompletas, selectedFrente, searchTerm, selectedVendedor, isRadarOportunidades]);
+  };
+
+  export const TabMapaEmpresas: React.FC<TabMapaEmpresasProps> = ({
+    selectedYears = [2026],
+    selectedMonths = [],
+    onSelectEmpresaParaFiltro
+  }) => {
+    const mapContainerRef = useRef<HTMLDivElement>(null);
+    const mapInstanceRef = useRef<L.Map | null>(null);
+    const clusterGroupRef = useRef<any>(null);
+    const markersByIdRef = useRef<Record<string, L.Marker>>({});
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedVendedor, setSelectedVendedor] = useState<string>('TODOS');
+    const [selectedFrente, setSelectedFrente] = useState<FrenteCaptaçãoFilter>('TODAS');
+    const [selectedNivel, setSelectedNivel] = useState<NivelScoreFilter>('TODOS');
+    const [isRadarOportunidades, setIsRadarOportunidades] = useState(false);
+    const [sortBy, setSortBy] = useState<'CREDITO' | 'TICKET_MEDIO' | 'CUPONS' | 'NOME'>('CREDITO');
+    const [selectedEmpresaId, setSelectedEmpresaId] = useState<string | null>(null);
+    const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
+    const [geoDataMap, setGeoDataMap] = useState<Record<string, { lat: number; lng: number; logradouro?: string; bairro?: string; cep?: string; numero?: string; cidade?: string; estado?: string; fonte?: string }>>({});
+    const [isLoadingGeo, setIsLoadingGeo] = useState<boolean>(true);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Easter egg: "CHUPA FÁBIO!" ao atingir zoom máximo (200ms)
+    const [showVocacaoEasterEgg, setShowVocacaoEasterEgg] = useState(false);
+
+    // Redimensiona o Leaflet ao entrar ou sair do modo tela cheia
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }, [isFullscreen]);
+
+    // Tecla ESC para sair de tela cheia
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && isFullscreen) {
+          setIsFullscreen(false);
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isFullscreen]);
+
+    // Carrega empresas do Supabase para o período selecionado
+    const { topEmpresas, isLoading: isEmpresasLoading } = useSupabaseEmpresas({
+      selectedYears,
+      selectedMonths,
+      limit: 500
+    });
+
+    // Carrega base de geolocalização com alta precisão
+    useEffect(() => {
+      let isMounted = true;
+      async function loadGeo() {
+        try {
+          setIsLoadingGeo(true);
+          const res = await fetch('/data/empresas_geo.json?t=' + Date.now());
+          if (res.ok) {
+            const json = await res.json();
+            if (isMounted) setGeoDataMap(json);
+          }
+        } catch (err) {
+          console.warn('Geo data ainda não gerado ou arquivo ausente, usando fallback.');
+        } finally {
+          if (isMounted) setIsLoadingGeo(false);
+        }
+      }
+      loadGeo();
+      return () => {
+        isMounted = false;
+      };
+    }, []);
+
+    // Mescla dados de negócio com os dados geográficos REAIS e CONFIRMADOS (Sem coordenadas inventadas)
+    const empresasCompletas = useMemo(() => {
+      return topEmpresas
+        .map(emp => {
+          const cleanCnpj = emp.cnpj.replace(/\D/g, '').padStart(14, '0');
+          const geo = geoDataMap[cleanCnpj] || geoDataMap[emp.cnpj];
+
+          // Apenas estabelecimentos com geocodificação real confirmada entram no mapa
+          if (!geo || !geo.lat || !geo.lng) {
+            return null;
+          }
+
+          return {
+            ...emp,
+            latitude: geo.lat,
+            longitude: geo.lng,
+            hasGeo: true,
+            logradouro: geo.logradouro || emp.logradouro,
+            bairro: geo.bairro || emp.bairro,
+            cep: geo.cep || emp.cep,
+            numero: geo.numero || emp.numero,
+            cidade: geo.cidade || emp.cidade || 'São Paulo',
+            estado: geo.estado || emp.estado || 'SP',
+            creditoUrnas: emp.creditoUrnas || 0,
+            creditoDoacoes: emp.creditoDoacoes || 0
+          };
+        })
+        .filter((e): e is NonNullable<typeof e> => e !== null);
+    }, [topEmpresas, geoDataMap]);
+
+    // Filtros de busca e frentes de captação
+    const empresasFiltradas = useMemo(() => {
+      return empresasCompletas.filter(emp => {
+        // Filtro por Frente de Captação
+        if (selectedFrente === 'CADASTRO' && (emp.creditoUrnas || 0) <= 0) {
+          return false;
+        }
+        if (selectedFrente === 'DOACAO' && (emp.creditoDoacoes || 0) <= 0) {
+          return false;
+        }
+        // Filtro de Nível de Eficiência (Score)
+        if (selectedNivel !== 'TODOS' && emp.nivelScore !== selectedNivel) {
+          return false;
+        }
+
+        // Radar de Oportunidades: tem bom retorno em urnas (>= R$ 150) mas zero ou pouco em doações automáticas (<= R$ 20)
+        if (isRadarOportunidades) {
+          const temUrnas = (emp.creditoUrnas || 0) >= 150;
+          const semDoacoes = (emp.creditoDoacoes || 0) <= 20;
+          if (!temUrnas || !semDoacoes) return false;
+        }
+
+        // Busca por CNPJ, Nome, Bairro ou CEP
+        if (searchTerm.trim()) {
+          const term = searchTerm.toLowerCase();
+          const matchCnpj = emp.cnpj.includes(term);
+          const matchNome = (emp.razaoSocial || '').toLowerCase().includes(term) || (emp.nomeFantasia || '').toLowerCase().includes(term);
+          const matchBairro = (emp.bairro || '').toLowerCase().includes(term);
+          const matchCep = (emp.cep || '').toLowerCase().includes(term);
+          if (!matchCnpj && !matchNome && !matchBairro && !matchCep) return false;
+        }
+
+        // Vendedor (Todos, por ID ou Apenas Sem Vendedor / Órfãs)
+        if (selectedVendedor !== 'TODOS') {
+          if (selectedVendedor === 'SEM_VENDEDOR') {
+            if (emp.idVendedor || emp.idVendedorAbertura) return false;
+          } else {
+            const vendId = parseInt(selectedVendedor, 10);
+            if (emp.idVendedor !== vendId && emp.idVendedorAbertura !== vendId) return false;
+          }
+        }
+
+        return true;
+      });
+  }, [empresasCompletas, selectedFrente, selectedNivel, searchTerm, selectedVendedor, isRadarOportunidades]);
 
   // Sincronização Dinâmica ao Arrastar o Mapa e Ordenação Personalizada
   const empresasVisiveisNaTela = useMemo(() => {
@@ -436,24 +447,38 @@ export const TabMapaEmpresas: React.FC<TabMapaEmpresasProps> = ({
           ? emp.creditoDoacoes
           : emp.creditoTotal;
 
-      const icon = createCustomIcon(valorExibido, isSelected, selectedFrente, emp.creditoUrnas, emp.creditoDoacoes);
+      const icon = createCustomIcon(valorExibido, isSelected, selectedFrente, emp.creditoUrnas, emp.creditoDoacoes, emp.nivelScore);
       // @ts-ignore
-      const marker = L.marker([emp.latitude, emp.longitude], { 
+      const marker = L.marker([emp.latitude, emp.longitude], {
         icon,
         // @ts-ignore
-        customCredito: valorExibido 
+        customCredito: valorExibido
       });
 
       // Popup Estilo Booking com Raio-X das Frentes de Captação
       const vendedorNome = emp.idVendedor ? VENDEDORES_MAP[emp.idVendedor] : 'Não atribuído';
       const enderecoTexto = [emp.logradouro, emp.numero, emp.bairro, emp.cidade, emp.cep].filter(Boolean).join(', ');
 
+      const nivelBadgeHtml = emp.nivelScore ? `
+        <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${emp.nivelScore === 'EXCEPCIONAL' ? 'bg-[#00E04B]/20 text-[#006E24] border border-[#00E04B]/40' :
+          emp.nivelScore === 'BOM' ? 'bg-[#D9FBFF] text-[#004A6D] border border-[#BCD3DF]' :
+            emp.nivelScore === 'MODERADO' ? 'bg-[#EDCD01]/25 text-[#002A3A] border border-[#EDCD01]/40' :
+              emp.nivelScore === 'BAIXO' ? 'bg-[#E03F2A]/15 text-[#E03F2A] border border-[#E03F2A]/30' :
+                'bg-[#FD3168]/20 text-[#FD3168] border border-[#FD3168]/40'
+        }">
+          ${emp.scoreEficiencia || 0}% (${emp.nivelScore})
+        </span>
+      ` : '';
+
       const popupContent = document.createElement('div');
       popupContent.className = 'p-1 font-sans text-[#002A3A] min-w-[270px]';
       popupContent.innerHTML = `
         <div class="flex items-start justify-between gap-2 border-b border-gray-100 pb-2 mb-2">
           <div>
-            <div class="text-[10px] font-bold tracking-wider uppercase text-cyan-700">${emp.categoria || 'Parceiro'}</div>
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="text-[10px] font-bold tracking-wider uppercase text-cyan-700">${emp.categoria || 'Parceiro'}</span>
+              ${nivelBadgeHtml}
+            </div>
             <h4 class="font-bold text-sm leading-tight text-gray-900">${emp.nomeFantasia || emp.razaoSocial}</h4>
             <div class="text-[11px] text-gray-500 font-mono mt-0.5">${emp.cnpj}</div>
           </div>
@@ -546,21 +571,20 @@ export const TabMapaEmpresas: React.FC<TabMapaEmpresasProps> = ({
 
   const totalCreditoVisivel = useMemo(() => {
     return empresasVisiveisNaTela.reduce((acc, curr) => {
-      const val = selectedFrente === 'CADASTRO' 
-        ? curr.creditoUrnas 
-        : selectedFrente === 'DOACAO' 
-          ? curr.creditoDoacoes 
+      const val = selectedFrente === 'CADASTRO'
+        ? curr.creditoUrnas
+        : selectedFrente === 'DOACAO'
+          ? curr.creditoDoacoes
           : curr.creditoTotal;
       return acc + (val || 0);
     }, 0);
   }, [empresasVisiveisNaTela, selectedFrente]);
 
   return (
-    <div className={`flex flex-col bg-white transition-all ${
-      isFullscreen 
-        ? 'fixed inset-0 z-50 w-screen h-screen' 
+    <div className={`flex flex-col bg-white transition-all ${isFullscreen
+        ? 'fixed inset-0 z-50 w-screen h-screen'
         : 'h-[calc(100vh-175px)] w-full rounded-xl shadow-xs border border-gray-100 relative'
-    }`}>
+      }`}>
       {/* Easter Egg Flutuante: "CHUPA FÁBIO!" ao usar zoom máximo */}
       {showVocacaoEasterEgg && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] pointer-events-none transition-all duration-300 animate-bounce">
@@ -591,32 +615,29 @@ export const TabMapaEmpresas: React.FC<TabMapaEmpresasProps> = ({
           <div className="flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200 text-xs">
             <button
               onClick={() => setSelectedFrente('TODAS')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all ${
-                selectedFrente === 'TODAS'
+              className={`px-2.5 py-1 rounded-md font-medium transition-all ${selectedFrente === 'TODAS'
                   ? 'bg-white text-[#002A3A] shadow-xs font-bold'
                   : 'text-gray-600 hover:text-gray-900'
-              }`}
+                }`}
             >
               🌐 Todas as Frentes
             </button>
             <button
               onClick={() => setSelectedFrente('CADASTRO')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all flex items-center gap-1 ${
-                selectedFrente === 'CADASTRO'
+              className={`px-2.5 py-1 rounded-md font-medium transition-all flex items-center gap-1 ${selectedFrente === 'CADASTRO'
                   ? 'bg-amber-500 text-white shadow-xs font-bold'
                   : 'text-gray-600 hover:text-gray-900'
-              }`}
+                }`}
             >
               <Inbox className="w-3 h-3" />
               Urnas / Cadastro
             </button>
             <button
               onClick={() => setSelectedFrente('DOACAO')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all flex items-center gap-1 ${
-                selectedFrente === 'DOACAO'
+              className={`px-2.5 py-1 rounded-md font-medium transition-all flex items-center gap-1 ${selectedFrente === 'DOACAO'
                   ? 'bg-rose-500 text-white shadow-xs font-bold'
                   : 'text-gray-600 hover:text-gray-900'
-              }`}
+                }`}
             >
               <HeartHandshake className="w-3 h-3" />
               Doações
@@ -634,6 +655,20 @@ export const TabMapaEmpresas: React.FC<TabMapaEmpresasProps> = ({
             {Object.entries(VENDEDORES_MAP).map(([id, nome]) => (
               <option key={id} value={id}>{nome}</option>
             ))}
+          </select>
+
+          {/* Filtro por Nível de Eficiência (Score) */}
+          <select
+            value={selectedNivel}
+            onChange={(e) => setSelectedNivel(e.target.value as NivelScoreFilter)}
+            className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 font-medium focus:outline-hidden focus:ring-2 focus:ring-[#00E3E6]"
+          >
+            <option value="TODOS">⚡ Todos os Níveis</option>
+            <option value="EXCEPCIONAL">🟢 Excepcional (&gt; 100%)</option>
+            <option value="BOM">🔵 Bom (80% a 100%)</option>
+            <option value="MODERADO">🟡 Moderado (50% a 79%)</option>
+            <option value="BAIXO">🟠 Baixo (25% a 49%)</option>
+            <option value="CRITICO">🔴 Crítico (&lt; 25%)</option>
           </select>
         </div>
 
@@ -654,11 +689,10 @@ export const TabMapaEmpresas: React.FC<TabMapaEmpresasProps> = ({
           <button
             onClick={() => setIsRadarOportunidades(!isRadarOportunidades)}
             title="Filtrar parceiros com alta arrecadação em urnas (>= R$ 150) mas zero/poucas doações automáticas (<= R$ 20)"
-            className={`p-1.5 px-2.5 rounded-lg border transition-all flex items-center gap-1.5 text-xs font-semibold ${
-              isRadarOportunidades
+            className={`p-1.5 px-2.5 rounded-lg border transition-all flex items-center gap-1.5 text-xs font-semibold ${isRadarOportunidades
                 ? 'bg-purple-600 border-purple-700 text-white shadow-xs font-bold ring-2 ring-purple-300'
                 : 'bg-white border-purple-200 text-purple-700 hover:bg-purple-50'
-            }`}
+              }`}
           >
             <Target className={`w-3.5 h-3.5 ${isRadarOportunidades ? 'text-white' : 'text-purple-600'}`} />
             <span>{isRadarOportunidades ? '🎯 Radar Ativo' : 'Radar Oportunidades'}</span>
@@ -680,11 +714,10 @@ export const TabMapaEmpresas: React.FC<TabMapaEmpresasProps> = ({
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
             title={isFullscreen ? "Sair da Tela Cheia (ESC)" : "Expandir Mapa para Tela Cheia"}
-            className={`p-1.5 px-2.5 rounded-lg border transition-all flex items-center gap-1.5 text-xs font-semibold ${
-              isFullscreen
+            className={`p-1.5 px-2.5 rounded-lg border transition-all flex items-center gap-1.5 text-xs font-semibold ${isFullscreen
                 ? 'bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100 shadow-xs'
                 : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-[#002A3A]'
-            }`}
+              }`}
           >
             {isFullscreen ? (
               <>
@@ -703,7 +736,7 @@ export const TabMapaEmpresas: React.FC<TabMapaEmpresasProps> = ({
 
       {/* Área Principal Split-View (Estilo Booking) */}
       <div className="flex-1 flex overflow-hidden border border-t-0 border-gray-200 rounded-b-xl bg-gray-50">
-        
+
         {/* Painel Lateral: Lista de Cards Dinâmica ao arrastar o mouse */}
         <div className="w-[380px] lg:w-[440px] flex-shrink-0 flex flex-col bg-white border-r border-gray-200 overflow-hidden shadow-xs">
           <div className="p-2.5 px-3 bg-gray-50/90 border-b border-gray-100 flex items-center justify-between text-xs text-gray-500">
@@ -753,17 +786,28 @@ export const TabMapaEmpresas: React.FC<TabMapaEmpresasProps> = ({
                   <div
                     key={emp.id}
                     onClick={() => handleSelectCard(emp)}
-                    className={`p-3 rounded-xl border transition-all cursor-pointer ${
-                      isSelected
+                    className={`p-3 rounded-xl border transition-all cursor-pointer ${isSelected
                         ? 'border-[#00E3E6] bg-[#00E3E6]/10 shadow-sm ring-1 ring-[#00E3E6]'
                         : 'border-gray-200/80 bg-white hover:border-gray-300 hover:shadow-xs'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <div>
-                        <span className="inline-block px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-gray-100 text-gray-600 mb-1">
-                          {emp.categoria || 'Comércio'}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          <span className="inline-block px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-gray-100 text-gray-600">
+                            {emp.categoria || 'Comércio'}
+                          </span>
+                          {emp.nivelScore && (
+                            <span className={`inline-block px-1.5 py-0.5 text-[9px] font-black uppercase rounded ${emp.nivelScore === 'EXCEPCIONAL' ? 'bg-[#00E04B]/20 text-[#006E24] border border-[#00E04B]/40' :
+                                emp.nivelScore === 'BOM' ? 'bg-[#D9FBFF] text-[#004A6D] border border-[#BCD3DF]' :
+                                  emp.nivelScore === 'MODERADO' ? 'bg-[#EDCD01]/25 text-[#002A3A] border border-[#EDCD01]/40' :
+                                    emp.nivelScore === 'BAIXO' ? 'bg-[#E03F2A]/15 text-[#E03F2A] border border-[#E03F2A]/30' :
+                                      'bg-[#FD3168]/20 text-[#FD3168] border border-[#FD3168]/40'
+                              }`}>
+                              {emp.scoreEficiencia}% ({emp.nivelScore})
+                            </span>
+                          )}
+                        </div>
                         <h4 className="text-xs font-bold text-gray-900 line-clamp-1">
                           {emp.nomeFantasia || emp.razaoSocial}
                         </h4>
@@ -821,26 +865,52 @@ export const TabMapaEmpresas: React.FC<TabMapaEmpresasProps> = ({
         <div className="flex-1 relative overflow-hidden">
           <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-          {/* Legenda de Categorias e Frentes no Mapa */}
-          <div className="absolute top-4 right-4 z-[400] bg-white/95 backdrop-blur-xs p-3 rounded-xl border border-gray-200 shadow-md text-xs space-y-2 pointer-events-auto max-w-[210px]">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-1">Legenda das Frentes</span>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#EDCD01]"></span>
-              <span className="text-gray-700 text-[11px]">Urnas / Cadastro</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#FD3168]"></span>
-              <span className="text-gray-700 text-[11px]">Doações (App / Auto)</span>
-            </div>
-            
-            <div className="pt-2 border-t border-gray-100 text-[10px] text-gray-400 leading-tight">
-              🖱️ <em>A lista à esquerda acompanha em tempo real a área visível do mapa.</em>
+              {/* Legenda de Níveis e Frentes no Mapa */}
+              <div className="absolute top-4 right-4 z-[400] bg-white/95 backdrop-blur-xs p-3 rounded-xl border border-gray-200 shadow-md text-xs space-y-2 pointer-events-auto max-w-[220px]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block mb-1">Nível de Eficiência</span>
+                <div className="grid grid-cols-1 gap-1 text-[11px]">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#008A2E] border border-[#00E04B]"></span>
+                    <span className="text-gray-700 font-medium">Excepcional (&gt; 100%)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#004A6D] border border-[#00E3E6]"></span>
+                    <span className="text-gray-700 font-medium">Bom (80% a 100%)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#C29B00] border border-[#EDCD01]"></span>
+                    <span className="text-gray-700 font-medium">Moderado (50% a 79%)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#E03F2A] border border-[#FF8A7A]"></span>
+                    <span className="text-gray-700 font-medium">Baixo (25% a 49%)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#D81B4E] border border-[#FD3168]"></span>
+                    <span className="text-gray-700 font-medium">Crítico (&lt; 25%)</span>
+                  </div>
+                </div>
+
+                  <div className="pt-2 border-t border-gray-100">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block mb-1">Frente Predominante</span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#EDCD01]"></span>
+                      <span className="text-gray-700 text-[11px]">Urnas / Cadastro</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#FD3168]"></span>
+                      <span className="text-gray-700 text-[11px]">Doações (App / Auto)</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-100 text-[10px] text-gray-400 leading-tight">
+                    🖱️ <em>A lista à esquerda acompanha em tempo real a área visível do mapa.</em>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
           </div>
-
-        </div>
-
-      </div>
-    </div>
-  );
+          );
 };

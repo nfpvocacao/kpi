@@ -1,2 +1,2 @@
 // Arquivo gerado automaticamente no build (npm run build)
-export const APP_VERSION = "V.202610141927";
+export const APP_VERSION = "V.202610281004";
