@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, fetchAllParallel } from '../lib/supabaseClient';
 import { EmpresaParceira, VENDEDORES_MAP } from '../types';
 
 export interface UseEmpresasParams {
@@ -7,37 +7,6 @@ export interface UseEmpresasParams {
   selectedMonths?: number[];
   searchTerm?: string;
   limit?: number;
-}
-
-// Helper function to fetch all rows in parallel using count + range
-async function fetchAllParallel<T = any>(
-  buildQuery: () => any,
-  pageSize = 1000
-): Promise<T[]> {
-  const { data: firstPage, count, error } = await buildQuery().range(0, pageSize - 1);
-  if (error) throw error;
-  if (!firstPage || firstPage.length === 0) return [];
-
-  const total = count ?? firstPage.length;
-  if (total <= pageSize || firstPage.length < pageSize) {
-    return firstPage as T[];
-  }
-
-  const pagePromises = [];
-  for (let from = pageSize; from < total; from += pageSize) {
-    const to = Math.min(from + pageSize - 1, total - 1);
-    pagePromises.push(buildQuery().range(from, to));
-  }
-
-  const results = await Promise.all(pagePromises);
-  let allRows = [...firstPage];
-  for (const res of results) {
-    if (res.error) throw res.error;
-    if (res.data) {
-      allRows.push(...res.data);
-    }
-  }
-  return allRows as T[];
 }
 
 export function useSupabaseEmpresas(params: UseEmpresasParams = {}) {

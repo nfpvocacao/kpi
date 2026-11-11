@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, fetchAllParallel } from '../lib/supabaseClient';
 
 export interface DoadorRealSupabase {
   id: string; // cpf_doador
@@ -153,20 +153,29 @@ export function useSupabaseDoadores(params: UseDoadoresParams = {}) {
 
         const listAll = Object.values(cpfMap);
 
-        // Fetch master names from nfp_doadores to enrich names where available
-        const { data: nfpMaster } = await supabase
-          .from('nfp_doadores')
-          .select('cpf, doador, celular, ligacao');
+        // Fetch master names from nfp_doadores sem o limite de 1000
+        const nfpMaster = await fetchAllParallel(() =>
+          supabase
+            .from('nfp_doadores')
+            .select('cpf, doador, celular, ligacao', { count: 'exact' })
+        );
 
         if (nfpMaster && nfpMaster.length > 0) {
           const nfpMap: Record<string, any> = {};
-          nfpMaster.forEach(m => {
-            if (m.cpf) nfpMap[m.cpf.trim()] = m;
+          nfpMaster.forEach((m: any) => {
+            if (m.cpf) {
+              const rawCpf = m.cpf.trim();
+              const cleanCpf = rawCpf.replace(/\D/g, '');
+              nfpMap[rawCpf] = m;
+              if (cleanCpf) nfpMap[cleanCpf] = m;
+            }
           });
 
           listAll.forEach(d => {
-            if (nfpMap[d.cpf]) {
-              const m = nfpMap[d.cpf];
+            const rawCpf = (d.cpf || '').trim();
+            const cleanCpf = rawCpf.replace(/\D/g, '');
+            const m = nfpMap[rawCpf] || (cleanCpf ? nfpMap[cleanCpf] : null);
+            if (m) {
               if (m.doador) d.nome = m.doador;
               if (m.celular) d.celular = m.celular;
               if (m.ligacao) d.tipoLigacao = m.ligacao;

@@ -33,6 +33,8 @@ import {
 import { KPICard } from '../KPICard';
 import { BrandBadge } from '../BrandBadge';
 import { CopyChartButton } from '../CopyChartButton';
+import { GraficoTrienalComparativo } from '../GraficoTrienalComparativo';
+import { GraficoMensalCreditos } from '../GraficoMensalCreditos';
 import { MetricaMensal } from '../../types';
 import { formatarMoeda, formatarNumero } from '../../data/mockDatabase';
 import { useSupabaseMapaInterno, MapaInternoRow } from '../../hooks/useSupabaseMapaInterno';
@@ -362,6 +364,12 @@ export const TabApresentacao: React.FC<TabApresentacaoProps> = ({
           badge={{ text: 'Receita NFP', color: 'bg-[#FD3168] text-white' }}
         />
       </div>
+
+      {/* NOVO: Gráfico de Evolução Trienal e Projeção (Receita x Custo x Resultado + Copiar) */}
+      <GraficoTrienalComparativo />
+
+      {/* NOVO: Gráfico de Evolução Mensal de Créditos (Cadastro x Automatizados) + 4 KPIs */}
+      <GraficoMensalCreditos />
 
       {/* GRÁFICO COMPARATIVO EM LINHAS (SOBREPOSIÇÃO DE ANOS - YOY) */}
       <div ref={chartYoyRef} className="bg-white rounded-2xl p-6 border border-[#BCD3DF]/80 shadow-md space-y-5">

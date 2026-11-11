@@ -5,6 +5,7 @@ import datetime
 import openpyxl
 import threading
 import pyautogui
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -204,6 +205,60 @@ def extrair_dados_nfp():
 
 
 
+GOOGLE_SHEETS_WEBHOOK_URL = os.getenv(
+    "GOOGLE_SHEETS_WEBHOOK_URL",
+    "https://script.google.com/macros/s/AKfycbz13VKBiGotkBDSwv2VFklKysCwrDakSC5yHcvcP4BX1tFjfd3XwhIipjc0u0gOr5qdlA/exec"
+)
+
+def enviar_dados_google_sheets(dados):
+    """
+    Envia os meses extraídos para a planilha Google Sheets via Apps Script Webhook.
+    Colunas: Data (execução), Mês (referência MM/AAAA), Plenos, Restritos, Total.
+    """
+    if not GOOGLE_SHEETS_WEBHOOK_URL:
+        print("  [Google Sheets] URL do webhook não configurada.")
+        return False
+
+    print("\n--- ENVIANDO DADOS PARA O GOOGLE SHEETS (Informações Fazenda) ---")
+    data_hoje = datetime.date.today().strftime("%d/%m/%Y")
+    
+    payload_rows = []
+    for dt_key in sorted(dados.keys()):
+        item = dados[dt_key]
+        partes = dt_key.split("-")
+        mes_formatado = f"{partes[1]}/{partes[0]}"
+        
+        payload_rows.append({
+            "data": data_hoje,
+            "mes": mes_formatado,
+            "plenos": item.get('plenos', 0),
+            "restritos": item.get('restritos', 0),
+            "total": item.get('total', 0)
+        })
+
+    try:
+        response = requests.post(
+            GOOGLE_SHEETS_WEBHOOK_URL,
+            json={"rows": payload_rows},
+            timeout=30
+        )
+        print(f"  [Google Sheets] Status HTTP: {response.status_code}")
+        try:
+            res_data = response.json()
+            if res_data.get("status") == "success":
+                print(f"  [Google Sheets] Sucesso! {res_data.get('inserted')} registros inseridos.")
+                return True
+            else:
+                print(f"  [Google Sheets] Resposta do script: {res_data}")
+        except Exception:
+            print(f"  [Google Sheets] Resposta recebida: {response.text[:200]}")
+        return True
+    except Exception as e:
+        print(f"  [Google Sheets] Erro de conexão com o Webhook: {e}")
+        return False
+
+
+
 def atualizar_planilha_mapa(caminho_excel, dados):
     """
     Atualiza as colunas da aba 'Mapa' na planilha Excel local com os dados extraídos.
@@ -271,6 +326,9 @@ def atualizar_planilha_mapa(caminho_excel, dados):
         print(f"[COPIA LOCAL] Planilha espelhada em: {dest}")
     except Exception as e_cp:
         print(f"[AVISO] Falha ao espelhar em {dest}: {e_cp}")
+
+    # Enviar para o Google Sheets logo apos efetuar as acoes na planilha Mapa Automatizacoes
+    enviar_dados_google_sheets(dados)
 
     return True
 

@@ -55,6 +55,11 @@ O **NFP Analytics** consolida milhões de registros de cupons fiscais doados à 
 - **Supabase (PostgreSQL Cloud 24/7)**: Fonte primária oficial conectada via `@supabase/supabase-js`.
 - **Row Level Security & REST API**: Consultas de alto desempenho com suporte a paginação `Range` e ordenações dinâmicas.
 
+
+- **⚠️ Diretriz Crítica: Limite de 1.000 Linhas do Supabase (PostgREST)**:
+  - Por especificaço do PostgREST, toda consulta sem paginação expressa retorna no máximo **1.000 registros**.
+  - **Padrão Obrigatório do Projeto**: Em consultas a tabelas que possam conter mais de 1.000 linhas (`nfp_doadores`, `nfp_empresas`, `vocacao_resumo_mensal_doadores`, jvocacao_doador_estabelecimento_mensal`), é **mandatório** utilizar a função `fetchAllParallel` exportada de {src/lib/supabaseClient.ts}, garantindo paginação em paralelo via `range(from, to)` com contagem exata e sem perdas de registros (evitando problemas como nomes de doadores ou estabelecimentos não encontrados).
+
 ### Pipeline de Scripts e Automação (Python & Batch)
 - `obter_dados.py`: Automação Selenium com certificado digital A1 para login na SEFAZ-SP, extração dos dados atualizados de doadores plenos e restritos e gravação direta na planilha oficial no Google Drive (`G:\...`) com espelhamento automático para a pasta local `planilhas/` e raiz.
 - `autorun_nfp.bat`: Executor sequencial em lote no Windows para extração SEFAZ (`obter_dados.py`), ETL de importação (`etl_import.py`) e sincronização de negócios Bitrix24 (`sync_bitrix_to_supabase.py`).
