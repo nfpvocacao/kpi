@@ -389,4 +389,10 @@ export const GraficoMensalCreditos: React.FC = () => {
                   </div>
                 ))}
               </div>
-       
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
