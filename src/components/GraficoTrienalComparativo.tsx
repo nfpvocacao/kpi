@@ -22,6 +22,7 @@ export const GraficoTrienalComparativo: React.FC = () => {
 
   // Coordenadas calculadas no DOM para os colchetes e tendências
   const [coordsBarras, setCoordsBarras] = useState<{ x: number; yTop: number }[]>([]);
+  const [coordsResultado, setCoordsResultado] = useState<{ x: number; yTop: number }[]>([]);
 
   // Formatador em milhares (k)
   const formatarK = (val: number | null | undefined) => {
@@ -127,21 +128,34 @@ export const GraficoTrienalComparativo: React.FC = () => {
       const barGroups = svg.querySelectorAll('.recharts-bar-rectangles');
       if (!barGroups || barGroups.length < 2) return;
 
-      // Pegar os retângulos da fatia superior de receita (Cadastro / topo de 100%)
+      // 1. Pegar os retângulos da fatia superior de receita (Cadastro / topo de 100%)
       const topBarRects = barGroups[1]?.querySelectorAll('path.recharts-rectangle');
-      if (!topBarRects || topBarRects.length === 0) return;
+      if (topBarRects && topBarRects.length > 0) {
+        const coords: { x: number; yTop: number }[] = [];
+        topBarRects.forEach((rectPath) => {
+          const bRect = rectPath.getBoundingClientRect();
+          const xCenter = (bRect.left - containerRect.left) + bRect.width / 2;
+          const yTop = bRect.top - containerRect.top;
+          coords.push({ x: xCenter, yTop });
+        });
+        if (coords.length > 0) {
+          setCoordsBarras(coords);
+        }
+      }
 
-      const coords: { x: number; yTop: number }[] = [];
-
-      topBarRects.forEach((rectPath) => {
-        const bRect = rectPath.getBoundingClientRect();
-        const xCenter = (bRect.left - containerRect.left) + bRect.width / 2;
-        const yTop = bRect.top - containerRect.top;
-        coords.push({ x: xCenter, yTop });
-      });
-
-      if (coords.length > 0) {
-        setCoordsBarras(coords);
+      // 2. Pegar os retângulos da coluna de Resultado Líquido (Verde / barGroups[3])
+      const resBarRects = barGroups[3]?.querySelectorAll('path.recharts-rectangle');
+      if (resBarRects && resBarRects.length > 0) {
+        const coordsRes: { x: number; yTop: number }[] = [];
+        resBarRects.forEach((rectPath) => {
+          const bRect = rectPath.getBoundingClientRect();
+          const xCenter = (bRect.left - containerRect.left) + bRect.width / 2;
+          const yTop = bRect.top - containerRect.top;
+          coordsRes.push({ x: xCenter, yTop });
+        });
+        if (coordsRes.length > 0) {
+          setCoordsResultado(coordsRes);
+        }
       }
     };
 
@@ -299,7 +313,7 @@ export const GraficoTrienalComparativo: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={chartData}
-                  margin={{ top: 75, right: 30, left: 10, bottom: 20 }}
+                  margin={{ top: 95, right: 30, left: 10, bottom: 20 }}
                   barGap={2}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -313,10 +327,10 @@ export const GraficoTrienalComparativo: React.FC = () => {
                     tickLine={false}
                   />
 
-                  {/* Eixo Y Oculto (hide={true}) com domínio estendido para folga no topo */}
+                  {/* Eixo Y Oculto (hide={true}) com domínio estendido para a dupla camada de colchetes */}
                   <YAxis 
                     hide={true}
-                    domain={[0, 130]}
+                    domain={[0, 145]}
                   />
 
                   <Tooltip content={<CustomTooltip />} />
@@ -403,25 +417,26 @@ export const GraficoTrienalComparativo: React.FC = () => {
                 </ComposedChart>
               </ResponsiveContainer>
 
-              {/* COLCHETES DE CRESCIMENTO NO TOPO DAS COLUNAS DE RECEITA (COM MAIS ESPAÇO) */}
+              {/* DUPLA CAMADA DE COLCHETES DE CRESCIMENTO (RECEITA + RESULTADO LÍQUIDO) */}
               {modoVisao === 'anual' && coordsBarras.length >= 3 && (
                 <svg className="absolute inset-0 pointer-events-none w-full h-full z-10">
-                  {/* Colchete 1: 2025 -> 2026 (+33.8%) */}
+                  {/* ============================================================== */}
+                  {/* CAMADA 1: COLCHETES DE RECEITA TOTAL (TOPO MAIS ALTO)          */}
+                  {/* ============================================================== */}
+                  {/* 1.1 Receita 2025 -> 2026 (+33.8%) */}
                   {(() => {
                     const x1 = coordsBarras[0].x;
                     const x2 = coordsBarras[1].x;
-                    const y = coordsBarras[0].yTop - 42; // Linha bem elevada, acima do rótulo total
+                    const y = coordsBarras[0].yTop - 64; // Linha superior mais alta
                     const xMid = (x1 + x2) / 2;
                     return (
                       <g>
-                        {/* Linha do colchete com ganchos nas pontas */}
                         <path 
-                          d={`M ${x1} ${y + 10} L ${x1} ${y} L ${x2} ${y} L ${x2} ${y + 10}`} 
+                          d={`M ${x1} ${y + 8} L ${x1} ${y} L ${x2} ${y} L ${x2} ${y + 8}`} 
                           fill="none" 
                           stroke="#003E5C" 
                           strokeWidth={1.75} 
                         />
-                        {/* Pill badge de crescimento */}
                         <rect 
                           x={xMid - 28} 
                           y={y - 12} 
@@ -446,16 +461,16 @@ export const GraficoTrienalComparativo: React.FC = () => {
                     );
                   })()}
 
-                  {/* Colchete 2: 2026 -> 2027 (+44.7%) */}
+                  {/* 1.2 Receita 2026 -> 2027 (+44.7%) */}
                   {(() => {
                     const x1 = coordsBarras[1].x;
                     const x2 = coordsBarras[2].x;
-                    const y = coordsBarras[1].yTop - 42;
+                    const y = coordsBarras[1].yTop - 64;
                     const xMid = (x1 + x2) / 2;
                     return (
                       <g>
                         <path 
-                          d={`M ${x1} ${y + 10} L ${x1} ${y} L ${x2} ${y} L ${x2} ${y + 10}`} 
+                          d={`M ${x1} ${y + 8} L ${x1} ${y} L ${x2} ${y} L ${x2} ${y + 8}`} 
                           fill="none" 
                           stroke="#003E5C" 
                           strokeWidth={1.75} 
@@ -483,57 +498,248 @@ export const GraficoTrienalComparativo: React.FC = () => {
                       </g>
                     );
                   })()}
+
+                  {/* ===================================================================== */}
+                  {/* CAMADA 2: COLCHETES DE RESULTADO LÍQUIDO (ACIMA DAS BARRAS DE RECEITA) */}
+                  {/* ===================================================================== */}
+                  {coordsResultado.length >= 3 && (
+                    <>
+                      {/* 2.1 Resultado 2025 -> 2026 (+46.2%) */}
+                      {(() => {
+                        const x1 = coordsResultado[0].x;
+                        const x2 = coordsResultado[1].x;
+                        // yRes posicionado no vão entre o topo da receita e o colchete de receita
+                        const yRes = coordsBarras[0].yTop - 26; 
+                        const xMid = (x1 + x2) / 2;
+                        return (
+                          <g>
+                            <path 
+                              d={`M ${x1} ${yRes + 8} L ${x1} ${yRes} L ${x2} ${yRes} L ${x2} ${yRes + 8}`} 
+                              fill="none" 
+                              stroke="#1E7E50" 
+                              strokeWidth={1.75} 
+                            />
+                            <rect 
+                              x={xMid - 28} 
+                              y={yRes - 12} 
+                              width={56} 
+                              height={20} 
+                              rx={10} 
+                              fill="#E8F8F0" 
+                              stroke="#1E7E50" 
+                              strokeWidth={1.25} 
+                            />
+                            <text 
+                              x={xMid} 
+                              y={yRes + 2} 
+                              textAnchor="middle" 
+                              fill="#1E7E50" 
+                              fontSize={11} 
+                              fontWeight={800}
+                            >
+                              +46,2%
+                            </text>
+                          </g>
+                        );
+                      })()}
+
+                      {/* 2.2 Resultado 2026 -> 2027 (+57.1%) */}
+                      {(() => {
+                        const x1 = coordsResultado[1].x;
+                        const x2 = coordsResultado[2].x;
+                        const yRes = coordsBarras[1].yTop - 26;
+                        const xMid = (x1 + x2) / 2;
+                        return (
+                          <g>
+                            <path 
+                              d={`M ${x1} ${yRes + 8} L ${x1} ${yRes} L ${x2} ${yRes} L ${x2} ${yRes + 8}`} 
+                              fill="none" 
+                              stroke="#1E7E50" 
+                              strokeWidth={1.75} 
+                            />
+                            <rect 
+                              x={xMid - 28} 
+                              y={yRes - 12} 
+                              width={56} 
+                              height={20} 
+                              rx={10} 
+                              fill="#E8F8F0" 
+                              stroke="#1E7E50" 
+                              strokeWidth={1.25} 
+                            />
+                            <text 
+                              x={xMid} 
+                              y={yRes + 2} 
+                              textAnchor="middle" 
+                              fill="#1E7E50" 
+                              fontSize={11} 
+                              fontWeight={800}
+                            >
+                              +57,1%
+                            </text>
+                          </g>
+                        );
+                      })()}
+                    </>
+                  )}
                 </svg>
               )}
             </div>
 
-            {/* Cards Inferiores com Valores Reais em R$ e % */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5 pt-4 border-t border-[#BCD3DF]/30">
+            {/* Cards Inferiores com Proporção Otimizada e Blindagem contra Quebra de Linha */}
+            <div className="flex flex-col xl:flex-row gap-4 mt-5 pt-4 border-t border-[#BCD3DF]/30 w-full items-stretch">
               {dadosAnual.map(anoData => (
-                <div key={anoData.ano} className="bg-[#F8FAFC] p-4 rounded-xl border border-[#BCD3DF]/50 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#BCD3DF]/30">
+                <div key={anoData.ano} className="flex-1 min-w-[240px] bg-[#F8FAFC] p-4 rounded-xl border border-[#BCD3DF]/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-[#BCD3DF]/30">
                     <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-[#003E5C] text-white">
                       Ano {anoData.ano}
                     </span>
-                    <span className="text-xs font-bold text-[#1E7E50]">
-                      Margem: {anoData.receitaTotalReal > 0 ? ((anoData.resultadoReal / anoData.receitaTotalReal) * 100).toFixed(1) : 0}%
+                    <span className="text-[10px] font-bold text-[#003E5C]/60 uppercase tracking-wider">
+                      Resumo Executivo
                     </span>
                   </div>
 
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-[#003E5C]/80">Receita Automatizados:</span>
-                      <span className="font-bold text-[#00829B]">
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-[#003E5C]/80 shrink-0">Receita Automatizados:</span>
+                      <span className="font-bold text-[#00829B] whitespace-nowrap text-right">
                         {formatarMoeda(anoData.receitaAutomatizacaoReal)}{' '}
                         <span className="text-[11px] text-[#003E5C]">({anoData.pctAutomatizacaoReal.toFixed(1)}%)</span>
                       </span>
                     </div>
 
-                    <div className="flex justify-between">
-                      <span className="text-[#003E5C]/80">Receita Cadastro:</span>
-                      <span className="font-bold text-[#003E5C]">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-[#003E5C]/80 shrink-0">Receita Cadastro:</span>
+                      <span className="font-bold text-[#003E5C] whitespace-nowrap text-right">
                         {formatarMoeda(anoData.receitaCadastroReal)}{' '}
                         <span className="text-[11px] text-[#00829B]">({anoData.pctCadastroReal.toFixed(1)}%)</span>
                       </span>
                     </div>
 
-                    <div className="flex justify-between font-extrabold text-[#002A3A] border-t border-gray-200 pt-1">
-                      <span>Receita Total (100%):</span>
-                      <span>{formatarMoeda(anoData.receitaTotalReal)}</span>
+                    <div className="flex justify-between items-center gap-2 font-extrabold text-[#002A3A] border-t border-gray-200 pt-1.5">
+                      <span className="shrink-0">Receita Total (100%):</span>
+                      <span className="whitespace-nowrap text-right">{formatarMoeda(anoData.receitaTotalReal)}</span>
                     </div>
 
-                    <div className="flex justify-between text-[#C53A3A]">
-                      <span>Custos Totais:</span>
-                      <span className="font-bold">{formatarMoeda(anoData.despesasReal)}</span>
+                    <div className="flex justify-between items-center gap-2 text-[#C53A3A]">
+                      <span className="shrink-0">Custo de Captação:</span>
+                      <span className="font-bold whitespace-nowrap text-right">{formatarMoeda(anoData.despesasReal)}</span>
                     </div>
 
-                    <div className="flex justify-between text-[#1E7E50] font-extrabold border-t border-gray-200 pt-1">
-                      <span>Resultado Líquido:</span>
-                      <span>{formatarMoeda(anoData.resultadoReal)}</span>
+                    <div className="flex justify-between items-center gap-2 text-[#1E7E50] font-extrabold border-t border-gray-200 pt-1.5">
+                      <span className="shrink-0">Resultado Líquido:</span>
+                      <span className="whitespace-nowrap text-right">{formatarMoeda(anoData.resultadoReal)}</span>
                     </div>
+                  </div>
+
+                  {/* Informação da Margem na parte de baixo em Azul */}
+                  <div className="mt-3 pt-2 border-t border-[#BCD3DF]/40 flex items-center justify-between bg-[#EBF7FB] px-2.5 py-1.5 rounded-lg">
+                    <span className="text-[11px] font-bold text-[#003E5C]">Margem Líquida:</span>
+                    <span className="text-xs font-black text-[#00829B]">
+                      {anoData.receitaTotalReal > 0 ? ((anoData.resultadoReal / anoData.receitaTotalReal) * 100).toFixed(1) : 0}%
+                    </span>
                   </div>
                 </div>
               ))}
+
+              {/* 4º CARD: EVOLUÇÃO PARA 2027 (LARGURA DEDICADA E PERFEITAMENTE AJUSTADA) */}
+              {(() => {
+                const d25 = dadosAnual[0];
+                const d26 = dadosAnual[1];
+                const d27 = dadosAnual[2];
+
+                const calcCresc = (vFinal: number, vInicial: number) => {
+                  if (!vInicial || vInicial === 0) return '+0,0%';
+                  const p = ((vFinal - vInicial) / vInicial) * 100;
+                  return `${p >= 0 ? '+' : ''}${p.toFixed(1).replace('.', ',')}%`;
+                };
+
+                const corCresc = (vFinal: number, vInicial: number) => {
+                  return vFinal >= vInicial ? 'text-[#1E7E50]' : 'text-[#C53A3A]';
+                };
+
+                return (
+                  <div className="w-full xl:w-[175px] shrink-0 bg-[#F8FAFC] p-3 rounded-xl border-2 border-[#00829B]/40 shadow-2xs flex flex-col justify-between">
+                    <div className="flex items-center mb-2.5 pb-2 border-b border-[#BCD3DF]/30">
+                      <div className="grid grid-cols-2 gap-1.5 text-center w-full">
+                        <span className="text-[9.5px] font-black text-[#003E5C] px-1 py-0.5 bg-[#D9FBFF] rounded border border-[#00829B]/30 whitespace-nowrap">
+                          2025 ➔ 2027
+                        </span>
+                        <span className="text-[9.5px] font-black text-[#003E5C] px-1 py-0.5 bg-[#D9FBFF] rounded border border-[#00829B]/30 whitespace-nowrap">
+                          2026 ➔ 2027
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      {/* Automatizados */}
+                      <div className="flex items-center h-[18px]">
+                        <div className="grid grid-cols-2 gap-2 text-center w-full font-black text-[11px]">
+                          <span className={`${corCresc(d27.receitaAutomatizacaoReal, d25.receitaAutomatizacaoReal)} whitespace-nowrap`}>
+                            {calcCresc(d27.receitaAutomatizacaoReal, d25.receitaAutomatizacaoReal)}
+                          </span>
+                          <span className={`${corCresc(d27.receitaAutomatizacaoReal, d26.receitaAutomatizacaoReal)} whitespace-nowrap`}>
+                            {calcCresc(d27.receitaAutomatizacaoReal, d26.receitaAutomatizacaoReal)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Cadastro */}
+                      <div className="flex items-center h-[18px]">
+                        <div className="grid grid-cols-2 gap-2 text-center w-full font-black text-[11px]">
+                          <span className={`${corCresc(d27.receitaCadastroReal, d25.receitaCadastroReal)} whitespace-nowrap`}>
+                            {calcCresc(d27.receitaCadastroReal, d25.receitaCadastroReal)}
+                          </span>
+                          <span className={`${corCresc(d27.receitaCadastroReal, d26.receitaCadastroReal)} whitespace-nowrap`}>
+                            {calcCresc(d27.receitaCadastroReal, d26.receitaCadastroReal)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Receita Total */}
+                      <div className="flex items-center border-t border-gray-200 pt-1.5 font-extrabold text-[#002A3A] h-[23px]">
+                        <div className="grid grid-cols-2 gap-2 text-center w-full font-black text-[11px]">
+                          <span className="text-[#00829B] whitespace-nowrap">
+                            {calcCresc(d27.receitaTotalReal, d25.receitaTotalReal)}
+                          </span>
+                          <span className="text-[#00829B] whitespace-nowrap">
+                            {calcCresc(d27.receitaTotalReal, d26.receitaTotalReal)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Custo de Captação */}
+                      <div className="flex items-center h-[18px]">
+                        <div className="grid grid-cols-2 gap-2 text-center w-full font-black text-[11px]">
+                          <span className="text-[#C53A3A] whitespace-nowrap">
+                            {calcCresc(d27.despesasReal, d25.despesasReal)}
+                          </span>
+                          <span className="text-[#C53A3A] whitespace-nowrap">
+                            {calcCresc(d27.despesasReal, d26.despesasReal)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Resultado Líquido */}
+                      <div className="flex items-center border-t border-gray-200 pt-1.5 font-extrabold text-[#1E7E50] h-[23px]">
+                        <div className="grid grid-cols-2 gap-2 text-center w-full font-black text-[11px]">
+                          <span className="text-[#1E7E50] whitespace-nowrap">
+                            {calcCresc(d27.resultadoReal, d25.resultadoReal)}
+                          </span>
+                          <span className="text-[#1E7E50] whitespace-nowrap">
+                            {calcCresc(d27.resultadoReal, d26.resultadoReal)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Espaçador idêntico ao rodapé da Margem Líquida dos outros 3 cards */}
+                    <div className="mt-3 pt-2 border-t border-transparent px-2.5 py-1.5 opacity-0 pointer-events-none select-none text-xs">
+                      <span>Placeholder</span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </>
         )}

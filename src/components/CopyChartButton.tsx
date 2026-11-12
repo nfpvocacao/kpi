@@ -25,12 +25,20 @@ export const CopyChartButton: React.FC<CopyChartButtonProps> = ({
       
       const node = chartRef.current;
       
-      // Render PNG blob
+      // Capturar dimensões exatas computadas do elemento para evitar desconfiguração na clonagem
+      const width = node.offsetWidth;
+      const height = node.offsetHeight;
+      
+      // Render PNG blob com largura e altura fixadas e estilos inline preservados
       const blob = await toBlob(node, {
         backgroundColor: '#ffffff',
         pixelRatio: 2,
         cacheBust: true,
+        width,
+        height,
         style: {
+          width: `${width}px`,
+          height: `${height}px`,
           borderRadius: '16px',
         }
       });
@@ -57,7 +65,18 @@ export const CopyChartButton: React.FC<CopyChartButtonProps> = ({
         setStatus('copied');
       } else {
         // Fallback: download PNG file
-        const dataUrl = await toPng(node, { backgroundColor: '#ffffff', pixelRatio: 2, cacheBust: true });
+        const dataUrl = await toPng(node, { 
+          backgroundColor: '#ffffff', 
+          pixelRatio: 2, 
+          cacheBust: true,
+          width,
+          height,
+          style: {
+            width: `${width}px`,
+            height: `${height}px`,
+            borderRadius: '16px',
+          }
+        });
         const link = document.createElement('a');
         const cleanName = title.toLowerCase().replace(/[^a-z0-9]/g, '_');
         link.download = `${cleanName}_${new Date().toISOString().slice(0, 10)}.png`;
