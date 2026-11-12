@@ -17,57 +17,58 @@ import { formatarMoeda } from '../data/mockDatabase';
 const NOMES_MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 // Dados mensais oficiais extraídos da aba 'Resumo Automatização' da planilha
-// Linhas: Plenos, Restritos, Total, Créditos Automatização, Retorno médio por cupom, Retorno médio Aut. (Pleno)
+// Linhas: Plenos, Restritos, Total, Quantidades Cupons, Créditos Automatização, Retorno médio por cupom, Retorno médio Aut. (Pleno)
 const DADOS_MENSAIS_AUTOMATIZACAO: Record<number, Array<{
   mes: number;
   plenos: number;
   restritos: number;
   total: number;
+  cupons: number;
   creditos: number;
   retornoCupom: number;
   retornoPleno: number;
 }>> = {
   2025: [
-    { mes: 1, plenos: 725, restritos: 876, total: 1601, creditos: 42266.18, retornoCupom: 12.29, retornoPleno: 58.30 },
-    { mes: 2, plenos: 723, restritos: 876, total: 1599, creditos: 42455.09, retornoCupom: 12.91, retornoPleno: 58.72 },
-    { mes: 3, plenos: 709, restritos: 893, total: 1602, creditos: 42713.82, retornoCupom: 11.79, retornoPleno: 60.25 },
-    { mes: 4, plenos: 718, restritos: 885, total: 1603, creditos: 52390.63, retornoCupom: 14.14, retornoPleno: 72.97 },
-    { mes: 5, plenos: 718, restritos: 882, total: 1600, creditos: 50470.29, retornoCupom: 13.11, retornoPleno: 70.29 },
-    { mes: 6, plenos: 733, restritos: 867, total: 1600, creditos: 53901.38, retornoCupom: 15.40, retornoPleno: 73.54 },
-    { mes: 7, plenos: 743, restritos: 859, total: 1602, creditos: 35479.32, retornoCupom: 6.04, retornoPleno: 47.75 },
-    { mes: 8, plenos: 747, restritos: 855, total: 1602, creditos: 41893.14, retornoCupom: 6.40, retornoPleno: 56.08 },
-    { mes: 9, plenos: 753, restritos: 849, total: 1602, creditos: 38295.77, retornoCupom: 6.06, retornoPleno: 50.86 },
-    { mes: 10, plenos: 885, restritos: 847, total: 1732, creditos: 39297.23, retornoCupom: 5.02, retornoPleno: 44.40 },
-    { mes: 11, plenos: 1056, restritos: 847, total: 1903, creditos: 74167.12, retornoCupom: 6.45, retornoPleno: 70.23 },
-    { mes: 12, plenos: 1141, restritos: 840, total: 1981, creditos: 122971.66, retornoCupom: 9.75, retornoPleno: 107.78 }
+    { mes: 1, plenos: 725, restritos: 876, total: 1601, cupons: 3439, creditos: 42266.18, retornoCupom: 12.29, retornoPleno: 58.30 },
+    { mes: 2, plenos: 723, restritos: 876, total: 1599, cupons: 3289, creditos: 42455.09, retornoCupom: 12.91, retornoPleno: 58.72 },
+    { mes: 3, plenos: 709, restritos: 893, total: 1602, cupons: 3623, creditos: 42713.82, retornoCupom: 11.79, retornoPleno: 60.25 },
+    { mes: 4, plenos: 718, restritos: 885, total: 1603, cupons: 3704, creditos: 52390.63, retornoCupom: 14.14, retornoPleno: 72.97 },
+    { mes: 5, plenos: 718, restritos: 882, total: 1600, cupons: 3851, creditos: 50470.29, retornoCupom: 13.11, retornoPleno: 70.29 },
+    { mes: 6, plenos: 733, restritos: 867, total: 1600, cupons: 3500, creditos: 53901.38, retornoCupom: 15.40, retornoPleno: 73.54 },
+    { mes: 7, plenos: 743, restritos: 859, total: 1602, cupons: 5870, creditos: 35479.32, retornoCupom: 6.04, retornoPleno: 47.75 },
+    { mes: 8, plenos: 747, restritos: 855, total: 1602, cupons: 6550, creditos: 41893.14, retornoCupom: 6.40, retornoPleno: 56.08 },
+    { mes: 9, plenos: 753, restritos: 849, total: 1602, cupons: 6321, creditos: 38295.77, retornoCupom: 6.06, retornoPleno: 50.86 },
+    { mes: 10, plenos: 885, restritos: 847, total: 1732, cupons: 7828, creditos: 39297.23, retornoCupom: 5.02, retornoPleno: 44.40 },
+    { mes: 11, plenos: 1056, restritos: 847, total: 1903, cupons: 11497, creditos: 74167.12, retornoCupom: 6.45, retornoPleno: 70.23 },
+    { mes: 12, plenos: 1141, restritos: 840, total: 1981, cupons: 12608, creditos: 122971.66, retornoCupom: 9.75, retornoPleno: 107.78 }
   ],
   2026: [
-    { mes: 1, plenos: 1321, restritos: 839, total: 2160, creditos: 64261.30, retornoCupom: 5.54, retornoPleno: 48.65 },
-    { mes: 2, plenos: 1322, restritos: 836, total: 2158, creditos: 62894.92, retornoCupom: 6.51, retornoPleno: 47.58 },
-    { mes: 3, plenos: 1344, restritos: 836, total: 2180, creditos: 61402.48, retornoCupom: 5.38, retornoPleno: 45.69 },
-    { mes: 4, plenos: 1342, restritos: 833, total: 2175, creditos: 71166.30, retornoCupom: 6.61, retornoPleno: 53.03 },
-    { mes: 5, plenos: 1400, restritos: 827, total: 2227, creditos: 90418.52, retornoCupom: 7.19, retornoPleno: 64.58 },
-    { mes: 6, plenos: 1582, restritos: 820, total: 2402, creditos: 74271.86, retornoCupom: 5.72, retornoPleno: 46.95 },
-    { mes: 7, plenos: 1731, restritos: 819, total: 2550, creditos: 69596.23, retornoCupom: 4.97, retornoPleno: 40.21 },
-    { mes: 8, plenos: 1988, restritos: 822, total: 2810, creditos: 104328.00, retornoCupom: 4.80, retornoPleno: 52.48 },
-    { mes: 9, plenos: 3948, restritos: 827, total: 4775, creditos: 193068.80, retornoCupom: 4.85, retornoPleno: 48.90 },
-    { mes: 10, plenos: 4401, restritos: 826, total: 5227, creditos: 207499.64, retornoCupom: 4.52, retornoPleno: 47.15 },
-    { mes: 11, plenos: 6331, restritos: 826, total: 7157, creditos: 404614.21, retornoCupom: 5.81, retornoPleno: 63.91 },
-    { mes: 12, plenos: 6581, restritos: 826, total: 7407, creditos: 600121.39, retornoCupom: 8.29, retornoPleno: 91.19 }
+    { mes: 1, plenos: 1321, restritos: 839, total: 2160, cupons: 11598, creditos: 64261.30, retornoCupom: 5.54, retornoPleno: 48.65 },
+    { mes: 2, plenos: 1322, restritos: 836, total: 2158, cupons: 9657, creditos: 62894.92, retornoCupom: 6.51, retornoPleno: 47.58 },
+    { mes: 3, plenos: 1344, restritos: 836, total: 2180, cupons: 11412, creditos: 61402.48, retornoCupom: 5.38, retornoPleno: 45.69 },
+    { mes: 4, plenos: 1342, restritos: 833, total: 2175, cupons: 10772, creditos: 71166.30, retornoCupom: 6.61, retornoPleno: 53.03 },
+    { mes: 5, plenos: 1400, restritos: 827, total: 2227, cupons: 12572, creditos: 90418.52, retornoCupom: 7.19, retornoPleno: 64.58 },
+    { mes: 6, plenos: 1582, restritos: 820, total: 2402, cupons: 12993, creditos: 74271.86, retornoCupom: 5.72, retornoPleno: 46.95 },
+    { mes: 7, plenos: 1731, restritos: 819, total: 2550, cupons: 13999, creditos: 69596.23, retornoCupom: 4.97, retornoPleno: 40.21 },
+    { mes: 8, plenos: 1988, restritos: 822, total: 2810, cupons: 21735, creditos: 104328.00, retornoCupom: 4.80, retornoPleno: 52.48 },
+    { mes: 9, plenos: 3948, restritos: 827, total: 4775, cupons: 39808, creditos: 193068.80, retornoCupom: 4.85, retornoPleno: 48.90 },
+    { mes: 10, plenos: 4401, restritos: 826, total: 5227, cupons: 45907, creditos: 207499.64, retornoCupom: 4.52, retornoPleno: 47.15 },
+    { mes: 11, plenos: 6331, restritos: 826, total: 7157, cupons: 69641, creditos: 404614.21, retornoCupom: 5.81, retornoPleno: 63.91 },
+    { mes: 12, plenos: 6581, restritos: 826, total: 7407, cupons: 72391, creditos: 600121.39, retornoCupom: 8.29, retornoPleno: 91.19 }
   ],
   2027: [
-    { mes: 1, plenos: 6731, restritos: 826, total: 7557, creditos: 238685.46, retornoCupom: 4.43, retornoPleno: 35.46 },
-    { mes: 2, plenos: 6881, restritos: 826, total: 7707, creditos: 266650.17, retornoCupom: 5.54, retornoPleno: 38.75 },
-    { mes: 3, plenos: 7031, restritos: 826, total: 7857, creditos: 238331.69, retornoCupom: 4.84, retornoPleno: 33.90 },
-    { mes: 4, plenos: 8381, restritos: 826, total: 9207, creditos: 348830.49, retornoCupom: 5.95, retornoPleno: 41.62 },
-    { mes: 5, plenos: 8531, restritos: 826, total: 9357, creditos: 392674.72, retornoCupom: 5.75, retornoPleno: 46.03 },
-    { mes: 6, plenos: 8681, restritos: 826, total: 9507, creditos: 312626.05, retornoCupom: 5.14, retornoPleno: 36.01 },
-    { mes: 7, plenos: 8831, restritos: 826, total: 9657, creditos: 276591.69, retornoCupom: 4.47, retornoPleno: 31.32 },
-    { mes: 8, plenos: 10181, restritos: 826, total: 11007, creditos: 351855.36, retornoCupom: 4.32, retornoPleno: 34.56 },
-    { mes: 9, plenos: 10331, restritos: 826, total: 11157, creditos: 360758.52, retornoCupom: 4.37, retornoPleno: 34.92 },
-    { mes: 10, plenos: 10481, restritos: 826, total: 11307, creditos: 341093.66, retornoCupom: 4.07, retornoPleno: 32.54 },
-    { mes: 11, plenos: 10631, restritos: 826, total: 11457, creditos: 494128.88, retornoCupom: 4.65, retornoPleno: 46.48 },
-    { mes: 12, plenos: 10781, restritos: 826, total: 11607, creditos: 804370.41, retornoCupom: 7.46, retornoPleno: 74.61 }
+    { mes: 1, plenos: 6731, restritos: 826, total: 7557, cupons: 53848, creditos: 238685.46, retornoCupom: 4.43, retornoPleno: 35.46 },
+    { mes: 2, plenos: 6881, restritos: 826, total: 7707, cupons: 48167, creditos: 266650.17, retornoCupom: 5.54, retornoPleno: 38.75 },
+    { mes: 3, plenos: 7031, restritos: 826, total: 7857, cupons: 49217, creditos: 238331.69, retornoCupom: 4.84, retornoPleno: 33.90 },
+    { mes: 4, plenos: 8381, restritos: 826, total: 9207, cupons: 58667, creditos: 348830.49, retornoCupom: 5.95, retornoPleno: 41.62 },
+    { mes: 5, plenos: 8531, restritos: 826, total: 9357, cupons: 68248, creditos: 392674.72, retornoCupom: 5.75, retornoPleno: 46.03 },
+    { mes: 6, plenos: 8681, restritos: 826, total: 9507, cupons: 60767, creditos: 312626.05, retornoCupom: 5.14, retornoPleno: 36.01 },
+    { mes: 7, plenos: 8831, restritos: 826, total: 9657, cupons: 61817, creditos: 276591.69, retornoCupom: 4.47, retornoPleno: 31.32 },
+    { mes: 8, plenos: 10181, restritos: 826, total: 11007, cupons: 81448, creditos: 351855.36, retornoCupom: 4.32, retornoPleno: 34.56 },
+    { mes: 9, plenos: 10331, restritos: 826, total: 11157, cupons: 82648, creditos: 360758.52, retornoCupom: 4.37, retornoPleno: 34.92 },
+    { mes: 10, plenos: 10481, restritos: 826, total: 11307, cupons: 83848, creditos: 341093.66, retornoCupom: 4.07, retornoPleno: 32.54 },
+    { mes: 11, plenos: 10631, restritos: 826, total: 11457, cupons: 106310, creditos: 494128.88, retornoCupom: 4.65, retornoPleno: 46.48 },
+    { mes: 12, plenos: 10781, restritos: 826, total: 11607, cupons: 107810, creditos: 804370.41, retornoCupom: 7.46, retornoPleno: 74.61 }
   ]
 };
 
@@ -336,7 +337,25 @@ export const GraficoMensalCreditos: React.FC = () => {
               </div>
             </div>
 
-            {/* Linha 4: P/Cupom */}
+            {/* Linha 4: Qtd Cupons (logo abaixo de Total) */}
+            <div className="flex items-center py-2 text-xs border-b border-[#BCD3DF]/40 hover:bg-[#F4F9FC]/60 transition-colors bg-[#F4FBFD] font-bold">
+              <div 
+                className="text-center shrink-0 text-[#00829B] text-[9.5px] font-black border-r border-[#BCD3DF]/60 bg-[#F4FBFD] leading-tight px-0.5"
+                style={{ width: COL_LABEL_WIDTH }}
+                title="Quantidade de Cupons"
+              >
+                Qtd Cupons
+              </div>
+              <div className="flex-1 grid grid-cols-12 text-center" style={{ paddingLeft: '32px', paddingRight: '32px' }}>
+                {dadosMes.map(d => (
+                  <div key={d.mes} className="text-[#00829B] text-[11px] font-extrabold">
+                    {d.cupons.toLocaleString('pt-BR')}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Linha 5: P/Cupom */}
             <div className="flex items-center py-2 text-xs border-b border-[#BCD3DF]/40 hover:bg-[#F4F9FC]/60 transition-colors bg-white font-semibold">
               <div 
                 className="text-center shrink-0 text-[#1E7E50] text-[10px] font-black border-r border-[#BCD3DF]/60 bg-white"
@@ -354,7 +373,7 @@ export const GraficoMensalCreditos: React.FC = () => {
               </div>
             </div>
 
-            {/* Linha 5: P/Pleno */}
+            {/* Linha 6: P/Pleno */}
             <div className="flex items-center py-2 text-xs hover:bg-[#F4F9FC]/60 transition-colors bg-[#F8FAFC] font-bold">
               <div 
                 className="text-center shrink-0 text-[#003E5C] text-[10px] font-black border-r border-[#BCD3DF]/60 bg-[#F8FAFC]"
@@ -370,10 +389,4 @@ export const GraficoMensalCreditos: React.FC = () => {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+       
