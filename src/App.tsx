@@ -13,13 +13,13 @@ import { TabComissoes } from './components/tabs/TabComissoes';
 import { TabDoadores } from './components/tabs/TabDoadores';
 import { TabDoadoresAutomaticos } from './components/tabs/TabDoadoresAutomaticos';
 import { TabCampanhas } from './components/tabs/TabCampanhas';
+import { TabQrCodeEventos } from './components/tabs/TabQrCodeEventos';
 import { TabBenchmarking } from './components/tabs/TabBenchmarking';
 import { TabApresentacao } from './components/tabs/TabApresentacao';
 import { TabDevDocs } from './components/tabs/TabDevDocs';
 import { DatabaseStatusModal } from './components/DatabaseStatusModal';
 
 import { BusinessRulesModal } from './components/BusinessRulesModal';
-import { TvModeModal } from './components/TvModeModal';
 import { BrandLogo } from './components/BrandLogo';
 import { BrandBadge } from './components/BrandBadge';
 import { LoginScreen } from './components/LoginScreen';
@@ -54,7 +54,6 @@ export default function App() {
   });
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
-  const [isTvModeOpen, setIsTvModeOpen] = useState(false);
   const [isUsuariosModalOpen, setIsUsuariosModalOpen] = useState(false);
   const [isAlterarSenhaModalOpen, setIsAlterarSenhaModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -181,7 +180,6 @@ export default function App() {
         onOpenDatabaseModal={() => setIsDatabaseModalOpen(true)}
         onOpenRulesModal={() => setIsRulesModalOpen(true)}
         onSyncDatabase={handleSync}
-        onOpenTvMode={() => setIsTvModeOpen(true)}
         onOpenUsuariosModal={() => setIsUsuariosModalOpen(true)}
         onOpenAlterarSenhaModal={() => setIsAlterarSenhaModalOpen(true)}
         isSyncing={isSyncing}
@@ -199,7 +197,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-[1800px] w-full mx-auto px-4 lg:px-8 py-6">
+      <main className="flex-1 max-w-[1800px] w-full mx-auto px-4 lg:px-8 py-6 pb-24 md:pb-6">
 
         {activeTab === 'desempenho' && (
           <TabDesempenho
@@ -259,6 +257,10 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'qrcode' && (
+          <TabQrCodeEventos />
+        )}
+
         {activeTab === 'benchmarking' && (
           <TabBenchmarking 
             selectedYears={periodFilter.years}
@@ -307,17 +309,6 @@ export default function App() {
 
         </div>
       </footer>
-
-      {/* Fullscreen TV Mode Carousel Overlay */}
-      <TvModeModal
-        isOpen={isTvModeOpen}
-        onClose={() => setIsTvModeOpen(false)}
-        ultimaSincronizacao={databaseState.ultimaSincronizacao}
-        periodFilter={periodFilter}
-        metricasFiltradas={metricasFiltradas}
-        metricasAnterior={metricasAnterior}
-        periodoLabel={periodoLabel}
-      />
 
       {/* Modal de Gestão de Usuários e Permissões por Telas (Admin) */}
       <UsuariosModal

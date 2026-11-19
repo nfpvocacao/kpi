@@ -33,4 +33,46 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #004a6d;
-}
+}
+
+/* ============================================================== */
+/* ESTILOS DE IMPRESSÃO ISOLADA (NUNCA VAZA O SITE NA IMPRESSÃO) */
+/* ============================================================== */
+@media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Oculta tudo que não for a área exclusiva de impressão */
+  header,
+  nav,
+  footer,
+  aside,
+  .md\:hidden,
+  .sticky,
+  button,
+  input,
+  #root > div > header,
+  #root > div > main > *:not(#area-impressao-exclusiva-container) {
+    display: none !important;
+  }
+
+  #area-impressao-exclusiva-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 100vh !important;
+    width: 100vw !important;
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}

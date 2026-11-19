@@ -27,6 +27,7 @@ const TODAS_AS_ABAS: { id: TabId; label: string; desc: string }[] = [
   { id: 'doadores', label: 'Raio-X Doadores', desc: 'Análise de doadores individuais e CPFs' },
   { id: 'automaticos', label: 'Doadores Fidelizados', desc: 'Doações automáticas recorrentes SEFAZ' },
   { id: 'campanhas', label: 'Ações & Campanhas', desc: 'Eventos de captação e campanhas ativas' },
+  { id: 'qrcode', label: 'QR Eventos', desc: 'Geração e histórico de QR Codes de eventos para cadastro Bitrix' },
   { id: 'benchmarking', label: 'Benchmarking', desc: 'Comparativos de mercado e prospecção' },
   { id: 'apresentacao', label: 'Apresentação', desc: 'Painel para projeção institucional' },
   { id: 'dev', label: 'Dev / Processos', desc: 'Acesso técnico, logs e rotinas de banco' }

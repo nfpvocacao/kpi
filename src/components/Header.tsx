@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, RefreshCw, ShieldCheck, ChevronDown, Calendar, Filter, Tv, UserCheck, LogOut, Users, KeyRound } from 'lucide-react';
+import { Database, RefreshCw, ShieldCheck, ChevronDown, Calendar, Filter, UserCheck, LogOut, Users, KeyRound } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { DatabaseState, PeriodFilter } from '../types';
 import { PeriodSelectorPopover } from './PeriodSelectorPopover';
@@ -12,7 +12,6 @@ interface HeaderProps {
   onOpenDatabaseModal: () => void;
   onOpenRulesModal: () => void;
   onSyncDatabase: () => void;
-  onOpenTvMode?: () => void;
   onOpenUsuariosModal?: () => void;
   onOpenAlterarSenhaModal?: () => void;
   isSyncing: boolean;
@@ -25,7 +24,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDatabaseModal,
   onOpenRulesModal,
   onSyncDatabase,
-  onOpenTvMode,
   onOpenUsuariosModal,
   onOpenAlterarSenhaModal,
   isSyncing
@@ -70,11 +68,11 @@ export const Header: React.FC<HeaderProps> = ({
 
           
           {/* Left: Brand + Application Title */}
-          <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+          <div className="flex items-center gap-4 w-full md:w-auto justify-center md:justify-start">
             <div className="flex items-center gap-3">
               <BrandLogo variant="full" color="navy" />
               <div className="h-7 w-px bg-[#BCD3DF] hidden sm:block"></div>
-              <div>
+              <div className="hidden sm:block">
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-lg sm:text-xl tracking-tight text-[#004A6D]">
                     NFP <span className="text-[#00E3E6] bg-[#004A6D] px-1.5 py-0.5 rounded-sm text-sm">Analytics</span>
@@ -93,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onSyncDatabase}
               disabled={isSyncing}
-              className="md:hidden p-2 text-[#004A6D] hover:bg-[#D9FBFF] rounded-lg transition-colors"
+              className="md:hidden absolute right-4 top-4 p-2 text-[#004A6D] hover:bg-[#D9FBFF] rounded-lg transition-colors"
               title="Sincronizar dados"
             >
               <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-[#00E3E6]' : ''}`} />
@@ -101,44 +99,32 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Right: Period Filter, Database Cache Indicator & Business Rules Button */}
-          <div className="flex items-center flex-wrap gap-2.5 w-full md:w-auto justify-end">
+          <div className="flex items-center flex-wrap gap-2 w-full md:w-auto justify-center md:justify-end">
             
             {/* Master Period Filter Button (Triggers Popover) */}
             <button
               onClick={() => setIsPeriodPopoverOpen(true)}
-              className="flex items-center bg-[#F4F9FA] hover:bg-[#D9FBFF]/60 border border-[#BCD3DF] hover:border-[#004A6D] rounded-xl px-3.5 py-2 text-xs font-bold text-[#002A3A] transition-all shadow-xs cursor-pointer group"
+              className="flex items-center bg-[#F4F9FA] hover:bg-[#D9FBFF]/60 border border-[#BCD3DF] hover:border-[#004A6D] rounded-xl px-3 py-1.5 text-xs font-bold text-[#002A3A] transition-all shadow-2xs cursor-pointer group"
               title="Clique para abrir o Seletor de Período Misto (Anos & Meses)"
             >
-              <Calendar className="w-3.5 h-3.5 text-[#004A6D] mr-2 group-hover:text-[#00E3E6] transition-colors" />
+              <Calendar className="w-3.5 h-3.5 text-[#004A6D] mr-1.5 group-hover:text-[#00E3E6] transition-colors" />
               <span className="text-[#004A6D]/70 mr-1.5 font-semibold hidden lg:inline">Período:</span>
-              <span className="font-black text-[#004A6D] mr-2 underline decoration-[#00E3E6] decoration-2 underline-offset-2">
+              <span className="font-black text-[#004A6D] mr-1 underline decoration-[#00E3E6] decoration-2 underline-offset-2 text-xs">
                 {getPeriodLabel(periodFilter)}
               </span>
               <Filter className="w-3 h-3 text-[#004A6D]/60 ml-1" />
-              <ChevronDown className="w-3.5 h-3.5 text-[#004A6D] ml-1 group-hover:translate-y-0.5 transition-transform" />
+              <ChevronDown className="w-3.5 h-3.5 text-[#004A6D] ml-0.5 group-hover:translate-y-0.5 transition-transform" />
             </button>
 
-            {/* Sync Button */}
+            {/* Sync Button (Desktop) */}
             <button
               onClick={onSyncDatabase}
               disabled={isSyncing}
-              className="flex items-center gap-1.5 bg-[#004A6D] hover:bg-[#002A3A] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs disabled:opacity-75 cursor-pointer"
+              className="hidden md:flex items-center gap-1.5 bg-[#004A6D] hover:bg-[#002A3A] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs disabled:opacity-75 cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-[#00E3E6]' : ''}`} />
-              <span className="hidden sm:inline">{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
+              <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
             </button>
-
-            {/* TV Mode Button */}
-            {onOpenTvMode && (
-              <button
-                onClick={onOpenTvMode}
-                className="flex items-center gap-1.5 bg-[#002A3A] hover:bg-[#001D29] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs border border-[#00E3E6]/40 cursor-pointer group"
-                title="Abrir o Modo Apresentação TV com Carrossel Automático de Dashboards"
-              >
-                <Tv className="w-3.5 h-3.5 text-[#00E3E6] group-hover:scale-110 transition-transform" />
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse ml-0.5"></span>
-              </button>
-            )}
 
             {/* Separador */}
             <div className="h-6 w-px bg-[#BCD3DF]/50 hidden sm:block"></div>
@@ -147,7 +133,7 @@ export const Header: React.FC<HeaderProps> = ({
             {usuario?.is_admin && onOpenUsuariosModal && (
               <button
                 onClick={onOpenUsuariosModal}
-                className="flex items-center gap-1.5 bg-[#F4F9FA] hover:bg-[#D9FBFF]/80 text-[#004A6D] border border-[#BCD3DF] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                className="hidden sm:flex items-center gap-1.5 bg-[#F4F9FA] hover:bg-[#D9FBFF]/80 text-[#004A6D] border border-[#BCD3DF] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
                 title="Gerenciar Usuários e Permissões de Telas"
               >
                 <Users className="w-3.5 h-3.5 text-[#004A6D]" />
@@ -157,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Informações do Usuário Logado e Logout */}
             {usuario && (
-              <div className="flex items-center gap-2 pl-1">
+              <div className="hidden sm:flex items-center gap-2 pl-1">
                 <div className="hidden xl:flex flex-col text-right">
                   <span className="text-xs font-black text-[#002A3A] leading-tight">
                     {usuario.nome}
